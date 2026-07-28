@@ -1,0 +1,10 @@
+# Go
+*.test
+*.out
+
+# Oracle harness (Rust, test-only — never part of the Go module surface)
+oracle/harness/target/
+oracle/bin/
+
+# macOS
+.DS_Store

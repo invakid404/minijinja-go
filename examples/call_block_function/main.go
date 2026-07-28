@@ -9,8 +9,8 @@ import (
 	"log"
 	"strings"
 
-	minijinja "github.com/mitsuhiko/minijinja/minijinja-go/v2"
-	"github.com/mitsuhiko/minijinja/minijinja-go/v2/value"
+	minijinja "github.com/invakid404/minijinja-go/v2"
+	"github.com/invakid404/minijinja-go/v2/value"
 )
 
 const templateSource = `{%- macro run_loop(num) -%}

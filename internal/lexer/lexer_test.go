@@ -7,15 +7,15 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/mitsuhiko/minijinja/minijinja-go/v2/internal/testutil"
-	"github.com/mitsuhiko/minijinja/minijinja-go/v2/syntax"
+	"github.com/invakid404/minijinja-go/v2/internal/testutil"
+	"github.com/invakid404/minijinja-go/v2/syntax"
 )
 
 const (
 	// Paths relative to lexer package directory (minijinja-go/internal/lexer/)
-	rustTestsDir  = "../../../minijinja/tests"
-	lexerInputDir = "../../../minijinja/tests/lexer-inputs"
-	snapshotDir   = "../../../minijinja/tests/snapshots"
+	rustTestsDir  = "../../testdata/upstream/minijinja/tests"
+	lexerInputDir = "../../testdata/upstream/minijinja/tests/lexer-inputs"
+	snapshotDir   = "../../testdata/upstream/minijinja/tests/snapshots"
 )
 
 func TestLexer(t *testing.T) {

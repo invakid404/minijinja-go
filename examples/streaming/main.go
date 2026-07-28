@@ -11,8 +11,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/mitsuhiko/minijinja/minijinja-go/v2"
-	"github.com/mitsuhiko/minijinja/minijinja-go/v2/value"
+	"github.com/invakid404/minijinja-go/v2"
+	"github.com/invakid404/minijinja-go/v2/value"
 )
 
 const template = `

@@ -1,3 +1,3 @@
-module github.com/mitsuhiko/minijinja/minijinja-go/v2
+module github.com/invakid404/minijinja-go/v2
 
 go 1.23

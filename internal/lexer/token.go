@@ -4,7 +4,7 @@ package lexer
 import (
 	"fmt"
 
-	"github.com/mitsuhiko/minijinja/minijinja-go/v2/syntax"
+	"github.com/invakid404/minijinja-go/v2/syntax"
 )
 
 // TokenType represents the type of a token.

@@ -1,9 +1,9 @@
 package minijinja
 
 import (
-	mjerrors "github.com/mitsuhiko/minijinja/minijinja-go/v2/internal/errors"
-	"github.com/mitsuhiko/minijinja/minijinja-go/v2/internal/parser"
-	"github.com/mitsuhiko/minijinja/minijinja-go/v2/value"
+	mjerrors "github.com/invakid404/minijinja-go/v2/internal/errors"
+	"github.com/invakid404/minijinja-go/v2/internal/parser"
+	"github.com/invakid404/minijinja-go/v2/value"
 )
 
 func (s *State) attachErrorInfo(err error, node parser.Node) error {

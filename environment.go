@@ -7,10 +7,10 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/mitsuhiko/minijinja/minijinja-go/v2/filters"
-	"github.com/mitsuhiko/minijinja/minijinja-go/v2/internal/parser"
-	"github.com/mitsuhiko/minijinja/minijinja-go/v2/syntax"
-	"github.com/mitsuhiko/minijinja/minijinja-go/v2/value"
+	"github.com/invakid404/minijinja-go/v2/filters"
+	"github.com/invakid404/minijinja-go/v2/internal/parser"
+	"github.com/invakid404/minijinja-go/v2/syntax"
+	"github.com/invakid404/minijinja-go/v2/value"
 )
 
 // AutoEscape determines the auto-escaping strategy.

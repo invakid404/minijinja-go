@@ -5,8 +5,8 @@ import (
 	"math/big"
 	"strconv"
 
-	"github.com/mitsuhiko/minijinja/minijinja-go/v2/internal/lexer"
-	"github.com/mitsuhiko/minijinja/minijinja-go/v2/syntax"
+	"github.com/invakid404/minijinja-go/v2/internal/lexer"
+	"github.com/invakid404/minijinja-go/v2/syntax"
 )
 
 const maxRecursion = 150

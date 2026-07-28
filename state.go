@@ -10,8 +10,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/mitsuhiko/minijinja/minijinja-go/v2/internal/parser"
-	"github.com/mitsuhiko/minijinja/minijinja-go/v2/value"
+	"github.com/invakid404/minijinja-go/v2/internal/parser"
+	"github.com/invakid404/minijinja-go/v2/value"
 )
 
 // State holds the evaluation state during template rendering.

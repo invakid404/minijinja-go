@@ -7,15 +7,15 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/mitsuhiko/minijinja/minijinja-go/v2/internal/testutil"
-	"github.com/mitsuhiko/minijinja/minijinja-go/v2/syntax"
-	"github.com/mitsuhiko/minijinja/minijinja-go/v2/value"
+	"github.com/invakid404/minijinja-go/v2/internal/testutil"
+	"github.com/invakid404/minijinja-go/v2/syntax"
+	"github.com/invakid404/minijinja-go/v2/value"
 )
 
 const (
-	rustInputDir    = "../minijinja/tests/inputs"
-	rustRefsDir     = "../minijinja/tests/inputs/refs"
-	rustSnapshotDir = "../minijinja/tests/snapshots"
+	rustInputDir    = "testdata/upstream/minijinja/tests/inputs"
+	rustRefsDir     = "testdata/upstream/minijinja/tests/inputs/refs"
+	rustSnapshotDir = "testdata/upstream/minijinja/tests/snapshots"
 	goInputDir      = "testdata/inputs"
 	goSnapshotDir   = "testdata/snapshots"
 )

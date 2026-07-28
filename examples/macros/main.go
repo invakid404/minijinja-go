@@ -10,7 +10,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/mitsuhiko/minijinja/minijinja-go/v2"
+	"github.com/invakid404/minijinja-go/v2"
 )
 
 func main() {

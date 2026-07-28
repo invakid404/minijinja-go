@@ -9,8 +9,8 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/mitsuhiko/minijinja/minijinja-go/v2"
-	"github.com/mitsuhiko/minijinja/minijinja-go/v2/value"
+	"github.com/invakid404/minijinja-go/v2"
+	"github.com/invakid404/minijinja-go/v2/value"
 )
 
 // Foo is an example struct with an optional field

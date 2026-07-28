@@ -9,8 +9,8 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/mitsuhiko/minijinja/minijinja-go/v2"
-	"github.com/mitsuhiko/minijinja/minijinja-go/v2/syntax"
+	"github.com/invakid404/minijinja-go/v2"
+	"github.com/invakid404/minijinja-go/v2/syntax"
 )
 
 const helloTemplate = `## this is a line comment

@@ -7,13 +7,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/mitsuhiko/minijinja/minijinja-go/v2/internal/testutil"
+	"github.com/invakid404/minijinja-go/v2/internal/testutil"
 )
 
 const (
-	rustTestsDir   = "../../../minijinja/tests"
-	parserInputDir = "../../../minijinja/tests/parser-inputs"
-	snapshotDir    = "../../../minijinja/tests/snapshots"
+	rustTestsDir   = "../../testdata/upstream/minijinja/tests"
+	parserInputDir = "../../testdata/upstream/minijinja/tests/parser-inputs"
+	snapshotDir    = "../../testdata/upstream/minijinja/tests/snapshots"
 )
 
 func TestParser(t *testing.T) {
