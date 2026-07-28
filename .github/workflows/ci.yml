@@ -1,0 +1,139 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  engine:
+    name: engine (${{ matrix.os }}, go ${{ matrix.go }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # ubuntu-latest is amd64, macos-latest is arm64. Both are covered
+        # because int64(float64) conversion was an architecture-dependent
+        # source of behaviour in the parked evaluator work, and the numeric
+        # slices are going to lean on it.
+        os: [ubuntu-latest, macos-latest]
+        go: ["1.23", "stable"]
+    env:
+      CGO_ENABLED: "0"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go }}
+          check-latest: true
+
+      - name: build
+        run: go build ./...
+
+      - name: vet
+        run: go vet ./...
+
+      # Only fork-authored Go code is format-gated. The engine tree is a
+      # byte-identical derivation of upstream and upstream is not gofmt-clean
+      # under current Go (value/value.go:340 `struct{` wants `struct {`);
+      # reformatting it would break seed fidelity, which is the more valuable
+      # invariant. scripts/verify-seed.sh is what guards the engine tree.
+      - name: gofmt (fork-authored code)
+        run: |
+          unformatted="$(gofmt -l oracle)"
+          if [ -n "$unformatted" ]; then
+            echo "these files need gofmt:"
+            echo "$unformatted"
+            exit 1
+          fi
+
+      - name: test
+        run: go test ./...
+
+  cgo-free:
+    name: pure-Go / CGO-free invariants
+    runs-on: ubuntu-latest
+    env:
+      CGO_ENABLED: "0"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+          check-latest: true
+
+      # This invariant is load-bearing: the host that consumes this fork stays
+      # CGO-free, so a C import here would break it downstream, not just here.
+      - name: no C imports in source
+        run: |
+          hits="$(grep -rn --include='*.go' -E '^[[:space:]]*import[[:space:]]+"C"|^[[:space:]]*"C"$' . || true)"
+          if [ -n "$hits" ]; then
+            echo "found cgo imports:"
+            echo "$hits"
+            exit 1
+          fi
+
+      - name: no C, assembly or prebuilt object files
+        run: |
+          hits="$(find . -path ./.git -prune -o -type f \
+            \( -name '*.c' -o -name '*.h' -o -name '*.cc' -o -name '*.cpp' \
+               -o -name '*.m' -o -name '*.s' -o -name '*.S' -o -name '*.syso' \) -print)"
+          if [ -n "$hits" ]; then
+            echo "found native sources or prebuilt objects:"
+            echo "$hits"
+            exit 1
+          fi
+
+      # The source grep alone is not enough: a dependency could pull cgo in.
+      # Ask the toolchain about the resolved package graph instead.
+      - name: no cgo anywhere in the dependency graph
+        run: |
+          go list -deps -f '{{ .ImportPath }}{{ if .CgoFiles }} CGO:{{ .CgoFiles }}{{ end }}' ./... > /tmp/deps.txt
+          if grep -q ' CGO:' /tmp/deps.txt; then
+            echo "packages with cgo files:"
+            grep ' CGO:' /tmp/deps.txt
+            exit 1
+          fi
+          if grep -qx 'C' /tmp/deps.txt; then
+            echo "pseudo-package C is in the dependency graph"
+            exit 1
+          fi
+          echo "$(wc -l < /tmp/deps.txt) packages in the graph, none using cgo"
+
+      # A pure-Go engine cross-compiles anywhere without a C toolchain. This
+      # proves the property rather than asserting it.
+      - name: cross-compile without a C toolchain
+        run: |
+          for target in linux/amd64 linux/arm64 darwin/arm64 darwin/amd64 windows/amd64 js/wasm; do
+            GOOS="${target%/*}" GOARCH="${target#*/}" go build ./... \
+              || { echo "failed to build for $target"; exit 1; }
+            echo "ok $target"
+          done
+
+      # The engine module has no third-party requirements today. Adding one is
+      # a supply-chain decision for a dependency that ends up on a host's
+      # critical path, so it should be a deliberate change to this check.
+      - name: engine module has no third-party dependencies
+        run: |
+          deps="$(go list -m -f '{{ if not .Main }}{{ .Path }}{{ end }}' all)"
+          if [ -n "$deps" ]; then
+            echo "unexpected module requirements:"
+            echo "$deps"
+            exit 1
+          fi
+
+  seed-fidelity:
+    name: seed is a mechanical derivation of upstream
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # Re-downloads the pinned upstream commit, replays the declared module
+      # path and fixture path transforms, and diffs. Any semantic delta, and
+      # any fork file not in the declared allowlist, fails here.
+      - name: verify seed
+        run: ./scripts/verify-seed.sh

@@ -1,0 +1,104 @@
+name: oracle
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  differential:
+    name: differential (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # amd64 and arm64. The scope requires the corpus to run on both while
+        # numeric fixes are being made.
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+          check-latest: true
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            oracle/harness/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('oracle/harness/Cargo.lock', 'oracle/harness/Cargo.toml') }}
+
+      - name: build the Rust harness
+        working-directory: oracle/harness
+        run: cargo build --release --locked
+
+      # Live lane: this fork against a freshly built BAML engine on this
+      # machine. Fails on any undeclared divergence, on a declared divergence
+      # that changed shape, and on a ledger entry that no longer diverges.
+      - name: differential against a live engine build
+        working-directory: oracle
+        run: go test -v ./...
+
+      # Replay lane: the same corpus against the committed recording, which was
+      # produced on a different platform. Green here means the Rust engine
+      # agreed with itself across architectures for these rows, and it proves
+      # the recording is not stale (it carries the corpus digest).
+      - name: differential against the committed recording
+        working-directory: oracle
+        env:
+          MJ_ORACLE_RECORDED_ONLY: "1"
+        run: go test ./...
+
+      - name: report
+        if: always()
+        working-directory: oracle
+        run: go run ./cmd/oracle report
+
+  isolation:
+    name: the oracle stays out of the engine module
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+          check-latest: true
+
+      # The engine module must not see the oracle at all: no oracle package in
+      # its package graph, and no Rust anywhere near its build.
+      - name: engine package graph excludes the oracle
+        run: |
+          if go list ./... | grep -q '/oracle'; then
+            echo "the oracle is inside the engine module's package graph"
+            go list ./... | grep '/oracle'
+            exit 1
+          fi
+
+      - name: engine module has no requirement on the oracle module
+        run: |
+          if go list -m all | grep -q 'minijinja-go/oracle'; then
+            echo "the engine module depends on the oracle module"
+            exit 1
+          fi
+
+      # The oracle depends on the fork through a local replace, which is
+      # correct for a test-only module and must never appear in the engine's
+      # own manifest.
+      - name: engine go.mod has no replace directives
+        run: |
+          if grep -qE '^\s*replace' go.mod; then
+            echo "the engine module has a replace directive"
+            grep -nE '^\s*replace' go.mod
+            exit 1
+          fi
