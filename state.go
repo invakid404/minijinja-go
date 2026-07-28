@@ -2976,57 +2976,14 @@ func (s *State) evalCall(call *parser.Call) (value.Value, error) {
 		return value.Undefined(), unknownFunction(v.ID).WithSpan(call.Span())
 	}
 
-	// A `receiver.name(...)` call is a method call, which resolves against the
-	// receiver rather than through the surrounding scope. It is tried before the
-	// generic path so the receiver is never evaluated as a whole expression:
-	// Rust compiles this shape to its own CallMethod instruction, and a receiver
-	// that has no such method is an unknown-method error rather than an
-	// undefined-value or unknown-function one. See PATCHES.md #8.
+	// `a.b(...)` is a method call, and the engine compiles it to its own
+	// CallMethod instruction rather than to "evaluate a.b, then call it"
+	// (vm/mod.rs:602-608). Dispatching it here, ahead of the generic callable
+	// paths, is what gives the value itself the first chance to answer and
+	// what makes a failure an unknown *method* rather than an unknown
+	// callable.
 	if getAttr, ok := call.Expr.(*parser.GetAttr); ok {
-		obj, err := s.evalExpr(getAttr.Expr)
-		if err != nil {
-			return value.Undefined(), err
-		}
-
-		// Check if object supports method calls directly
-		if objVal, ok := obj.AsObject(); ok {
-			if mc, ok := objVal.(value.MethodCallable); ok {
-				args, kwargs, err := s.evalCallArgs(call.Args)
-				if err != nil {
-					return value.Undefined(), err
-				}
-				result, err := mc.CallMethod(s, getAttr.Name, args, kwargs)
-				if err != value.ErrUnknownMethod {
-					return result, err
-				}
-				// Fall through to try GetAttr
-			}
-		}
-
-		// An attribute that exists is called, and failing to be callable is its
-		// own error; an attribute that does not exist is an unknown method.
-		// This mirrors the default Object::call_method in value/mod.rs.
-		attr := obj.GetAttr(getAttr.Name)
-		if !attr.IsUndefined() {
-			if callable, ok := attr.AsCallable(); ok {
-				args, kwargs, err := s.evalCallArgs(call.Args)
-				if err != nil {
-					return value.Undefined(), err
-				}
-				return callable.Call(s, args, kwargs)
-			}
-			if attrObj, ok := attr.AsObject(); ok {
-				if co, ok := attrObj.(value.CallableObject); ok {
-					args, kwargs, err := s.evalCallArgs(call.Args)
-					if err != nil {
-						return value.Undefined(), err
-					}
-					return co.ObjectCall(s, args, kwargs)
-				}
-			}
-			return value.Undefined(), notCallable(attr).WithSpan(call.Span())
-		}
-		return value.Undefined(), unknownMethod(obj, getAttr.Name).WithSpan(call.Span())
+		return s.evalMethodCall(call, getAttr)
 	}
 
 	// Evaluate the expression to get a callable
@@ -3056,6 +3013,74 @@ func (s *State) evalCall(call *parser.Call) (value.Value, error) {
 	}
 
 	return value.Undefined(), notCallable(expr).WithSpan(call.Span())
+}
+
+// evalMethodCall evaluates `obj.name(args)`.
+//
+// The order mirrors the engine's Value::call_method (value/mod.rs:1611-1643)
+// and the default Object::call_method (value/object.rs:249-252):
+//
+//  1. an object that implements method calls answers first;
+//  2. otherwise an attribute of that name is looked up and called, which is
+//     what makes `module.macro()` and callable attributes work;
+//  3. a failure at this point is an unknown *method*, so the environment's
+//     unknown-method callback is consulted;
+//  4. if there is no callback, or it declines with ErrUnknownMethod, the
+//     engine's own unknown-method error is reported.
+func (s *State) evalMethodCall(call *parser.Call, getAttr *parser.GetAttr) (value.Value, error) {
+	obj, err := s.evalExpr(getAttr.Expr)
+	if err != nil {
+		return value.Undefined(), err
+	}
+	if obj.IsUndefined() {
+		obj, err = s.handleUndefined(true)
+		if err != nil {
+			return value.Undefined(), wrapEvalError(err, getAttr.Span())
+		}
+	}
+
+	args, kwargs, err := s.evalCallArgs(call.Args)
+	if err != nil {
+		return value.Undefined(), err
+	}
+
+	if objVal, ok := obj.AsObject(); ok {
+		if mc, ok := objVal.(value.MethodCallable); ok {
+			result, err := mc.CallMethod(s, getAttr.Name, args, kwargs)
+			if err != value.ErrUnknownMethod {
+				return result, err
+			}
+		}
+	}
+
+	if attr := obj.GetAttr(getAttr.Name); !attr.IsUndefined() {
+		if callable, ok := attr.AsCallable(); ok {
+			return callable.Call(s, args, kwargs)
+		}
+		if attrObj, ok := attr.AsObject(); ok {
+			if co, ok := attrObj.(value.CallableObject); ok {
+				return co.ObjectCall(s, args, kwargs)
+			}
+		}
+		// The attribute exists but cannot be called. The engine reaches
+		// Value::call on it and reports that, not an unknown method
+		// (value/mod.rs:1601-1609), so `{"x": 1}.x()` is an invalid
+		// operation on both sides.
+		return value.Undefined(), notCallable(attr).WithSpan(call.Span())
+	}
+
+	if s.env.unknownMethod != nil {
+		result, err := s.env.unknownMethod(s, obj, getAttr.Name, args, kwargs)
+		if err == nil {
+			return result, nil
+		}
+		var mjErr *Error
+		if !stderrors.As(err, &mjErr) || mjErr.Kind != ErrUnknownMethod {
+			return value.Undefined(), wrapEvalError(err, call.Span())
+		}
+	}
+
+	return value.Undefined(), unknownMethod(obj, getAttr.Name).WithSpan(call.Span())
 }
 
 func (s *State) evalSuper(span parser.Span) (value.Value, error) {
