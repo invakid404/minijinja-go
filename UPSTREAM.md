@@ -14,7 +14,7 @@ logged in [PATCHES.md](PATCHES.md) and pinned by a differential corpus row.
 | Upstream subdirectory | `minijinja-go/` |
 | Upstream subtree sha | `10edf0cdd0a0b04fe3513464f7d1d1da51459096` |
 | Fork module path | `github.com/invakid404/minijinja-go/v2` |
-| Baseline tag | `v2.16.0-baml.1` (see [Releases](#releases); `v2.16.0-baml.0` is retained but superseded) |
+| Baseline tag | `v2.16.0-baml.2` (see [Releases](#releases); `-baml.0` and `-baml.1` are retained but superseded) |
 | License | Apache-2.0, upstream `LICENSE` preserved verbatim (upstream ships no `NOTICE`) |
 
 ### Behavioural target
@@ -112,12 +112,28 @@ the same upstream version, whether or not that release carries a semantic patch.
 `PATCHES.md` — not the suffix — is what says whether a release has a semantic
 delta.
 
+Superseding rather than moving is the rule: a published tag that turns out to be
+wrong gets a successor, never a rewrite. Every tag below still resolves.
+
 | Tag | Status | Notes |
 | --- | --- | --- |
-| `v2.16.0-baml.1` | **canonical baseline** | The semantically untouched baseline. Engine tree byte-identical to upstream except for the two mechanical transforms above. All CI green on linux/amd64 and darwin/arm64. |
-| `v2.16.0-baml.0` | retained, superseded | Same engine tree and same published module zip, but its `oracle` workflow is red on linux/amd64: it predates the explicit architecture-dependent ledger handling, so `arith/int-mul-i64-edge` fails there as a shape change. Retained unmoved because it is already in the Go checksum database. |
+| `v2.16.0-baml.2` | **canonical baseline** | The semantically untouched baseline. All CI green on linux/amd64 and darwin/arm64 at the tagged commit. |
+| `v2.16.0-baml.1` | retained, superseded | Green, but its copy of this file claimed the published module zips were identical across tags. They are not: they also differ in the provenance markdown, as the table note below records. Superseded to keep the provenance accurate about its own artifacts. |
+| `v2.16.0-baml.0` | retained, superseded | Its `oracle` workflow is red on linux/amd64: it predates the explicit architecture-dependent ledger handling, so `arith/int-mul-i64-edge` fails there as a shape change. Retained unmoved because it is already in the Go checksum database. |
 
-Superseding rather than moving is the rule: a published tag that is wrong gets a
-successor, never a rewrite. Both tags resolve, and both publish identical module
-content — the difference is entirely under `oracle/`, which is a separate module
-and is excluded from the module zip.
+All `v2.16.0-baml.*` tags publish **the same engine**. Comparing their module
+zips, the only files that differ are `README.md`, `UPSTREAM.md` and
+`PATCHES.md` — the provenance documents themselves, which each release updates
+to record the supersession. No Go source, no test data, and no engine behaviour
+differs between them. `oracle/` does not enter the comparison at all: it is a
+separate module and is excluded from every module zip.
+
+This is checkable rather than asserted:
+
+```
+$ unzip -q .../v2.16.0-baml.1.zip -d z1 && unzip -q .../v2.16.0-baml.2.zip -d z2
+$ diff -rq z1/...@v2.16.0-baml.1 z2/...@v2.16.0-baml.2
+Files PATCHES.md and PATCHES.md differ
+Files README.md and README.md differ
+Files UPSTREAM.md and UPSTREAM.md differ
+```

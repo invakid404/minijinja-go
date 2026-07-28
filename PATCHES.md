@@ -3,12 +3,12 @@
 Every deliberate behavioural difference between this fork and its upstream
 baseline is recorded here, keyed by the differential corpus ID that pins it.
 
-**The log is empty. As of `v2.16.0-baml.1` — the canonical baseline — this fork
+**The log is empty. As of `v2.16.0-baml.2` — the canonical baseline — this fork
 has no semantic delta over `mitsuhiko/minijinja@b9afca` (`minijinja-go/v2.16.0`).**
 The only differences are the two mechanical transforms described in
-[UPSTREAM.md](UPSTREAM.md), which `scripts/verify-seed.sh` proves. The same was
-true of the superseded `v2.16.0-baml.0`: the two tags publish identical module
-content, and neither carries a semantic patch.
+[UPSTREAM.md](UPSTREAM.md), which `scripts/verify-seed.sh` proves. The same is
+true of the superseded `v2.16.0-baml.0` and `v2.16.0-baml.1`: all three publish
+the same engine, and none carries a semantic patch.
 
 ## Rules
 

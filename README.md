@@ -4,11 +4,11 @@
 > minijinja stack: rendered bytes, boolean results, value coercion, and
 > success/error behaviour.
 >
-> The baseline tag `v2.16.0-baml.1` is upstream `minijinja-go/v2.16.0`
+> The baseline tag `v2.16.0-baml.2` is upstream `minijinja-go/v2.16.0`
 > (commit `b9afca42`) with **no semantic changes at all** — only a module-path
 > rewrite and vendored test corpora, proven mechanically by
-> [`scripts/verify-seed.sh`](scripts/verify-seed.sh). (`v2.16.0-baml.0` is
-> retained but superseded; see [Releases](UPSTREAM.md#releases).)
+> [`scripts/verify-seed.sh`](scripts/verify-seed.sh). (`-baml.0` and `-baml.1`
+> are retained but superseded; see [Releases](UPSTREAM.md#releases).)
 >
 > - [UPSTREAM.md](UPSTREAM.md) — pins, ownership boundary, upstream merge procedure
 > - [PATCHES.md](PATCHES.md) — every intentional semantic delta (currently none)
