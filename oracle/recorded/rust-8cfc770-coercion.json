@@ -1,0 +1,2092 @@
+{
+  "schema_version": 1,
+  "provenance": {
+    "engine_repo": "https://github.com/boundaryml/minijinja",
+    "engine_branch": "value-cmp",
+    "engine_rev": "8cfc770a5dffeda2de5b910d2b9f870d7edeff7c",
+    "engine_features": [
+      "macros",
+      "builtins",
+      "debug",
+      "preserve_order",
+      "adjacent_loop_items",
+      "unicode",
+      "json",
+      "unstable_machinery",
+      "custom_syntax",
+      "deserialization",
+      "serde"
+    ],
+    "harness_version": "1",
+    "os": "macos",
+    "arch": "aarch64",
+    "corpus_sha256": "b6e321c617b52bcbab2f985ecbc194aa9172fe85d4fa1efe1bb1cf1859f9b932"
+  },
+  "results": [
+    {
+      "id": "cmp/int-eq-string",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "cmp/string-eq-int",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "cmp/int-eq-bool-true",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "cmp/bool-true-eq-int",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "cmp/zero-eq-false",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "cmp/false-eq-zero",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "cmp/float-eq-bool",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "cmp/bool-eq-string",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "cmp/none-eq-false",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "cmp/none-eq-zero",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "cmp/none-eq-empty-string",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "cmp/none-eq-none",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "cmp/undefined-eq-undefined",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "cmp/undefined-eq-none",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "cmp/none-eq-undefined",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "cmp/list-eq-list",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "cmp/list-eq-list-numeric-coercion",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "cmp/nested-list-eq",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "cmp/list-eq-string",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "cmp/map-eq-map-diff-order",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "cmp/map-eq-list",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "cmp/int-eq-float-lossy-boundary",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "cmp/int-ne-string",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "cmp/int-lt-string",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "cmp/string-lt-int",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "cmp/none-lt-int",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "cmp/int-gt-none",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "cmp/bool-lt-int",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "cmp/int-lt-bool",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "cmp/none-lt-none",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "cmp/none-le-none",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "cmp/undefined-lt-undefined",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "cmp/list-lt-list",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "cmp/list-lt-list-prefix",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "cmp/list-lt-map",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "cmp/map-gt-list",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "cmp/map-lt-map",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "cmp/float-lt-int",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "cmp/int-le-float",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "cmp/string-lt-non-ascii",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "cmp/neg-zero-lt-zero",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "cmp/neg-zero-eq-zero",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "cmp/nan-eq-nan",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "cmp/one-gt-nan",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "cmp/nan-lt-one",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "cmp/nan-cmp-nan",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "truth/nan",
+      "outcome": {
+        "status": "ok",
+        "render": "y",
+        "boolean": null
+      }
+    },
+    {
+      "id": "truth/empty-list",
+      "outcome": {
+        "status": "ok",
+        "render": "n",
+        "boolean": null
+      }
+    },
+    {
+      "id": "truth/empty-map",
+      "outcome": {
+        "status": "ok",
+        "render": "n",
+        "boolean": null
+      }
+    },
+    {
+      "id": "truth/zero-float",
+      "outcome": {
+        "status": "ok",
+        "render": "n",
+        "boolean": null
+      }
+    },
+    {
+      "id": "truth/string-zero",
+      "outcome": {
+        "status": "ok",
+        "render": "y",
+        "boolean": null
+      }
+    },
+    {
+      "id": "truth/undefined",
+      "outcome": {
+        "status": "ok",
+        "render": "n",
+        "boolean": null
+      }
+    },
+    {
+      "id": "truth/cmp-object",
+      "outcome": {
+        "status": "ok",
+        "render": "y",
+        "boolean": null
+      }
+    },
+    {
+      "id": "truth/ternary-without-else",
+      "outcome": {
+        "status": "ok",
+        "render": "",
+        "boolean": null
+      }
+    },
+    {
+      "id": "logic/or-returns-value",
+      "outcome": {
+        "status": "ok",
+        "render": "x",
+        "boolean": null
+      }
+    },
+    {
+      "id": "logic/and-returns-value",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": null
+      }
+    },
+    {
+      "id": "logic/or-empty-containers",
+      "outcome": {
+        "status": "ok",
+        "render": "{\"b\": 1, \"a\": 2}",
+        "boolean": null
+      }
+    },
+    {
+      "id": "logic/not-nan",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "logic/not-empty-map",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "contains/string-in-string",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "contains/int-in-string-multi",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "contains/float-in-string",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "contains/bool-in-string",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "contains/none-in-string",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "contains/list-in-string",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "contains/int-in-list",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "contains/float-in-int-list",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "contains/string-in-int-list",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "contains/bool-in-int-list",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "contains/none-in-list",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "contains/key-in-map",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "contains/value-not-in-map",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "contains/int-key-in-numeric-string-key-map",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "contains/string-key-in-numeric-string-key-map",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "contains/in-none",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot perform a containment check on this value (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contains/in-int",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot perform a containment check on this value (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contains/in-undefined",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "contains/not-in-list",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "contains/int-in-range",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "concat/int-int",
+      "outcome": {
+        "status": "ok",
+        "render": "12",
+        "boolean": null
+      }
+    },
+    {
+      "id": "concat/none-string",
+      "outcome": {
+        "status": "ok",
+        "render": "nonex",
+        "boolean": null
+      }
+    },
+    {
+      "id": "concat/undefined-string",
+      "outcome": {
+        "status": "ok",
+        "render": "x",
+        "boolean": null
+      }
+    },
+    {
+      "id": "concat/float-int",
+      "outcome": {
+        "status": "ok",
+        "render": "1.02",
+        "boolean": null
+      }
+    },
+    {
+      "id": "concat/bool",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": null
+      }
+    },
+    {
+      "id": "concat/list",
+      "outcome": {
+        "status": "ok",
+        "render": "[1, \"a\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "concat/map",
+      "outcome": {
+        "status": "ok",
+        "render": "{\"b\": 1, \"a\": 2}",
+        "boolean": null
+      }
+    },
+    {
+      "id": "concat/cmp-object",
+      "outcome": {
+        "status": "ok",
+        "render": "Red",
+        "boolean": null
+      }
+    },
+    {
+      "id": "valuecmp/object-lt-string",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "valuecmp/object-gt-string",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "valuecmp/string-lt-object",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "valuecmp/string-gt-object",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "valuecmp/object-ne-string",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "valuecmp/object-eq-display",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "valuecmp/object-eq-int",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "valuecmp/object-lt-int",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "valuecmp/object-lt-object",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "valuecmp/object-eq-object-different-canonical",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "valuecmp/list-eq-string-list",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "valuecmp/object-in-string-list",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "valuecmp/object-in-string",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "valuecmp/object-sort",
+      "outcome": {
+        "status": "ok",
+        "render": "Blue,Red",
+        "boolean": null
+      }
+    },
+    {
+      "id": "valuecmp/object-is-eq-test",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "valuecmp/object-is-in-test",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "test/is-eq-int-string",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "test/is-in-string",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "test/is-lt-cross-kind",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "test/is-sequence-slice",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "test/is-sequence-range",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "test/is-iterable-range",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "test/is-mapping-map",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "test/is-iterable-map",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "test/is-string-cmp-object",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "test/is-defined-out-of-range-index",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "container/list-negative-index",
+      "outcome": {
+        "status": "ok",
+        "render": "3",
+        "boolean": null
+      }
+    },
+    {
+      "id": "container/list-index-underflow",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "container/list-index-float",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "container/list-index-string",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "container/string-index",
+      "outcome": {
+        "status": "ok",
+        "render": "a",
+        "boolean": null
+      }
+    },
+    {
+      "id": "container/string-negative-index",
+      "outcome": {
+        "status": "ok",
+        "render": "j",
+        "boolean": null
+      }
+    },
+    {
+      "id": "container/string-index-non-ascii",
+      "outcome": {
+        "status": "ok",
+        "render": "é",
+        "boolean": null
+      }
+    },
+    {
+      "id": "container/map-getitem",
+      "outcome": {
+        "status": "ok",
+        "render": "1",
+        "boolean": null
+      }
+    },
+    {
+      "id": "container/map-getattr",
+      "outcome": {
+        "status": "ok",
+        "render": "2",
+        "boolean": null
+      }
+    },
+    {
+      "id": "container/map-getitem-missing",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "container/nested-getitem",
+      "outcome": {
+        "status": "ok",
+        "render": "1",
+        "boolean": null
+      }
+    },
+    {
+      "id": "container/int-getitem",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "container/map-render-nested",
+      "outcome": {
+        "status": "ok",
+        "render": "{\"b\": {\"d\": 1, \"c\": 2}, \"a\": 3}",
+        "boolean": null
+      }
+    },
+    {
+      "id": "container/map-render-inside-list",
+      "outcome": {
+        "status": "ok",
+        "render": "[{\"b\": 1, \"a\": 2}]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "container/map-render-numeric-string-key",
+      "outcome": {
+        "status": "ok",
+        "render": "{\"1\": 2}",
+        "boolean": null
+      }
+    },
+    {
+      "id": "container/map-render-numeric-string-key-inside-list",
+      "outcome": {
+        "status": "ok",
+        "render": "[{\"1\": 2}]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "container/map-for-key-order",
+      "outcome": {
+        "status": "ok",
+        "render": "b;a;",
+        "boolean": null
+      }
+    },
+    {
+      "id": "container/map-values-order",
+      "outcome": {
+        "status": "ok",
+        "render": "1;2;",
+        "boolean": null
+      }
+    },
+    {
+      "id": "container/map-list-order",
+      "outcome": {
+        "status": "ok",
+        "render": "b,a",
+        "boolean": null
+      }
+    },
+    {
+      "id": "container/map-reverse-order",
+      "outcome": {
+        "status": "ok",
+        "render": "b,a",
+        "boolean": null
+      }
+    },
+    {
+      "id": "container/map-first",
+      "outcome": {
+        "status": "ok",
+        "render": "b",
+        "boolean": null
+      }
+    },
+    {
+      "id": "container/map-length",
+      "outcome": {
+        "status": "ok",
+        "render": "2",
+        "boolean": null
+      }
+    },
+    {
+      "id": "container/map-tojson-order",
+      "outcome": {
+        "status": "ok",
+        "render": "{\"b\":1,\"a\":2}",
+        "boolean": null
+      }
+    },
+    {
+      "id": "container/map-tojson-nested-order",
+      "outcome": {
+        "status": "ok",
+        "render": "{\"b\":{\"d\":1,\"c\":2},\"a\":3}",
+        "boolean": null
+      }
+    },
+    {
+      "id": "container/dict-literal-order",
+      "outcome": {
+        "status": "ok",
+        "render": "{\"b\": 1, \"a\": 2}",
+        "boolean": null
+      }
+    },
+    {
+      "id": "container/dict-literal-nested-order",
+      "outcome": {
+        "status": "ok",
+        "render": "{\"z\": {\"y\": 1, \"x\": 2}, \"a\": 3}",
+        "boolean": null
+      }
+    },
+    {
+      "id": "container/dict-literal-duplicate-key",
+      "outcome": {
+        "status": "ok",
+        "render": "{\"b\": 3, \"a\": 2}",
+        "boolean": null
+      }
+    },
+    {
+      "id": "container/dict-literal-int-key",
+      "outcome": {
+        "status": "ok",
+        "render": "{1: \"a\"}",
+        "boolean": null
+      }
+    },
+    {
+      "id": "container/map-loop-index",
+      "outcome": {
+        "status": "ok",
+        "render": "1:b;2:a;",
+        "boolean": null
+      }
+    },
+    {
+      "id": "slice/list-start-stop",
+      "outcome": {
+        "status": "ok",
+        "render": "[1, 2]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "slice/list-open-start",
+      "outcome": {
+        "status": "ok",
+        "render": "[0, 1, 2]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "slice/list-open-stop",
+      "outcome": {
+        "status": "ok",
+        "render": "[3, 4]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "slice/list-negative-start",
+      "outcome": {
+        "status": "ok",
+        "render": "[3, 4]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "slice/list-negative-stop",
+      "outcome": {
+        "status": "ok",
+        "render": "[0, 1]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "slice/list-underflow-start",
+      "outcome": {
+        "status": "ok",
+        "render": "[0, 1, 2]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "slice/list-underflow-stop",
+      "outcome": {
+        "status": "ok",
+        "render": "[]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "slice/list-inverted-range",
+      "outcome": {
+        "status": "ok",
+        "render": "[]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "slice/list-start-beyond-len",
+      "outcome": {
+        "status": "ok",
+        "render": "[]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "slice/list-step",
+      "outcome": {
+        "status": "ok",
+        "render": "[0, 2, 4]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "slice/list-reverse",
+      "outcome": {
+        "status": "ok",
+        "render": "[4, 3, 2, 1, 0]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "slice/list-reverse-step",
+      "outcome": {
+        "status": "ok",
+        "render": "[4, 2, 0]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "slice/list-start-reverse",
+      "outcome": {
+        "status": "ok",
+        "render": "[2, 0]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "slice/list-bounded-reverse",
+      "outcome": {
+        "status": "ok",
+        "render": "[4]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "slice/list-bounded-reverse-long",
+      "outcome": {
+        "status": "ok",
+        "render": "[8, 6, 4]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "slice/list-reverse-negative-start",
+      "outcome": {
+        "status": "ok",
+        "render": "[3, 2, 1, 0]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "slice/list-reverse-negative-stop",
+      "outcome": {
+        "status": "ok",
+        "render": "[4, 3, 2]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "slice/list-start-past-end-reverse",
+      "outcome": {
+        "status": "ok",
+        "render": "[2, 1, 0]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "slice/step-zero",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot slice by step size of 0 (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "slice/float-bounds",
+      "outcome": {
+        "status": "ok",
+        "render": "[1, 2]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "slice/string-start-stop",
+      "outcome": {
+        "status": "ok",
+        "render": "bc",
+        "boolean": null
+      }
+    },
+    {
+      "id": "slice/string-reverse",
+      "outcome": {
+        "status": "ok",
+        "render": "jihgfedcba",
+        "boolean": null
+      }
+    },
+    {
+      "id": "slice/string-bounded-reverse",
+      "outcome": {
+        "status": "ok",
+        "render": "ige",
+        "boolean": null
+      }
+    },
+    {
+      "id": "slice/string-negative",
+      "outcome": {
+        "status": "ok",
+        "render": "hij",
+        "boolean": null
+      }
+    },
+    {
+      "id": "slice/string-non-ascii",
+      "outcome": {
+        "status": "ok",
+        "render": "éb",
+        "boolean": null
+      }
+    },
+    {
+      "id": "slice/none",
+      "outcome": {
+        "status": "ok",
+        "render": "[]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "slice/undefined",
+      "outcome": {
+        "status": "ok",
+        "render": "[]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "slice/map",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: value of type map cannot be sliced (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "slice/int",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: value of type number cannot be sliced (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "slice/then-index",
+      "outcome": {
+        "status": "ok",
+        "render": "2",
+        "boolean": null
+      }
+    },
+    {
+      "id": "slice/render",
+      "outcome": {
+        "status": "ok",
+        "render": "[1, 2]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "range/basic",
+      "outcome": {
+        "status": "ok",
+        "render": "[0, 1, 2]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "range/list",
+      "outcome": {
+        "status": "ok",
+        "render": "0,1,2",
+        "boolean": null
+      }
+    },
+    {
+      "id": "range/start-stop-step",
+      "outcome": {
+        "status": "ok",
+        "render": "1,4,7",
+        "boolean": null
+      }
+    },
+    {
+      "id": "range/negative-step",
+      "outcome": {
+        "status": "ok",
+        "render": "10,7,4",
+        "boolean": null
+      }
+    },
+    {
+      "id": "range/negative-step-empty",
+      "outcome": {
+        "status": "ok",
+        "render": "",
+        "boolean": null
+      }
+    },
+    {
+      "id": "range/empty",
+      "outcome": {
+        "status": "ok",
+        "render": "",
+        "boolean": null
+      }
+    },
+    {
+      "id": "range/step-zero",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot create range with step of 0 (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "range/index",
+      "outcome": {
+        "status": "ok",
+        "render": "2",
+        "boolean": null
+      }
+    },
+    {
+      "id": "range/negative-index",
+      "outcome": {
+        "status": "ok",
+        "render": "4",
+        "boolean": null
+      }
+    },
+    {
+      "id": "range/slice",
+      "outcome": {
+        "status": "ok",
+        "render": "[1, 2]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "range/eq-list",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "range/length",
+      "outcome": {
+        "status": "ok",
+        "render": "3",
+        "boolean": null
+      }
+    },
+    {
+      "id": "range/too-many-elements",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: range has too many elements (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "display/list-mixed",
+      "outcome": {
+        "status": "ok",
+        "render": "[none, true, 1.0, \"a\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "display/list-undefined",
+      "outcome": {
+        "status": "ok",
+        "render": "[undefined]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "display/list-nested",
+      "outcome": {
+        "status": "ok",
+        "render": "[[\"a\"], \"b\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "display/list-escapes",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"a\\\"b\", \"c\\nd\", \"é\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "display/cmp-object-in-list",
+      "outcome": {
+        "status": "ok",
+        "render": "[Red]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "display/empty-list",
+      "outcome": {
+        "status": "ok",
+        "render": "[]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "display/empty-map",
+      "outcome": {
+        "status": "ok",
+        "render": "{}",
+        "boolean": null
+      }
+    },
+    {
+      "id": "display/map-string-values",
+      "outcome": {
+        "status": "ok",
+        "render": "{\"a\": \"x\", \"b\": none}",
+        "boolean": null
+      }
+    },
+    {
+      "id": "container/map-reverse-twice",
+      "outcome": {
+        "status": "ok",
+        "render": "c,a,b",
+        "boolean": null
+      }
+    },
+    {
+      "id": "container/map-reverse-three-keys",
+      "outcome": {
+        "status": "ok",
+        "render": "b,a,c",
+        "boolean": null
+      }
+    },
+    {
+      "id": "container/map-dictsort",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"a\", 2];[\"b\", 1]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "container/map-items-first",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"b\", 1]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "container/dict-function-kwargs-order",
+      "outcome": {
+        "status": "ok",
+        "render": "{\"b\": 1, \"a\": 2}",
+        "boolean": null
+      }
+    },
+    {
+      "id": "container/slice-eq-list",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "truth/empty-slice",
+      "outcome": {
+        "status": "ok",
+        "render": "n",
+        "boolean": null
+      }
+    },
+    {
+      "id": "truth/empty-range",
+      "outcome": {
+        "status": "ok",
+        "render": "n",
+        "boolean": null
+      }
+    },
+    {
+      "id": "logic/and-const-falsy-left",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": null
+      }
+    },
+    {
+      "id": "logic/and-runtime-falsy-left",
+      "outcome": {
+        "status": "ok",
+        "render": "0",
+        "boolean": null
+      }
+    },
+    {
+      "id": "logic/and-runtime-falsy-right",
+      "outcome": {
+        "status": "ok",
+        "render": "0",
+        "boolean": null
+      }
+    },
+    {
+      "id": "logic/and-nested-const",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": null
+      }
+    },
+    {
+      "id": "logic/and-const-with-failing-operand",
+      "outcome": {
+        "status": "ok",
+        "render": "0",
+        "boolean": null
+      }
+    },
+    {
+      "id": "slice/non-integer-bound",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot convert string to i64 (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "cmp/float-eq-int-lossy-boundary-reverse",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "cmp/nan-eq-zero",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "valuecmp/object-eq-none",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "container/index-bool-true",
+      "outcome": {
+        "status": "ok",
+        "render": "2",
+        "boolean": null
+      }
+    },
+    {
+      "id": "container/index-bool-false",
+      "outcome": {
+        "status": "ok",
+        "render": "1",
+        "boolean": null
+      }
+    },
+    {
+      "id": "container/string-index-bool",
+      "outcome": {
+        "status": "ok",
+        "render": "b",
+        "boolean": null
+      }
+    },
+    {
+      "id": "container/iterable-index-bool",
+      "outcome": {
+        "status": "ok",
+        "render": "1",
+        "boolean": null
+      }
+    },
+    {
+      "id": "container/map-index-bool",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "container/index-fractional-float",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "container/index-huge-float",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "container/index-negative-float",
+      "outcome": {
+        "status": "ok",
+        "render": "3",
+        "boolean": null
+      }
+    },
+    {
+      "id": "container/index-none",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "slice/bool-start",
+      "outcome": {
+        "status": "ok",
+        "render": "[1, 2, 3, 4]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "slice/bool-false-start",
+      "outcome": {
+        "status": "ok",
+        "render": "[0, 1, 2]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "slice/bool-stop",
+      "outcome": {
+        "status": "ok",
+        "render": "[0]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "slice/bool-step",
+      "outcome": {
+        "status": "ok",
+        "render": "[0, 1, 2]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "slice/bool-both-bounds",
+      "outcome": {
+        "status": "ok",
+        "render": "[]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "slice/bool-start-negative-step",
+      "outcome": {
+        "status": "ok",
+        "render": "[1, 0]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "slice/float-step",
+      "outcome": {
+        "status": "ok",
+        "render": "[0, 1, 2]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "slice/float-bound-at-i64-max",
+      "outcome": {
+        "status": "ok",
+        "render": "[]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "slice/float-bound-beyond-i64",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot convert number to i64 (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "slice/float-bound-at-i64-min",
+      "outcome": {
+        "status": "ok",
+        "render": "[0, 1]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "slice/fractional-step",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot convert number to i64 (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "slice/string-step",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot convert string to i64 (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "slice/undefined-bound",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot convert undefined to i64 (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "range/bool-stop",
+      "outcome": {
+        "status": "ok",
+        "render": "[0]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "range/bool-false",
+      "outcome": {
+        "status": "ok",
+        "render": "[]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "range/bool-start",
+      "outcome": {
+        "status": "ok",
+        "render": "[1, 2]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "range/bool-step",
+      "outcome": {
+        "status": "ok",
+        "render": "[0, 1, 2]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "range/bool-all-args",
+      "outcome": {
+        "status": "ok",
+        "render": "[0]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "range/float-arg",
+      "outcome": {
+        "status": "ok",
+        "render": "[0]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "range/fractional-arg",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot convert number to isize (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "range/string-arg",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot convert string to isize (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "range/none-arg",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot convert none to isize (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "str/repeat-bool",
+      "outcome": {
+        "status": "ok",
+        "render": "a",
+        "boolean": null
+      }
+    },
+    {
+      "id": "str/repeat-bool-reversed",
+      "outcome": {
+        "status": "ok",
+        "render": "a",
+        "boolean": null
+      }
+    },
+    {
+      "id": "container/list-times-bool",
+      "outcome": {
+        "status": "ok",
+        "render": "[1, 2]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "container/bool-times-list",
+      "outcome": {
+        "status": "ok",
+        "render": "[1, 2]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "container/list-repeat-is-sequence",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "str/repeat-negative",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: strings can only be multiplied with integers (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "str/repeat-fractional",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: strings can only be multiplied with integers (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "str/repeat-integral-float",
+      "outcome": {
+        "status": "ok",
+        "render": "aa",
+        "boolean": null
+      }
+    },
+    {
+      "id": "cmp/iterable-gt-list",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "cmp/list-lt-iterable",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "cmp/slice-gt-list",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "container/slice-plus-list",
+      "outcome": {
+        "status": "ok",
+        "render": "[2, 3, 9]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "container/list-plus-list-is-sequence",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "contains/none-in-map",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    }
+  ]
+}

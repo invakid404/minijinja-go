@@ -147,6 +147,10 @@ func rangeArg(v value.Value) (int64, error) {
 func fnRange(_ *State, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
 	var start, stop, step int64 = 0, 0, 1
 
+	// Arguments go through the engine's primitive integer conversion, so a bool
+	// is an argument (range(true) is range(1)) and an integral float is an
+	// argument. A value that does not convert is an error: range(1.5) and
+	// range('2') must not quietly become an empty range.
 	if len(args) >= 1 && len(args) <= 3 {
 		bounds := make([]int64, len(args))
 		for i, arg := range args {
@@ -169,7 +173,7 @@ func fnRange(_ *State, args []value.Value, kwargs map[string]value.Value) (value
 	}
 
 	if step == 0 {
-		return value.Undefined(), fmt.Errorf("range step cannot be zero")
+		return value.Undefined(), NewError(ErrInvalidOperation, "cannot create range with step of 0")
 	}
 
 	length := int64(0)

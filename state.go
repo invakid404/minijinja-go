@@ -2638,6 +2638,20 @@ func (s *State) evalBinOp(op *parser.BinOp) (value.Value, error) {
 		if err != nil {
 			return value.Undefined(), wrapEvalError(err, op.Span())
 		}
+		// `and` between two constant expressions yields the literal false when
+		// the result is falsy, instead of the operand the runtime path yields.
+		// That is not a simplification of the runtime rule: the Rust engine
+		// constant-folds such an expression at compile time with semantics that
+		// differ from its own VM instruction, and both are observable
+		// (`{{ 'a' and 0 }}` renders false, `{{ x and 0 }}` renders 0).
+		leftConst, leftFolds := s.foldConst(op.Left)
+		rightConst, rightFolds := s.foldConst(op.Right)
+		if leftFolds && rightFolds {
+			if leftConst.IsTrue() && rightConst.IsTrue() {
+				return rightConst, nil
+			}
+			return value.FromBool(false), nil
+		}
 		if !truthy {
 			return left, nil
 		}
@@ -2741,9 +2755,70 @@ func (s *State) evalBinOp(op *parser.BinOp) (value.Value, error) {
 		if err := s.assertIterable(right); err != nil {
 			return value.Undefined(), wrapEvalError(err, op.Span())
 		}
-		return value.FromBool(right.Contains(left)), nil
+		// A value that cannot hold anything is an error rather than a silent
+		// false: `1 in 5` must not look like a negative answer.
+		contains, err := right.TryContains(left)
+		if err != nil {
+			return value.Undefined(), wrapEvalError(err, op.Span())
+		}
+		return value.FromBool(contains), nil
 	default:
 		return value.Undefined(), NewError(ErrInvalidOperation, fmt.Sprintf("unknown binary operator: %v", op.Op)).WithSpan(op.Span())
+	}
+}
+
+// foldConst returns the value the Rust engine's compiler would constant-fold an
+// expression to, or ok = false if it would leave the expression to the VM.
+//
+// It mirrors `Expr::as_const` (boundaryml/minijinja@8cfc770
+// compiler/ast.rs:206-243): literals and containers, unary and binary operators
+// over them, and nothing else — and only when the operation actually succeeds,
+// since a folding attempt that errors leaves the expression alone.
+//
+// This exists because folding is not always semantics-preserving in that engine:
+// `and` folds to a plain false where the VM yields the falsy operand. Everything
+// else folds to what the VM would have produced anyway, so this is consulted
+// only where the difference shows.
+func (s *State) foldConst(expr parser.Expr) (value.Value, bool) {
+	if !isConstExpr(expr) {
+		return value.Undefined(), false
+	}
+	// Constant expressions have no side effects, so evaluating one to find out
+	// whether it folds is safe; an error means the compiler would not have
+	// folded it either.
+	v, err := s.evalExpr(expr)
+	if err != nil {
+		return value.Undefined(), false
+	}
+	return v, true
+}
+
+// isConstExpr reports whether an expression is built only from literals, which
+// is the shape half of what the Rust compiler will constant-fold.
+func isConstExpr(expr parser.Expr) bool {
+	switch e := expr.(type) {
+	case *parser.Const:
+		return true
+	case *parser.List:
+		for _, item := range e.Items {
+			if !isConstExpr(item) {
+				return false
+			}
+		}
+		return true
+	case *parser.Map:
+		for i := range e.Keys {
+			if !isConstExpr(e.Keys[i]) || !isConstExpr(e.Values[i]) {
+				return false
+			}
+		}
+		return true
+	case *parser.UnaryOp:
+		return isConstExpr(e.Expr)
+	case *parser.BinOp:
+		return isConstExpr(e.Left) && isConstExpr(e.Right)
+	default:
+		return false
 	}
 }
 
@@ -3069,8 +3144,13 @@ func (s *State) evalList(list *parser.List) (value.Value, error) {
 	return value.FromSlice(items), nil
 }
 
+// evalMap builds a map literal.
+//
+// The result preserves the order the entries were written in, because the Rust
+// engine's map value is insertion-ordered under the preserve_order feature BAML
+// builds with, and a rendered map is prompt bytes.
 func (s *State) evalMap(m *parser.Map) (value.Value, error) {
-	result := make(map[string]value.Value)
+	result := value.NewOrderedMap(len(m.Keys))
 	for i := range m.Keys {
 		key, err := s.evalExpr(m.Keys[i])
 		if err != nil {
@@ -3080,13 +3160,9 @@ func (s *State) evalMap(m *parser.Map) (value.Value, error) {
 		if err != nil {
 			return value.Undefined(), err
 		}
-		keyStr, ok := key.AsString()
-		if !ok {
-			keyStr = key.String()
-		}
-		result[keyStr] = val
+		result.SetKeyValue(key, val)
 	}
-	return value.FromMap(result), nil
+	return value.FromOrderedMap(result), nil
 }
 
 func (s *State) evalSlice(sl *parser.Slice) (value.Value, error) {
@@ -3095,17 +3171,17 @@ func (s *State) evalSlice(sl *parser.Slice) (value.Value, error) {
 		return value.Undefined(), err
 	}
 
-	var start, stop *int64
-	var step int64 = 1
-
-	// `ops::slice` (value/ops.rs:133-148) reads each present bound with
-	// `i64::try_from`, which is fallible: a bound that does not convert is an
-	// error. Leaving it unset instead — which is what the port did — makes an
-	// invalid bound indistinguishable from an OMITTED one, so `xs[1.5:]`
-	// silently sliced the whole sequence. An omitted bound is `none` here, and
-	// none is the one value the engine also treats as absent.
-	bound := func(e parser.Expr) (*int64, error) {
-		v, err := s.evalExpr(e)
+	// Bounds go through the engine's primitive integer conversion, so a bool is
+	// a bound (`xs[true:]` starts at index 1) and an integral float is a bound,
+	// while none means "omitted".
+	//
+	// A bound that is present but does not convert is an error, not an omitted
+	// bound: `xs['a':2]` must not quietly mean `xs[:2]`.
+	bound := func(expr parser.Expr) (*int64, error) {
+		if expr == nil {
+			return nil, nil
+		}
+		v, err := s.evalExpr(expr)
 		if err != nil {
 			return nil, err
 		}
@@ -3114,140 +3190,184 @@ func (s *State) evalSlice(sl *parser.Slice) (value.Value, error) {
 		}
 		i, ok := v.AsInt()
 		if !ok {
+			// The engine reports the failed conversion itself, in these words,
+			// and does not say which bound it was.
 			return nil, NewError(ErrInvalidOperation,
 				fmt.Sprintf("cannot convert %s to i64", v.Kind())).WithSpan(sl.Span())
 		}
 		return &i, nil
 	}
 
-	if sl.Start != nil {
-		if start, err = bound(sl.Start); err != nil {
-			return value.Undefined(), err
-		}
+	start, err := bound(sl.Start)
+	if err != nil {
+		return value.Undefined(), err
+	}
+	stop, err := bound(sl.Stop)
+	if err != nil {
+		return value.Undefined(), err
+	}
+	var step int64 = 1
+	if stepBound, err := bound(sl.Step); err != nil {
+		return value.Undefined(), err
+	} else if stepBound != nil {
+		step = *stepBound
 	}
 
-	if sl.Stop != nil {
-		if stop, err = bound(sl.Stop); err != nil {
-			return value.Undefined(), err
-		}
+	sliced, err := s.sliceValue(val, start, stop, step)
+	if err != nil {
+		return value.Undefined(), wrapEvalError(err, sl.Span())
 	}
-
-	if sl.Step != nil {
-		p, err := bound(sl.Step)
-		if err != nil {
-			return value.Undefined(), err
-		}
-		if p != nil {
-			step = *p
-		}
-	}
-
-	return s.sliceValue(val, start, stop, step)
+	return sliced, nil
 }
 
+// sliceValue implements subscript slicing exactly as the Rust engine's
+// `ops::slice` does (boundaryml/minijinja@8cfc770 value/ops.rs).
+//
+// Two behaviours are easy to get wrong and are pinned by the corpus: none and
+// undefined slice into an empty sequence rather than raising, and slicing a
+// sequence yields a lazy iterable rather than a sequence, which is observable
+// through `is sequence`.
 func (s *State) sliceValue(val value.Value, start, stop *int64, step int64) (value.Value, error) {
 	if step == 0 {
-		return value.Undefined(), fmt.Errorf("slice step cannot be zero")
+		return value.Undefined(), NewError(ErrInvalidOperation, "cannot slice by step size of 0")
 	}
 
-	switch {
-	case val.Kind() == value.KindSeq:
-		items, _ := val.AsSlice()
-		return value.FromSlice(sliceSlice(items, start, stop, step)), nil
-	case val.Kind() == value.KindString:
+	switch val.Kind() {
+	case value.KindString:
 		str, _ := val.AsString()
-		runes := []rune(str)
-		result := sliceRunes(runes, start, stop, step)
+		result := sliceItems([]rune(str), start, stop, step)
 		if val.IsSafe() {
 			return value.FromSafeString(string(result)), nil
 		}
 		return value.FromString(string(result)), nil
+	case value.KindBytes:
+		raw, _ := val.Raw().([]byte)
+		return value.FromBytes(sliceItems(raw, start, stop, step)), nil
+	case value.KindUndefined, value.KindNone:
+		return value.FromSlice([]value.Value{}), nil
+	case value.KindSeq, value.KindIterable:
+		items := val.Iter()
+		if items == nil {
+			return value.Undefined(), NewError(ErrInvalidOperation,
+				fmt.Sprintf("value of type %s cannot be sliced", val.Kind()))
+		}
+		return value.FromIterator(value.NewIterator("slice", sliceItems(items, start, stop, step))), nil
 	default:
-		return value.Undefined(), fmt.Errorf("cannot slice %s", val.Kind())
+		return value.Undefined(), NewError(ErrInvalidOperation,
+			fmt.Sprintf("value of type %s cannot be sliced", val.Kind()))
 	}
 }
 
-func sliceSlice(items []value.Value, start, stop *int64, step int64) []value.Value {
+// sliceItems applies Python-style slice bounds to any indexable sequence.
+//
+// The two branches mirror the Rust engine's two helpers: `get_offset_and_len`
+// for a forward step, which skips and takes rather than clamping, and
+// `range_step_backwards` for a negative step, which computes an element count
+// up front.
+func sliceItems[T any](items []T, start, stop *int64, step int64) []T {
 	length := int64(len(items))
-	s, e := resolveSliceIndices(length, start, stop, step)
+	result := []T{}
 
-	var result []value.Value
 	if step > 0 {
-		for i := s; i < e; i += step {
+		// skip(offset).take(count).step_by(step): the window is chosen first and
+		// the step then samples it, so the step never extends the window.
+		offset, count := sliceOffsetAndLen(start, stop, length)
+		if offset >= length {
+			return result
+		}
+		if avail := length - offset; count > avail {
+			count = avail
+		}
+		for i := offset; i < offset+count; i += step {
 			result = append(result, items[i])
 		}
-	} else {
-		for i := s; i > e; i += step {
-			result = append(result, items[i])
-		}
+		return result
+	}
+
+	for _, i := range sliceStepBackwards(start, stop, -step, length) {
+		result = append(result, items[i])
 	}
 	return result
 }
 
-func sliceRunes(runes []rune, start, stop *int64, step int64) []rune {
-	length := int64(len(runes))
-	s, e := resolveSliceIndices(length, start, stop, step)
-
-	var result []rune
-	if step > 0 {
-		for i := s; i < e; i += step {
-			result = append(result, runes[i])
-		}
-	} else {
-		for i := s; i > e; i += step {
-			result = append(result, runes[i])
-		}
+// sliceOffsetAndLen is the Rust engine's get_offset_and_len: the first index to
+// take from, and how many elements of the window to take.
+func sliceOffsetAndLen(start, stop *int64, length int64) (int64, int64) {
+	from := int64(0)
+	if start != nil {
+		from = *start
 	}
-	return result
+	if from < 0 || stop == nil || *stop < 0 {
+		if from < 0 {
+			from = max64(0, length+from)
+		}
+		to := length
+		if stop != nil {
+			if *stop < 0 {
+				to = max64(0, length+*stop)
+			} else {
+				to = *stop
+			}
+		}
+		return from, saturatingSub(to, from)
+	}
+	return from, saturatingSub(*stop, from)
 }
 
-func resolveSliceIndices(length int64, start, stop *int64, step int64) (int64, int64) {
-	var s, e int64
-
-	if step > 0 {
-		if start == nil {
-			s = 0
+// sliceStepBackwards is the Rust engine's range_step_backwards: the exact index
+// sequence a negative step visits.
+func sliceStepBackwards(start, stop *int64, step, length int64) []int64 {
+	from := length - 1
+	if from < 0 {
+		from = 0
+	}
+	if start != nil {
+		switch {
+		case *start >= length:
+			// clamped to the last element, saturating on an empty sequence
+		case *start >= 0:
+			from = *start
+		default:
+			from = max64(0, length+*start)
+		}
+	}
+	to := int64(0)
+	if stop != nil {
+		if *stop < 0 {
+			to = max64(0, length+*stop)
 		} else {
-			s = normalizeIndex(*start, length)
-		}
-		if stop == nil {
-			e = length
-		} else {
-			e = normalizeIndex(*stop, length)
-		}
-		if s < 0 {
-			s = 0
-		}
-		if e > length {
-			e = length
-		}
-	} else {
-		if start == nil {
-			s = length - 1
-		} else {
-			s = normalizeIndex(*start, length)
-		}
-		if stop == nil {
-			e = -1
-		} else {
-			e = normalizeIndex(*stop, length)
-		}
-		if s >= length {
-			s = length - 1
-		}
-		if e < -1 {
-			e = -1
+			to = *stop
 		}
 	}
 
-	return s, e
+	if length == 0 || to > from {
+		return nil
+	}
+	var count int64
+	if to == 0 {
+		count = (from + step) / step
+	} else {
+		count = (from - to + step - 1) / step
+	}
+	var out []int64
+	for i := from; i >= to && int64(len(out)) < count; i -= step {
+		out = append(out, i)
+	}
+	return out
 }
 
-func normalizeIndex(idx, length int64) int64 {
-	if idx < 0 {
-		idx = length + idx
+func max64(a, b int64) int64 {
+	if a > b {
+		return a
 	}
-	return idx
+	return b
+}
+
+func saturatingSub(a, b int64) int64 {
+	if a < b {
+		return 0
+	}
+	return a - b
 }
 
 func (s *State) applyFilter(filterExpr parser.Expr, val value.Value) (value.Value, error) {

@@ -59,7 +59,6 @@ import (
 	"math"
 	"math/big"
 	"reflect"
-	"sort"
 	"strconv"
 	"strings"
 )
@@ -818,7 +817,7 @@ func (v Value) Kind() ValueKind {
 		return KindBytes
 	case []Value:
 		return KindSeq
-	case map[string]Value:
+	case map[string]Value, *OrderedMap:
 		return KindMap
 	case *Iterator:
 		return KindIterable
@@ -910,8 +909,12 @@ func (v Value) IsTrue() bool {
 		return d != 0
 	case u64Value:
 		return d != 0
+	case bigIntValue:
+		return d.Int != nil && d.Int.Sign() != 0
 	case float64:
-		return d != 0 && !math.IsNaN(d)
+		// The Rust engine's rule is exactly `x != 0.0`, which makes NaN truthy.
+		// Excluding NaN here would make `{{ 'y' if 0.0 / 0.0 }}` disagree.
+		return d != 0
 	case string:
 		return d != ""
 	case safeString:
@@ -922,6 +925,10 @@ func (v Value) IsTrue() bool {
 		return len(d) > 0
 	case map[string]Value:
 		return len(d) > 0
+	case *OrderedMap:
+		return d.Len() > 0
+	case *Iterator:
+		return len(d.items) > 0
 	case Object:
 		return GetObjectTruth(d)
 	default:
@@ -967,20 +974,51 @@ func (v Value) String() string {
 			parts = append(parts, item.Repr())
 		}
 		return "[" + strings.Join(parts, ", ") + "]"
-	case map[string]Value:
-		var parts []string
-		keys := make([]string, 0, len(d))
-		for k := range d {
-			keys = append(keys, k)
-		}
-		sort.Strings(keys)
-		for _, k := range keys {
-			parts = append(parts, fmt.Sprintf("%q: %s", k, d[k].Repr()))
-		}
-		return "{" + strings.Join(parts, ", ") + "}"
+	case map[string]Value, *OrderedMap:
+		return v.formatMap()
 	default:
 		return fmt.Sprintf("%v", d)
 	}
+}
+
+// formatMap renders a mapping the way the Rust engine does: entries in
+// iteration order, each key and value in its debug form. Display and debug are
+// the same function there (an object's Display calls its render, which builds a
+// debug map), so this is used for both — which is why a map nested in a sequence
+// renders exactly as it would on its own.
+func (v Value) formatMap() string {
+	keys, ok := v.MapKeys()
+	if !ok {
+		return "{}"
+	}
+	ordered, _ := v.data.(*OrderedMap)
+	parts := make([]string, 0, len(keys))
+	for _, k := range keys {
+		val, _ := mapLookup(v, k)
+		parts = append(parts, fmt.Sprintf("%s: %s", mapKeyRepr(ordered, k), val.Repr()))
+	}
+	return "{" + strings.Join(parts, ", ") + "}"
+}
+
+// mapKeyRepr renders one map key.
+//
+// The Rust engine keys maps by Value, so how a key renders depends on what it
+// is: `{1: 'a'}` shows 1 and a map with the string key "1" shows "1". An
+// OrderedMap remembers that, so its keys render exactly.
+//
+// A value backed by a plain Go map has no such record — the key type was erased
+// before the engine saw it — so the long-standing heuristic is kept for those:
+// a key whose text is a canonical integer renders unquoted. That is what makes
+// a splatted `**{8: 8}` kwargs mapping, which passes through Go maps, still
+// render as the Rust engine does.
+func mapKeyRepr(ordered *OrderedMap, key string) string {
+	if ordered != nil {
+		return ordered.KeyRepr(key)
+	}
+	if i, err := strconv.ParseInt(key, 10, 64); err == nil && strconv.FormatInt(i, 10) == key {
+		return key
+	}
+	return FromString(key).Repr()
 }
 
 // Repr returns a debug representation of the value.
@@ -1020,29 +1058,15 @@ func (v Value) Repr() string {
 		return "[" + strings.Join(parts, ", ") + "]"
 	case *Iterator:
 		return "<iterator>"
-	case map[string]Value:
-		var parts []string
-		keys := make([]string, 0, len(d))
-		for k := range d {
-			keys = append(keys, k)
-		}
-		sort.Strings(keys)
-		for _, k := range keys {
-			parts = append(parts, fmt.Sprintf("%s: %s", formatMapKey(k), d[k].Repr()))
-		}
-		return "{" + strings.Join(parts, ", ") + "}"
+	case map[string]Value, *OrderedMap:
+		// The debug and display forms of a mapping are the same in the Rust
+		// engine, so a map nested in a sequence renders exactly as it would at
+		// the top level -- including quoting a key like "1" that happens to look
+		// numeric, because it is a string key.
+		return v.formatMap()
 	default:
 		return fmt.Sprintf("%v", d)
 	}
-}
-
-func formatMapKey(key string) string {
-	if i, err := strconv.ParseInt(key, 10, 64); err == nil {
-		if strconv.FormatInt(i, 10) == key {
-			return key
-		}
-	}
-	return fmt.Sprintf("%q", key)
 }
 
 // IsSafe returns true if this is a safe string.
@@ -1103,6 +1127,11 @@ func (v Value) SameAs(other Value) bool {
 		if m1, ok1 := v.data.(map[string]Value); ok1 {
 			if m2, ok2 := other.data.(map[string]Value); ok2 {
 				return reflect.ValueOf(m1).Pointer() == reflect.ValueOf(m2).Pointer()
+			}
+		}
+		if m1, ok1 := v.data.(*OrderedMap); ok1 {
+			if m2, ok2 := other.data.(*OrderedMap); ok2 {
+				return m1 == m2
 			}
 		}
 		return false
@@ -1219,6 +1248,37 @@ func (v Value) AsMap() (map[string]Value, bool) {
 	return nil, false
 }
 
+// AsMapValue returns the mapping as an ordered map when the value has one, so a
+// caller that needs both lookup and order does not have to choose.
+//
+// A value built from a Go map has no order of its own; it is reported in the
+// same deterministic order [Value.MapKeys] uses.
+func (v Value) AsMapValue() (*OrderedMap, bool) {
+	switch d := v.data.(type) {
+	case *OrderedMap:
+		return d, true
+	case map[string]Value:
+		out := NewOrderedMap(len(d))
+		for _, k := range sortedKeys(d) {
+			out.Set(k, d[k])
+		}
+		return out, true
+	}
+	if v.Kind() != KindMap {
+		return nil, false
+	}
+	keys, ok := v.MapKeys()
+	if !ok {
+		return nil, false
+	}
+	out := NewOrderedMap(len(keys))
+	for _, k := range keys {
+		val, _ := mapLookup(v, k)
+		out.Set(k, val)
+	}
+	return out, true
+}
+
 // Len returns the length of the value if it has one.
 func (v Value) Len() (int, bool) {
 	switch d := v.data.(type) {
@@ -1234,6 +1294,8 @@ func (v Value) Len() (int, bool) {
 		return len(d.items), true
 	case map[string]Value:
 		return len(d), true
+	case *OrderedMap:
+		return d.Len(), true
 	case LenGetter:
 		return d.Len()
 	case Object:
@@ -1247,6 +1309,12 @@ func (v Value) Len() (int, bool) {
 }
 
 // GetItem gets an item by key (string or integer index).
+//
+// An integer subscript is converted with [Value.AsInt], the engine's
+// primitive integer conversion, so a bool indexes as 0 or 1 and a float only
+// indexes when it converts exactly. A negative subscript counts from the end,
+// and an out-of-range or unconvertible subscript is undefined rather than an
+// error.
 func (v Value) GetItem(key Value) Value {
 	switch d := v.data.(type) {
 	case []Value:
@@ -1270,6 +1338,12 @@ func (v Value) GetItem(key Value) Value {
 	case map[string]Value:
 		if s, ok := key.AsString(); ok {
 			if val, exists := d[s]; exists {
+				return val
+			}
+		}
+	case *OrderedMap:
+		if s, ok := key.AsString(); ok {
+			if val, exists := d.Get(s); exists {
 				return val
 			}
 		}
@@ -1325,6 +1399,10 @@ func (v Value) GetAttr(name string) Value {
 		if val, ok := d[name]; ok {
 			return val
 		}
+	case *OrderedMap:
+		if val, ok := d.Get(name); ok {
+			return val
+		}
 	case Object:
 		return d.GetAttr(name)
 	}
@@ -1368,18 +1446,25 @@ type MapGetter interface {
 }
 
 // Iter returns an iterator over the value's items.
+//
+// A nil result means the value is not iterable at all. An iterable value that
+// happens to be empty returns an empty, non-nil slice: callers distinguish the
+// two, so conflating them made `range(0)|list|join(',')` render the list instead
+// of an empty string.
 func (v Value) Iter() []Value {
 	switch d := v.data.(type) {
 	case []Value:
+		if d == nil {
+			return []Value{}
+		}
 		return d
 	case *Iterator:
-		return d.items
-	case map[string]Value:
-		keys := make([]string, 0, len(d))
-		for k := range d {
-			keys = append(keys, k)
+		if d.items == nil {
+			return []Value{}
 		}
-		sort.Strings(keys)
+		return d.items
+	case map[string]Value, *OrderedMap:
+		keys, _ := v.MapKeys()
 		result := make([]Value, len(keys))
 		for i, k := range keys {
 			result[i] = FromString(k)
@@ -1400,11 +1485,15 @@ func (v Value) Iter() []Value {
 		}
 		return result
 	case Iterable:
-		return d.Iter()
+		items := d.Iter()
+		if items == nil {
+			return []Value{}
+		}
+		return items
 	case Object:
 		// Check for new object iteration interfaces
 		if seq := IterateObject(d); seq != nil {
-			var result []Value
+			result := []Value{}
 			for item := range seq {
 				result = append(result, item)
 			}
@@ -1429,6 +1518,8 @@ func (v Value) Clone() Value {
 			newMap[k] = val
 		}
 		return Value{data: newMap}
+	case *OrderedMap:
+		return Value{data: d.Clone()}
 	default:
 		return v // Immutable types can be shared
 	}

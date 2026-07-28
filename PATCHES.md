@@ -7,7 +7,8 @@ The baseline is `v2.16.0-baml.2` — upstream `mitsuhiko/minijinja@b9afca`
 (`minijinja-go/v2.16.0`) with no semantic change at all, proven mechanically by
 [`scripts/verify-seed.sh`](scripts/verify-seed.sh). Everything below is a delta
 over that baseline, introduced by the template sweep (slice 6 of the scope's
-plan) and the numeric core (slice 3), so that the fork matches BAML's engine
+plan), the numeric core (slice 3) and the coercion, container and VM operations
+(slice 4), so that the fork matches BAML's engine
 (`boundaryml/minijinja@8cfc770`, built with BAML's feature set).
 
 ## Rules
@@ -72,6 +73,29 @@ pure Go.
 | 30 | `num/lt-int-float-lossy`, `num/gt-float-int-lossy`, `num/lt-u128-vs-int`, `num/sort-uncomparable`, `num/eq-u128-vs-int`, `num/eq-int-float-lossy` | ordering two numbers that do not coerce losslessly | returned "not comparable", which the VM turned into an invalid-operation error | panics with `value.UncomparableNumbers`, which is what the engine does | `Ord::cmp` handles a failed coercion by assuming both operands are objects and unwrapping `self.as_object()` (`value/mod.rs:638-641`); for two numbers that unwrap is on a `None`. Returning an error instead was a different observable outcome on an input BAML can reach. Only ORDERING aborts — `PartialEq` handles the same failure safely and answers false, and so does the fork | `feat/mjfork-numeric` |
 | 31 | `num/u128-mixed-refuses`, `num/sub-2pow127-refuses`, `num/neg-bool`, `num/mul-string-repeat-negative` | Numeric error wording | the port's own phrasing (`cannot add number and number`), and a string repetition with a bad count fell through to the numeric arm and reported the operand KINDS as unsupported | `ops::impossible_op`'s wording, `Error::from(ErrorKind::InvalidOperation)`'s empty detail, and the engine's own `strings can only be multiplied with integers` | `ops.rs:240-250,304-315`, `value/mod.rs`. The template slice's `oracle/messages_test.go` compares the text of every error both engines produce, because BAML surfaces it to a caller when a prompt fails to render; these four rows are what the numeric lane owed that surface. The empty-detail case needed a way to say "no detail" that is not "an empty detail": `NewErrorWithoutDetail` in `internal/errors`, reached through a sentinel the `value` package raises and `wrapEvalError` recognises. An earlier revision inferred it from an empty `Message`, which was WRONG — an empty detail is still a detail, and `GetTemplate("")` passes the template name straight through, so that inference silently changed `template not found: ` to `template not found`. `numeric_contract_test.go` pins both forms | `feat/mjfork-numeric` |
 
+### Slice 4 — coercion, containers and the VM
+
+Comparison, containment, truthiness and the container operations, made
+byte-exact with the target engine, plus the generic `value_cmp` dispatch hook
+that is BoundaryML's sole engine delta over upstream. The numeric core (above)
+supplies the coercion these entries compare THROUGH; what they own is the shape
+of the operation around it — which arms run in which order, what falls through
+to the hook, and how containers enumerate.
+
+| 32 | `valuecmp/object-eq-string`, `valuecmp/string-eq-object`, `valuecmp/object-eq-object`, `valuecmp/string-in-object-list`, `valuecmp/object-in-string-list`, `valuecmp/list-eq-string-list`, `valuecmp/object-lt-string`, `valuecmp/object-gt-string`, `valuecmp/string-lt-object`, `valuecmp/string-gt-object`, `valuecmp/object-ne-string`, `valuecmp/object-eq-display`, `valuecmp/object-eq-int`, `valuecmp/object-lt-int`, `valuecmp/object-lt-object`, `valuecmp/object-eq-none`, `valuecmp/object-sort`, `valuecmp/object-is-eq-test`, `valuecmp/object-is-in-test` | Generic `value_cmp` dispatch (`value/valuecmp.go`, `value/ops.go`) | An object can only be compared with another object, through `ObjectWithCmp`, and only from `Compare`; `Equal` never reaches it. | New `value.ObjectWithValueCmp` hook. Equality asks the left operand's object, then the right's; ordering asks the left, then the right with the result negated, before kind ordering. Declining falls through to the ordinary rules. | This is BoundaryML's sole engine delta over upstream (`8cfc770`), and the engine half of the BAML enum-equality fence (#597): a host enum object compares by its canonical variant value while displaying an alias. The fork exposes it generically — no BAML types — and a corpus test object proves it. | `feat/mjfork-coercion` |
+| 33 | `cmp/int-eq-float-lossy-boundary`, `cmp/float-eq-int-lossy-boundary-reverse`, `cmp/int-eq-string`, `cmp/string-eq-int`, `cmp/bool-eq-string`, `cmp/int-eq-bool-true`, `cmp/none-eq-*`, `cmp/undefined-eq-*`, `cmp/map-eq-map-diff-order`, `cmp/list-eq-list-numeric-coercion` | Comparison structure (`value/ops.go`) | `Equal` walked ad-hoc `As*` conversions: bools coerced through `float64`, every integer compared as `float64`, maps compared only when both were Go maps. | `Equal` is the engine's `PartialEq` in order: identical-repr fast paths, then `ops::coerce(_, _, false)` (entry #19 supplies it, in exact i128), then the `value_cmp` hook, then the container arms. Containers compare by kind: map/map by entries, seq-or-iterable by iteration, plain by rendering. A none/undefined pair that is not both falls THROUGH rather than answering false, so an object can still be asked. | Equality is a coercion question, not a conversion-convenience question. Entry #19 owns the coercion itself; what this entry owns is the order of the arms around it — an early `return false` for none, undefined or a failed coercion is what bypasses the hook and the container arms. | `feat/mjfork-coercion` |
+| 34 | `cmp/none-lt-none`, `cmp/none-le-none`, `cmp/undefined-lt-undefined`, `cmp/map-lt-map`, `cmp/one-gt-nan`, `cmp/nan-lt-one`, `cmp/nan-cmp-nan`, `cmp/neg-zero-lt-zero`, `cmp/neg-zero-eq-zero`, `cmp/iterable-gt-list`, `cmp/list-lt-iterable`, `cmp/slice-gt-list` | Total ordering (`value/coerce.go`, `value/ops.go`) | `Compare` reported "incomparable" for same-kind pairs it had no rule for (none/none, undefined/undefined, map/map), which made the VM raise on `{{ none < none }}`. Floats were ordered with `<`, leaving NaN unordered and `-0.0` equal to `0.0`. | Ordering is total, as in Rust: payload-less kinds are equal to themselves, maps compare pairwise in iteration order, and bytes compare bytewise. `kindOrder` is the engine's full `ValueKind` declaration order, so the ranks now include iterable, plain and invalid. The float total order itself is entry #20. | Rust's `Ord for Value` never refuses, so a refusal is not a conservative choice: it turns a defined boolean into a template error. The float total order is also what `sort` uses. | `feat/mjfork-coercion` |
+| 35 | `cmp/int-in-string`, `contains/int-in-string-multi`, `contains/float-in-string`, `contains/bool-in-string`, `contains/none-in-string`, `contains/list-in-string`, `contains/string-in-int-list`, `contains/bool-in-int-list`, `contains/in-none`, `contains/in-int`, `contains/none-in-map`, `contains/int-in-range`, `test/is-in-string` | Containment (`value/ops.go`, `state.go`) | A string container only matched a string needle, so `1 in '1'` was false. A non-container answered `false`. | New `Value.TryContains` ports the Rust engine's `contains`: a string container stringifies a non-string needle, a mapping tests keys, a sequence or iterable tests items by equality (so containment reaches the `value_cmp` hook), an undefined container is empty, and anything else is an `invalid_operation` error. `Value.Contains` keeps its boolean signature and answers `false` on that error. | `1 in '1'` is the case the forensic record named. The error matters as much as the coercion: silently answering `false` for `1 in 5` turns a broken predicate into a passing one. | `feat/mjfork-coercion` |
+| 36 | `container/map-render-insertion-order`, `container/map-loop-insertion-order`, `container/map-render-nested`, `container/map-render-inside-list`, `container/map-for-key-order`, `container/map-values-order`, `container/map-list-order`, `container/map-first`, `container/map-tojson-order`, `container/map-tojson-nested-order`, `container/dict-literal-order`, `container/dict-literal-nested-order`, `container/dict-literal-duplicate-key`, `container/map-loop-index`, `container/map-items-first`, `container/map-dictsort`, `logic/or-empty-containers`, `concat/map` | Ordered mappings (`value/orderedmap.go`, `value/value.go`, `state.go`, `filters/filters.go`) | The map value is a Go `map[string]Value`, and every consumer sorted its keys. Insertion order could not be represented at all. | New `value.OrderedMap` representation with `FromOrderedMap`, `AsOrderedMap`, `AsMapValue` and `Value.MapKeys`. Map literals build one; every engine site that enumerates a mapping (display, debug, iteration, `items`, `list`, `first`, `dictsort`, `pprint`, JSON) goes through `MapKeys`. A value built from a Go map has no order and is still enumerated sorted, deterministically. | BAML builds its engine with `preserve_order`, so map order is prompt bytes: loop output, `items()`, display and `tojson` all observe it. `tojson` needed its own ordered encoder because `encoding/json` sorts Go map keys. | `feat/mjfork-coercion` |
+| 37 | `container/map-render-numeric-string-key`, `container/map-render-numeric-string-key-inside-list`, `container/dict-literal-int-key` | Map key spelling (`value/orderedmap.go`, `value/value.go`) | A map's debug form printed a key that looked like an integer unquoted and its display form always quoted it, so the two disagreed and neither was right for both key types. | An `OrderedMap` remembers a non-string key's spelling, and display and debug are one function, as they are in Rust. `{1: 'a'}` renders `{1: "a"}` and a mapping with the string key `"1"` renders `{"1": 2}`, in every position. A provenance-less Go map keeps the old heuristic, which is what a splatted `**{8: 8}` kwargs mapping needs. | Rust keys maps by `Value`, this fork keys by string. Remembering the spelling closes the rendering half of that gap; the lookup half is still open (see below). | `feat/mjfork-coercion` |
+| 38 | `truth/nan`, `logic/not-nan`, `truth/empty-range`, `truth/empty-slice`, `truth/empty-map` | Truthiness (`value/value.go`) | NaN was falsy, big integers were truthy by default, and an empty iterator was truthy. | Truthiness of a float is exactly `x != 0`, which makes NaN truthy; big integers test their sign; an iterator or ordered map with a known length of zero is falsy. | The Rust rule is a single `!= 0.0` comparison. Excluding NaN reads as a fix but flips `{{ 'y' if 0.0 / 0.0 }}`, and truthiness feeds `if`, `and`, `or`, `not` and ternaries. | `feat/mjfork-coercion` |
+| 39 | `logic/and-returns-value`, `logic/and-const-falsy-left`, `logic/and-runtime-falsy-left`, `logic/and-runtime-falsy-right`, `logic/and-nested-const`, `logic/and-const-with-failing-operand` | Constant-folded `and` (`state.go`) | `and` always yielded an operand. | When both operands are constant expressions, `and` yields a plain `false` if the result is falsy, and the right operand otherwise; with any non-constant operand the runtime rule (yield the operand) still applies. `isConstExpr`/`foldConst` mirror Rust's `Expr::as_const`, including that an operand whose operation fails is not folded. | Not a simplification: the Rust engine's compiler folds a fully-literal expression with semantics that differ from its own VM instruction for `and` alone. `{{ 'a' and 0 }}` renders `false` and `{{ x and 0 }}` renders `0` in BAML's engine, and both are prompt bytes. | `feat/mjfork-coercion` |
+| 40 | `slice/*` (29 rows), `test/is-sequence-slice`, `container/slice-eq-list`, `container/slice-plus-list`, `container/list-plus-list-is-sequence`, `range/slice` | Slicing (`state.go`, `value/ops.go`) | Bounds were resolved with ad-hoc clamping; a non-integer bound was silently treated as omitted; only sequences and strings could be sliced; the result was a sequence; slice errors were unclassifiable `fmt.Errorf` values. | `sliceOffsetAndLen` and `sliceStepBackwards` port the Rust engine's `get_offset_and_len` and `range_step_backwards` exactly. None and undefined slice into an empty sequence; iterables (a range, another slice) can be sliced; bytes can be sliced; a non-integer bound and a zero step are `invalid_operation` errors. The result is a lazy iterable, as in Rust, which `is sequence` observes. Sequence `+` accepts iterables so a slice can still be concatenated. | Slice arithmetic is where an off-by-one is invisible until it silently drops an element, and the corpus covers negative steps, both bounds past either end, and inverted ranges. Making the result lazy is what the kind tests see. Bound *conversion* is entry #25. | `feat/mjfork-coercion` |
+| 41 | `range/step-zero` | `range()` error class (`defaults.go`) | A zero step returned an unclassifiable `fmt.Errorf`. | It returns `ErrInvalidOperation`, like the Rust engine's `invalid_operation`. | An external consumer classifies engine errors by kind; an unexported error type cannot be classified at all. | `feat/mjfork-coercion` |
+| 42 | `range/empty`, `range/negative-step-empty` | Empty iterables (`value/value.go`) | `Value.Iter` returned `nil` both for "not iterable" and for "iterable but empty", so `range(0)|list|join(',')` rendered `[]` instead of nothing. | `Iter` returns a non-nil empty slice for an empty iterable and keeps `nil` for a value that cannot be iterated. | Callers use `nil` to mean "not iterable" and there is no other signal, so conflating the two makes an empty container fall through to a caller's "not a sequence" branch. | `feat/mjfork-coercion` |
+| 43 | `container/map-reverse-order`, `container/map-reverse-three-keys`, `container/map-reverse-twice` | `reverse` on a mapping (`filters/filters.go`) | Reversing a mapping reversed its (sorted) keys. | Reversing a mapping yields its keys in the mapping's own order; reversing that result does reverse. | Faithful to the target engine, including its bug: a Rust map enumerates with a double-ended iterator and `Value::reverse` re-boxes that iterator without calling `.rev()`, so `m|reverse` iterates forward. The second reverse works because the intermediate value enumerates differently. Verified directly against `8cfc770` rather than inferred. | `feat/mjfork-coercion` |
+| 44 | `container/index-bool-true`, `container/index-bool-false`, `container/string-index-bool`, `container/iterable-index-bool`, `container/map-index-bool`, `container/index-fractional-float`, `container/index-huge-float`, `container/index-negative-float`, `container/index-none`, `slice/bool-start`, `slice/bool-false-start`, `slice/bool-stop`, `slice/bool-step`, `slice/bool-both-bounds`, `slice/bool-start-negative-step`, `slice/float-step`, `slice/fractional-step`, `slice/string-step`, `slice/undefined-bound`, `slice/float-bound-at-i64-max`, `slice/float-bound-beyond-i64`, `slice/float-bound-at-i64-min`, `range/bool-stop`, `range/bool-false`, `range/bool-start`, `range/bool-step`, `range/bool-all-args`, `range/float-arg`, `range/fractional-arg`, `range/string-arg`, `range/none-arg`, `str/repeat-bool`, `str/repeat-bool-reversed`, `str/repeat-negative`, `str/repeat-fractional`, `str/repeat-integral-float`, `container/list-times-bool`, `container/bool-times-list`, `container/list-repeat-is-sequence` | VM integer conversion at every operand position (`value/value.go`, `state.go`, `defaults.go`, `value/ops.go`) | Every VM operand position that needs an integer went through `Value.AsInt`, which accepts only `int64` and an integral `float64`. A bool was not an integer, so `xs[true]` was undefined, `xs[true:]` was an invalid-bound error, `range(true)` was an empty range, and `'a' * true` failed. `range` also ignored a failed conversion entirely, turning `range(1.5)` and `range('2')` into empty ranges instead of errors. | Every one of those positions routes through `Value.AsInt`, which entries #21, #25, #26 and #28 made into the engine's primitive integer conversion (`primitive_int_try_from!`, `argtypes.rs:410-433`, reached through `Value::as_i64`/`as_usize`): a bool converts as 0/1, an integral float converts only when Rust's saturating cast round-trips, and everything else fails. What this entry adds is the operand positions that conversion had not reached — subscripts on a sequence, iterator, string and seq-object, and both repetition branches — plus the corpus that pins every position from both sides. The repetition branches also commit on the operand KIND, as `ops::mul` does, so a count that does not convert reports the count rather than falling through to numeric multiplication and reporting the operand kinds; and a repeated sequence is a lazy iterable, like a slice and like a concatenation. | Found by cold review. This was a success/error/value mismatch in the class this slice claims, in the most easily reached direction: a bool bound made a defined slice raise. This slice and the numeric slice reached the same conversion independently and from opposite ends — one from the VM operand positions, one from `Value.AsInt` itself — and the merge keeps the numeric one, which additionally handles the `u64` and `u128` reprs that only exist there. The float boundary is deliberately a round-trip check rather than a range check, because Go's own float-to-int conversion is undefined out of range and was observed differing between amd64 and arm64 — `slice/float-bound-at-i64-max` and `slice/float-bound-beyond-i64` pin both sides of it. | `feat/mjfork-coercion` |
+
 ### Error message wording
 
 The template sweep also aligns the *text* of engine errors with BAML's. That is
@@ -83,22 +107,26 @@ each owned by a later slice.
 
 ## Known divergences not yet patched
 
-The differential records 10 declared divergences from BAML's engine, all classed
-`engine`, and **none of them belongs to the template class or the numeric
-class**: every row in those two lanes agrees with the engine. They are listed
-with their evidence in `oracle/divergences.json`.
+The differential records 4 declared divergences from BAML's engine, all classed
+`engine`, and **none of them belongs to the template, numeric, coercion or
+container class**: every row in those lanes agrees with the engine. They are
+listed with their evidence in `oracle/divergences.json`.
 
 | Slice | Corpus IDs |
 | --- | --- |
-| 2 — generic `value_cmp` API | `valuecmp/object-eq-string`, `valuecmp/string-eq-object`, `valuecmp/string-in-object-list`, `valuecmp/object-eq-object` |
-| 4 — coercion and containers | `cmp/int-in-string`, `container/map-render-insertion-order`, `container/map-loop-insertion-order` |
-| 5 — builtins and pycompat | `str/lower-dotted-capital-i`, `str/upper-sharp-s`, `err/go-only-urlencode-filter` |
+| 5 — builtins and pycompat | `str/lower-dotted-capital-i`, `str/upper-sharp-s`, `err/go-only-urlencode-filter`, `container/dict-function-kwargs-order` |
 
 The template slice had two entries in this table and both are closed:
 `err/syntax-incomplete-if` by patch #1 and `tmpl/loop-cycle-no-args` by patch #9.
 The numeric slice had four — `arith/int-add-above-2pow53`,
 `arith/int-mul-i64-edge`, `arith/rem-negative` and `arith/div-by-zero` — and all
-four are closed by patches #10 to #16.
+four are closed by patches #10 to #16. Slice 4 had seven: the four generic
+`value_cmp` rows and the three coercion/container rows
+(`cmp/int-in-string`, `container/map-render-insertion-order`,
+`container/map-loop-insertion-order`), all closed by patches #32 to #44. It
+opened one, `container/dict-function-kwargs-order`, which is slice 5's because
+the order is lost in the keyword-argument plumbing rather than in the mapping —
+see the named gap below.
 
 ### The numeric class carries no exception, and cannot
 
@@ -153,3 +181,36 @@ diagnostics for every panic row, from both sides, alongside the status parity
 that IS the contract. A row that starts or stops faulting fails; a change to the
 recorded engine diagnostic fails; a change to the fork's fails; and a new panic
 row anywhere in the corpus fails until it is pinned deliberately.
+
+### Named gap: keyword-argument order
+
+`dict(b=1, a=2)` renders `{"a": 2, "b": 1}` here and `{"b": 1, "a": 2}` in the
+target (`container/dict-function-kwargs-order`). Entry #36 gave every other
+mapping surface an order, but keyword arguments reach a function as a Go
+`map[string]Value` (`value.Callable`, `filters.Filter`), so the order is gone
+before the function is called. Closing it means the callable signature carrying
+an ordered mapping, which is a change to the public object protocol and belongs
+with the slice that reworks that surface.
+
+### Named gap: mappings are keyed by string, not by value
+
+Rust keys its maps by `Value`, so `{1: 'a'}` and `{'1': 'a'}` are different
+mappings. This fork keys by string. Patch #37 closes the *rendering* half of that
+gap by remembering a key's spelling, and `contains/int-key-in-numeric-string-key-map`
+and `contains/none-in-map` show that containment already answers correctly for
+string-keyed mappings, which is what BAML produces (`BamlValue` maps and class
+fields are string-keyed, `baml_value.rs:20-56`).
+
+What remains open is *lookup* by a non-string key: `{1: 'a'}[1]` is undefined
+here and `'a'` in Rust, and iterating such a mapping yields the key as a string
+rather than as a number. There is no corpus row asserting the fork's behaviour
+because there is no BAML surface that reaches it; a row would pin a difference
+nobody consumes.
+
+Closing it properly is a value-model change, not a patch: `OrderedMap` would key
+its index by a canonical `(kind, text)` pair rather than by the key text, expose
+`KeyValues() []Value` alongside `MapKeys()`, and `Value.GetItem`, containment,
+equality, ordering and the map-consuming filters would take key values instead of
+key strings. `AsMap() map[string]Value` would remain as a lossy convenience.
+That touches every map site in the engine and the public object protocol, so it
+belongs in a slice of its own rather than being smuggled into this one.

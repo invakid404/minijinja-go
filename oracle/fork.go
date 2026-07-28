@@ -15,22 +15,21 @@ import (
 // string. It is the generic shape of BAML's enum object, with no BAML types
 // involved.
 //
-// This fork's object protocol only offers object-to-object comparison
-// (value.ObjectWithCmp, dispatched at value/ops.go:420-425). BoundaryML's
-// engine additionally asks an object to compare itself against an arbitrary
-// Value before ordinary equality/ordering. The two sides implement the same
-// canonical-value semantics; whatever the differential reports about them is a
-// statement about comparison dispatch, not about the fixture.
+// Both sides implement the same canonical-value semantics through the same
+// generic hook — value.ObjectWithValueCmp here, Object::value_cmp in Rust — so
+// whatever the differential reports about these rows is a statement about the
+// engine's comparison dispatch, not about the fixture.
 type cmpObject struct {
 	canonical string
 	display   string
 }
 
 var (
-	_ value.Object           = (*cmpObject)(nil)
-	_ value.ObjectWithString = (*cmpObject)(nil)
-	_ value.ObjectWithCmp    = (*cmpObject)(nil)
-	_ fmt.Stringer           = (*cmpObject)(nil)
+	_ value.Object             = (*cmpObject)(nil)
+	_ value.ObjectWithString   = (*cmpObject)(nil)
+	_ value.ObjectWithCmp      = (*cmpObject)(nil)
+	_ value.ObjectWithValueCmp = (*cmpObject)(nil)
+	_ fmt.Stringer             = (*cmpObject)(nil)
 )
 
 func (o *cmpObject) GetAttr(string) value.Value { return value.Undefined() }
@@ -54,11 +53,26 @@ func (o *cmpObject) ObjectCmp(other value.Object) (int, bool) {
 	return strings.Compare(o.canonical, oo.canonical), true
 }
 
+// ValueCmp is the generic comparison hook, implemented exactly as the Rust
+// harness implements Object::value_cmp: compare to a string by canonical value,
+// delegate to the object-to-object hook for objects, and decline anything else.
+func (o *cmpObject) ValueCmp(other value.Value) (int, bool) {
+	if s, ok := other.AsString(); ok {
+		return strings.Compare(o.canonical, s), true
+	}
+	if obj, ok := other.AsObject(); ok {
+		return o.ObjectCmp(obj)
+	}
+	return 0, false
+}
+
 // BuildValue converts a corpus input into a fork value.
 //
-// Maps go through value.FromMap, which is the idiomatic way a consumer passes a
-// mapping to this engine. That the port then sorts the keys is exactly the
-// behaviour the differential is here to observe, so it is not worked around.
+// A corpus map declares its entry order, and that order is part of the fixture
+// because BAML builds its engine with preserve_order. It is therefore built with
+// the fork's order-preserving mapping, which is the same thing the Rust side
+// does with Value::from_iter. A host that has no order to declare would use
+// value.FromMap instead and get a deterministic, sorted one.
 func BuildValue(tv TypedValue) (value.Value, error) {
 	switch tv.Kind {
 	case KindInt:
@@ -82,15 +96,15 @@ func BuildValue(tv TypedValue) (value.Value, error) {
 		}
 		return value.FromSlice(items), nil
 	case KindMap:
-		m := make(map[string]value.Value, len(tv.Entries))
+		m := value.NewOrderedMap(len(tv.Entries))
 		for _, e := range tv.Entries {
 			v, err := BuildValue(e.Value)
 			if err != nil {
 				return value.Undefined(), fmt.Errorf("map key %q: %w", e.Key, err)
 			}
-			m[e.Key] = v
+			m.Set(e.Key, v)
 		}
-		return value.FromMap(m), nil
+		return value.FromOrderedMap(m), nil
 	case KindCmpObject:
 		return value.FromObject(&cmpObject{canonical: tv.Canonical, display: tv.Display}), nil
 	default:

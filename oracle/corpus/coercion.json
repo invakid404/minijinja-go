@@ -1,0 +1,4668 @@
+{
+  "schema_version": 1,
+  "rows": [
+    {
+      "id": "cmp/int-eq-string",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "1 == '1'",
+      "expect": "boolean",
+      "notes": "Number vs string equality. Rust coerce() has no number/string mapping, so it falls through to the object branch and is false; the fork must not coerce either."
+    },
+    {
+      "id": "cmp/string-eq-int",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "'1' == 1",
+      "expect": "boolean",
+      "notes": "Reverse operand order of cmp/int-eq-string."
+    },
+    {
+      "id": "cmp/int-eq-bool-true",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "1 == true",
+      "expect": "boolean",
+      "notes": "Bool coerces to an integer through coerce()'s i128 arm."
+    },
+    {
+      "id": "cmp/bool-true-eq-int",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "true == 1",
+      "expect": "boolean",
+      "notes": "Reverse operand order of cmp/int-eq-bool-true."
+    },
+    {
+      "id": "cmp/zero-eq-false",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "0 == false",
+      "expect": "boolean",
+      "notes": "The false/zero corner of bool-number coercion."
+    },
+    {
+      "id": "cmp/false-eq-zero",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "false == 0",
+      "expect": "boolean",
+      "notes": "Reverse operand order of cmp/zero-eq-false."
+    },
+    {
+      "id": "cmp/float-eq-bool",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "1.0 == true",
+      "expect": "boolean",
+      "notes": "Float vs bool: coerce()'s float arm converts the bool through as_f64."
+    },
+    {
+      "id": "cmp/bool-eq-string",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "true == 'true'",
+      "expect": "boolean",
+      "notes": "A bool must not be compared by its rendered text."
+    },
+    {
+      "id": "cmp/none-eq-false",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "none == false",
+      "expect": "boolean",
+      "notes": "None is only equal to none; it is not falsy-equal."
+    },
+    {
+      "id": "cmp/none-eq-zero",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "none == 0",
+      "expect": "boolean",
+      "notes": "None vs number."
+    },
+    {
+      "id": "cmp/none-eq-empty-string",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "none == ''",
+      "expect": "boolean",
+      "notes": "None vs string."
+    },
+    {
+      "id": "cmp/none-eq-none",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "none == none",
+      "expect": "boolean",
+      "notes": "Baseline: none equals itself."
+    },
+    {
+      "id": "cmp/undefined-eq-undefined",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "nope == nope",
+      "expect": "boolean",
+      "notes": "Undefined equals undefined. Both engines default to lenient undefined behaviour, so this is a value question, not an error question."
+    },
+    {
+      "id": "cmp/undefined-eq-none",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "nope == none",
+      "expect": "boolean",
+      "notes": "Undefined and none are distinct."
+    },
+    {
+      "id": "cmp/none-eq-undefined",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "none == nope",
+      "expect": "boolean",
+      "notes": "Reverse operand order of cmp/undefined-eq-none."
+    },
+    {
+      "id": "cmp/list-eq-list",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "[1, 2] == [1, 2]",
+      "expect": "boolean",
+      "notes": "Elementwise sequence equality."
+    },
+    {
+      "id": "cmp/list-eq-list-numeric-coercion",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "[1] == [1.0]",
+      "expect": "boolean",
+      "notes": "Element coercion inside a sequence comparison."
+    },
+    {
+      "id": "cmp/nested-list-eq",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "[[1], [2]] == [[1], [2]]",
+      "expect": "boolean",
+      "notes": "Recursive sequence equality."
+    },
+    {
+      "id": "cmp/list-eq-string",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "[1] == '1'",
+      "expect": "boolean",
+      "notes": "A sequence is not equal to its rendering."
+    },
+    {
+      "id": "cmp/map-eq-map-diff-order",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "m == m2",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "b",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              },
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 2
+                }
+              }
+            ]
+          }
+        },
+        {
+          "name": "m2",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 2
+                }
+              },
+              {
+                "key": "b",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "boolean",
+      "notes": "Insertion order must not affect map equality: preserving order for display must not make equal maps unequal."
+    },
+    {
+      "id": "cmp/map-eq-list",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "m == [1, 2]",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "b",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              },
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 2
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "boolean",
+      "notes": "Map vs sequence equality across kinds."
+    },
+    {
+      "id": "cmp/int-eq-float-lossy-boundary",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "big == bigf",
+      "inputs": [
+        {
+          "name": "big",
+          "value": {
+            "kind": "int",
+            "value": 9007199254740993
+          }
+        },
+        {
+          "name": "bigf",
+          "value": {
+            "kind": "float",
+            "value": 9007199254740992.0
+          }
+        }
+      ],
+      "expect": "boolean",
+      "notes": "2^53+1 vs 2^53 as a float. Comparison coerces with lossy=false, so an integer that cannot round-trip through f64 does not compare numerically at all; the fork's AsFloat is unconditionally lossy."
+    },
+    {
+      "id": "cmp/int-ne-string",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "1 != '1'",
+      "expect": "boolean",
+      "notes": "!= is the negation of the same dispatch."
+    },
+    {
+      "id": "cmp/int-lt-string",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "1 < 'a'",
+      "expect": "boolean",
+      "notes": "Cross-kind ordering falls back to kind order: Number < String."
+    },
+    {
+      "id": "cmp/string-lt-int",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "'a' < 1",
+      "expect": "boolean",
+      "notes": "Reverse operand order of cmp/int-lt-string."
+    },
+    {
+      "id": "cmp/none-lt-int",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "none < 1",
+      "expect": "boolean",
+      "notes": "None participates in kind ordering rather than erroring."
+    },
+    {
+      "id": "cmp/int-gt-none",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "1 > none",
+      "expect": "boolean",
+      "notes": "Reverse operand order of cmp/none-lt-int."
+    },
+    {
+      "id": "cmp/bool-lt-int",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "true < 2",
+      "expect": "boolean",
+      "notes": "Bool vs number ordering coerces rather than using kind order (both are... not the same kind: Bool < Number by kind)."
+    },
+    {
+      "id": "cmp/int-lt-bool",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "0 < true",
+      "expect": "boolean",
+      "notes": "Reverse operand order of cmp/bool-lt-int; kind order puts Bool before Number regardless of the numeric values."
+    },
+    {
+      "id": "cmp/none-lt-none",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "none < none",
+      "expect": "boolean",
+      "notes": "Same-kind ordering for a kind with no numeric or string payload. Rust's Ord is total and answers Equal; the fork's Compare reports incomparable and the VM raises."
+    },
+    {
+      "id": "cmp/none-le-none",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "none <= none",
+      "expect": "boolean",
+      "notes": "The <= half of cmp/none-lt-none."
+    },
+    {
+      "id": "cmp/undefined-lt-undefined",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "nope < nope",
+      "expect": "boolean",
+      "notes": "Ordering two undefined values."
+    },
+    {
+      "id": "cmp/list-lt-list",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "[1, 2] < [1, 3]",
+      "expect": "boolean",
+      "notes": "Lexicographic sequence ordering."
+    },
+    {
+      "id": "cmp/list-lt-list-prefix",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "[1] < [1, 2]",
+      "expect": "boolean",
+      "notes": "A prefix sorts before its extension."
+    },
+    {
+      "id": "cmp/list-lt-map",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "[1] < m",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "b",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "boolean",
+      "notes": "Seq < Map by kind order."
+    },
+    {
+      "id": "cmp/map-gt-list",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "m > [1]",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "b",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "boolean",
+      "notes": "Reverse operand order of cmp/list-lt-map."
+    },
+    {
+      "id": "cmp/map-lt-map",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "m < m2",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "b",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              },
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 2
+                }
+              }
+            ]
+          }
+        },
+        {
+          "name": "m2",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 2
+                }
+              },
+              {
+                "key": "b",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "boolean",
+      "notes": "Map/map ordering compares key/value pairs in iteration order, which under preserve_order is insertion order. Rust documents that this is order-sensitive and accepts it."
+    },
+    {
+      "id": "cmp/float-lt-int",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "1.5 < 2",
+      "expect": "boolean",
+      "notes": "Mixed float/int ordering."
+    },
+    {
+      "id": "cmp/int-le-float",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "2 <= 2.0",
+      "expect": "boolean",
+      "notes": "Equality through the ordering path."
+    },
+    {
+      "id": "cmp/string-lt-non-ascii",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "'É' < 'e'",
+      "expect": "boolean",
+      "notes": "String ordering is by UTF-8 bytes on both sides, not by collation."
+    },
+    {
+      "id": "cmp/neg-zero-lt-zero",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "-0.0 < 0.0",
+      "expect": "boolean",
+      "notes": "Rust orders floats with a total order (f64_total_cmp), which puts -0.0 strictly before 0.0 even though == says they are equal. The fork uses plain < and reports Equal."
+    },
+    {
+      "id": "cmp/neg-zero-eq-zero",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "-0.0 == 0.0",
+      "expect": "boolean",
+      "notes": "The equality half of cmp/neg-zero-lt-zero: equality is IEEE, ordering is total. Both must hold at once."
+    },
+    {
+      "id": "cmp/nan-eq-nan",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "0.0 / 0.0 == 0.0 / 0.0",
+      "expect": "boolean",
+      "notes": "NaN equality is IEEE on both sides."
+    },
+    {
+      "id": "cmp/one-gt-nan",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "1.0 > ('nan'|float)",
+      "expect": "boolean",
+      "notes": "Under a total float order NaN sorts above every number, so this is false with the number on the left. The NaN is PARSED rather than computed: the sign of a hardware NaN is not portable (0.0 / 0.0 is positive on arm64 and negative on amd64) and f64_total_cmp orders by the bit pattern, so a computed NaN would make this row architecture-dependent. num/gt-nan pins the other operand order."
+    },
+    {
+      "id": "cmp/nan-lt-one",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "('nan'|float) < 1.0",
+      "expect": "boolean",
+      "notes": "The same total order with NaN on the left: a positive NaN sorts above every number, so this is false. Parsed rather than computed for the reason cmp/one-gt-nan gives. num/lt-nan pins the other operand order and num/lt-neg-nan the negative side."
+    },
+    {
+      "id": "cmp/nan-cmp-nan",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "0.0 / 0.0 >= 0.0 / 0.0",
+      "expect": "boolean",
+      "notes": "A total order makes NaN equal to itself for ordering purposes."
+    },
+    {
+      "id": "truth/nan",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "'y' if 0.0 / 0.0 else 'n'",
+      "expect": "bytes",
+      "notes": "Rust's is_true is `x != 0.0`, which makes NaN truthy; the fork explicitly excludes NaN. Float division agrees on both engines, so this row isolates truthiness."
+    },
+    {
+      "id": "truth/empty-list",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "'y' if [] else 'n'",
+      "expect": "bytes",
+      "notes": "Empty sequence truthiness."
+    },
+    {
+      "id": "truth/empty-map",
+      "surface": "container",
+      "form": "expression",
+      "source": "'y' if m0 else 'n'",
+      "inputs": [
+        {
+          "name": "m0",
+          "value": {
+            "kind": "map",
+            "entries": []
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "Empty mapping truthiness."
+    },
+    {
+      "id": "truth/zero-float",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "'y' if 0.0 else 'n'",
+      "expect": "bytes",
+      "notes": "Zero float truthiness."
+    },
+    {
+      "id": "truth/string-zero",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "'y' if '0' else 'n'",
+      "expect": "bytes",
+      "notes": "A non-empty string is truthy regardless of content."
+    },
+    {
+      "id": "truth/undefined",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "'y' if nope else 'n'",
+      "expect": "bytes",
+      "notes": "Undefined truthiness under lenient behaviour."
+    },
+    {
+      "id": "truth/cmp-object",
+      "surface": "value_cmp",
+      "form": "expression",
+      "source": "'y' if color else 'n'",
+      "inputs": [
+        {
+          "name": "color",
+          "value": {
+            "kind": "cmp_object",
+            "canonical": "RED",
+            "display": "Red"
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "Truthiness of a plain host object with no explicit truth hook."
+    },
+    {
+      "id": "truth/ternary-without-else",
+      "surface": "control",
+      "form": "expression",
+      "source": "'a' if false",
+      "expect": "bytes",
+      "notes": "A ternary with no else branch yields undefined, which renders as nothing."
+    },
+    {
+      "id": "logic/or-returns-value",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "0 or 'x'",
+      "expect": "bytes",
+      "notes": "or yields the operand, not a bool."
+    },
+    {
+      "id": "logic/and-returns-value",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "'a' and 0",
+      "expect": "bytes",
+      "notes": "and yields the falsy operand."
+    },
+    {
+      "id": "logic/or-empty-containers",
+      "surface": "container",
+      "form": "expression",
+      "source": "[] or m",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "b",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              },
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 2
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "or between containers; the rendered result also pins map display order."
+    },
+    {
+      "id": "logic/not-nan",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "not (0.0 / 0.0)",
+      "expect": "boolean",
+      "notes": "`not` goes through the same truthiness rule as the ternary."
+    },
+    {
+      "id": "logic/not-empty-map",
+      "surface": "container",
+      "form": "expression",
+      "source": "not m0",
+      "inputs": [
+        {
+          "name": "m0",
+          "value": {
+            "kind": "map",
+            "entries": []
+          }
+        }
+      ],
+      "expect": "boolean",
+      "notes": "`not` on an empty mapping."
+    },
+    {
+      "id": "contains/string-in-string",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "'b' in 'abc'",
+      "expect": "boolean",
+      "notes": "Baseline substring containment."
+    },
+    {
+      "id": "contains/int-in-string-multi",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "1 in '11'",
+      "expect": "boolean",
+      "notes": "The same coercion as cmp/int-in-string with a longer haystack: a string container stringifies the needle."
+    },
+    {
+      "id": "contains/float-in-string",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "1.5 in 'x1.5y'",
+      "expect": "boolean",
+      "notes": "A float needle is stringified with float formatting, so this also pins float display inside containment."
+    },
+    {
+      "id": "contains/bool-in-string",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "true in 'true'",
+      "expect": "boolean",
+      "notes": "Bool needle against a string container."
+    },
+    {
+      "id": "contains/none-in-string",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "none in 'none'",
+      "expect": "boolean",
+      "notes": "None renders as `none`, so a string container containing that text matches."
+    },
+    {
+      "id": "contains/list-in-string",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "[1] in '[1]'",
+      "expect": "boolean",
+      "notes": "The stringify rule applies to containers too."
+    },
+    {
+      "id": "contains/int-in-list",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "1 in [1, 2]",
+      "expect": "boolean",
+      "notes": "Sequence containment uses equality, not identity."
+    },
+    {
+      "id": "contains/float-in-int-list",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "1.0 in [1]",
+      "expect": "boolean",
+      "notes": "Numeric coercion reaches sequence containment."
+    },
+    {
+      "id": "contains/string-in-int-list",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "'1' in [1]",
+      "expect": "boolean",
+      "notes": "Containment in a sequence does NOT stringify, unlike a string container."
+    },
+    {
+      "id": "contains/bool-in-int-list",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "true in [1]",
+      "expect": "boolean",
+      "notes": "Bool/number coercion inside sequence containment."
+    },
+    {
+      "id": "contains/none-in-list",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "none in [none]",
+      "expect": "boolean",
+      "notes": "None is equal to none inside a sequence."
+    },
+    {
+      "id": "contains/key-in-map",
+      "surface": "container",
+      "form": "expression",
+      "source": "'b' in m",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "b",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              },
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 2
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "boolean",
+      "notes": "Map containment tests keys."
+    },
+    {
+      "id": "contains/value-not-in-map",
+      "surface": "container",
+      "form": "expression",
+      "source": "1 in m",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "b",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              },
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 2
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "boolean",
+      "notes": "A map value is not a member; only keys are."
+    },
+    {
+      "id": "contains/int-key-in-numeric-string-key-map",
+      "surface": "container",
+      "form": "expression",
+      "source": "1 in numkey",
+      "inputs": [
+        {
+          "name": "numkey",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "1",
+                "value": {
+                  "kind": "int",
+                  "value": 2
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "boolean",
+      "notes": "A map with the string key \"1\" is not keyed by the integer 1."
+    },
+    {
+      "id": "contains/string-key-in-numeric-string-key-map",
+      "surface": "container",
+      "form": "expression",
+      "source": "'1' in numkey",
+      "inputs": [
+        {
+          "name": "numkey",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "1",
+                "value": {
+                  "kind": "int",
+                  "value": 2
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "boolean",
+      "notes": "The matching half of contains/int-key-in-numeric-string-key-map."
+    },
+    {
+      "id": "contains/in-none",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "1 in nada",
+      "inputs": [
+        {
+          "name": "nada",
+          "value": {
+            "kind": "null"
+          }
+        }
+      ],
+      "expect": "error",
+      "notes": "Rust raises invalid_operation for a containment check on a non-container; the fork answers false. A silent false is the more dangerous of the two."
+    },
+    {
+      "id": "contains/in-int",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "1 in 5",
+      "expect": "error",
+      "notes": "Same as contains/in-none for a number container."
+    },
+    {
+      "id": "contains/in-undefined",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "1 in nope",
+      "expect": "boolean",
+      "notes": "Undefined containers are special-cased to false rather than raising."
+    },
+    {
+      "id": "contains/not-in-list",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "4 not in [1, 2, 3]",
+      "expect": "boolean",
+      "notes": "`not in` is the negation of the same dispatch."
+    },
+    {
+      "id": "contains/int-in-range",
+      "surface": "container",
+      "form": "expression",
+      "source": "1 in range(3)",
+      "expect": "boolean",
+      "notes": "Containment against a lazy iterable."
+    },
+    {
+      "id": "concat/int-int",
+      "surface": "string",
+      "form": "expression",
+      "source": "1 ~ 2",
+      "expect": "bytes",
+      "notes": "~ stringifies both operands."
+    },
+    {
+      "id": "concat/none-string",
+      "surface": "string",
+      "form": "expression",
+      "source": "none ~ 'x'",
+      "expect": "bytes",
+      "notes": "None's rendering inside concatenation."
+    },
+    {
+      "id": "concat/undefined-string",
+      "surface": "string",
+      "form": "expression",
+      "source": "nope ~ 'x'",
+      "expect": "bytes",
+      "notes": "Undefined renders as nothing, so concatenation drops it."
+    },
+    {
+      "id": "concat/float-int",
+      "surface": "string",
+      "form": "expression",
+      "source": "1.0 ~ 2",
+      "expect": "bytes",
+      "notes": "Integral float rendering inside concatenation."
+    },
+    {
+      "id": "concat/bool",
+      "surface": "string",
+      "form": "expression",
+      "source": "true ~ ''",
+      "expect": "bytes",
+      "notes": "Bool rendering."
+    },
+    {
+      "id": "concat/list",
+      "surface": "container",
+      "form": "expression",
+      "source": "[1, 'a'] ~ ''",
+      "expect": "bytes",
+      "notes": "Sequence rendering inside concatenation, including how a nested string is quoted."
+    },
+    {
+      "id": "concat/map",
+      "surface": "container",
+      "form": "expression",
+      "source": "m ~ ''",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "b",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              },
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 2
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "Map rendering through concatenation rather than interpolation."
+    },
+    {
+      "id": "concat/cmp-object",
+      "surface": "value_cmp",
+      "form": "expression",
+      "source": "color ~ ''",
+      "inputs": [
+        {
+          "name": "color",
+          "value": {
+            "kind": "cmp_object",
+            "canonical": "RED",
+            "display": "Red"
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "A host object concatenates by its display, not its comparison identity."
+    },
+    {
+      "id": "valuecmp/object-lt-string",
+      "surface": "value_cmp",
+      "form": "expression",
+      "source": "color < 'RED'",
+      "inputs": [
+        {
+          "name": "color",
+          "value": {
+            "kind": "cmp_object",
+            "canonical": "RED",
+            "display": "Red"
+          }
+        }
+      ],
+      "expect": "boolean",
+      "notes": "Ordering also consults value_cmp, before kind ordering. Equal canonical values are not less-than."
+    },
+    {
+      "id": "valuecmp/object-gt-string",
+      "surface": "value_cmp",
+      "form": "expression",
+      "source": "color > 'BLUE'",
+      "inputs": [
+        {
+          "name": "color",
+          "value": {
+            "kind": "cmp_object",
+            "canonical": "RED",
+            "display": "Red"
+          }
+        }
+      ],
+      "expect": "boolean",
+      "notes": "value_cmp's ordering result is used as-is from the left operand."
+    },
+    {
+      "id": "valuecmp/string-lt-object",
+      "surface": "value_cmp",
+      "form": "expression",
+      "source": "'BLUE' < color",
+      "inputs": [
+        {
+          "name": "color",
+          "value": {
+            "kind": "cmp_object",
+            "canonical": "RED",
+            "display": "Red"
+          }
+        }
+      ],
+      "expect": "boolean",
+      "notes": "From the right operand the ordering must be reversed, not reused."
+    },
+    {
+      "id": "valuecmp/string-gt-object",
+      "surface": "value_cmp",
+      "form": "expression",
+      "source": "'BLUE' > color",
+      "inputs": [
+        {
+          "name": "color",
+          "value": {
+            "kind": "cmp_object",
+            "canonical": "RED",
+            "display": "Red"
+          }
+        }
+      ],
+      "expect": "boolean",
+      "notes": "The other half of valuecmp/string-lt-object; a wrong reversal would make both true."
+    },
+    {
+      "id": "valuecmp/object-ne-string",
+      "surface": "value_cmp",
+      "form": "expression",
+      "source": "color != 'BLUE'",
+      "inputs": [
+        {
+          "name": "color",
+          "value": {
+            "kind": "cmp_object",
+            "canonical": "RED",
+            "display": "Red"
+          }
+        }
+      ],
+      "expect": "boolean",
+      "notes": "!= reaches the same hook."
+    },
+    {
+      "id": "valuecmp/object-eq-display",
+      "surface": "value_cmp",
+      "form": "expression",
+      "source": "color == 'Red'",
+      "inputs": [
+        {
+          "name": "color",
+          "value": {
+            "kind": "cmp_object",
+            "canonical": "RED",
+            "display": "Red"
+          }
+        }
+      ],
+      "expect": "boolean",
+      "notes": "The display string is not an identity. This is the alias half of the BAML enum fence: an alias must not substitute for the canonical value."
+    },
+    {
+      "id": "valuecmp/object-eq-int",
+      "surface": "value_cmp",
+      "form": "expression",
+      "source": "color == 1",
+      "inputs": [
+        {
+          "name": "color",
+          "value": {
+            "kind": "cmp_object",
+            "canonical": "RED",
+            "display": "Red"
+          }
+        }
+      ],
+      "expect": "boolean",
+      "notes": "The hook declines a number, and the engine must then fall through rather than invent an answer."
+    },
+    {
+      "id": "valuecmp/object-lt-int",
+      "surface": "value_cmp",
+      "form": "expression",
+      "source": "color > 1",
+      "inputs": [
+        {
+          "name": "color",
+          "value": {
+            "kind": "cmp_object",
+            "canonical": "RED",
+            "display": "Red"
+          }
+        }
+      ],
+      "expect": "boolean",
+      "notes": "When the hook declines, ordering falls back to kind order (Number < Plain)."
+    },
+    {
+      "id": "valuecmp/object-lt-object",
+      "surface": "value_cmp",
+      "form": "expression",
+      "source": "blue < color",
+      "inputs": [
+        {
+          "name": "color",
+          "value": {
+            "kind": "cmp_object",
+            "canonical": "RED",
+            "display": "Red"
+          }
+        },
+        {
+          "name": "blue",
+          "value": {
+            "kind": "cmp_object",
+            "canonical": "BLUE",
+            "display": "Blue"
+          }
+        }
+      ],
+      "expect": "boolean",
+      "notes": "Object-to-object ordering by canonical value."
+    },
+    {
+      "id": "valuecmp/object-eq-object-different-canonical",
+      "surface": "value_cmp",
+      "form": "expression",
+      "source": "color == blue",
+      "inputs": [
+        {
+          "name": "color",
+          "value": {
+            "kind": "cmp_object",
+            "canonical": "RED",
+            "display": "Red"
+          }
+        },
+        {
+          "name": "blue",
+          "value": {
+            "kind": "cmp_object",
+            "canonical": "BLUE",
+            "display": "Blue"
+          }
+        }
+      ],
+      "expect": "boolean",
+      "notes": "Different canonical values are unequal even though both are the same object type."
+    },
+    {
+      "id": "valuecmp/list-eq-string-list",
+      "surface": "value_cmp",
+      "form": "expression",
+      "source": "[color] == ['RED']",
+      "inputs": [
+        {
+          "name": "color",
+          "value": {
+            "kind": "cmp_object",
+            "canonical": "RED",
+            "display": "Red"
+          }
+        }
+      ],
+      "expect": "boolean",
+      "notes": "The hook must be reached through nested sequence equality, not only at the top level."
+    },
+    {
+      "id": "valuecmp/object-in-string-list",
+      "surface": "value_cmp",
+      "form": "expression",
+      "source": "color in ['RED']",
+      "inputs": [
+        {
+          "name": "color",
+          "value": {
+            "kind": "cmp_object",
+            "canonical": "RED",
+            "display": "Red"
+          }
+        }
+      ],
+      "expect": "boolean",
+      "notes": "Reverse of the seed's valuecmp/string-in-object-list: the object is the needle and the string is in the container."
+    },
+    {
+      "id": "valuecmp/object-in-string",
+      "surface": "value_cmp",
+      "form": "expression",
+      "source": "color in 'REDS'",
+      "expect": "boolean",
+      "inputs": [
+        {
+          "name": "color",
+          "value": {
+            "kind": "cmp_object",
+            "canonical": "RED",
+            "display": "Red"
+          }
+        }
+      ],
+      "notes": "A string container stringifies the needle, so containment sees the display, not the canonical value. This asymmetry with sequence containment is real and must be preserved."
+    },
+    {
+      "id": "valuecmp/object-sort",
+      "surface": "value_cmp",
+      "form": "expression",
+      "source": "[color, blue]|sort|join(',')",
+      "inputs": [
+        {
+          "name": "color",
+          "value": {
+            "kind": "cmp_object",
+            "canonical": "RED",
+            "display": "Red"
+          }
+        },
+        {
+          "name": "blue",
+          "value": {
+            "kind": "cmp_object",
+            "canonical": "BLUE",
+            "display": "Blue"
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "Sorting is the practical consumer of the ordering hook."
+    },
+    {
+      "id": "valuecmp/object-is-eq-test",
+      "surface": "value_cmp",
+      "form": "expression",
+      "source": "color is eq('RED')",
+      "inputs": [
+        {
+          "name": "color",
+          "value": {
+            "kind": "cmp_object",
+            "canonical": "RED",
+            "display": "Red"
+          }
+        }
+      ],
+      "expect": "boolean",
+      "notes": "The `eq` test must use the same equality as ==."
+    },
+    {
+      "id": "valuecmp/object-is-in-test",
+      "surface": "value_cmp",
+      "form": "expression",
+      "source": "'RED' is in([color])",
+      "inputs": [
+        {
+          "name": "color",
+          "value": {
+            "kind": "cmp_object",
+            "canonical": "RED",
+            "display": "Red"
+          }
+        }
+      ],
+      "expect": "boolean",
+      "notes": "The `in` test must use the same containment as the operator."
+    },
+    {
+      "id": "test/is-eq-int-string",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "1 is eq('1')",
+      "expect": "boolean",
+      "notes": "The `eq` test on a cross-type pair must agree with ==."
+    },
+    {
+      "id": "test/is-in-string",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "1 is in('1')",
+      "expect": "boolean",
+      "notes": "The `in` test must agree with the `in` operator on the coercion case."
+    },
+    {
+      "id": "test/is-lt-cross-kind",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "1 is lt('a')",
+      "expect": "boolean",
+      "notes": "The `lt` test must use the same total order as <."
+    },
+    {
+      "id": "test/is-sequence-slice",
+      "surface": "container",
+      "form": "expression",
+      "source": "xs[1:3] is sequence",
+      "inputs": [
+        {
+          "name": "xs",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              },
+              {
+                "kind": "int",
+                "value": 3
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "boolean",
+      "notes": "Rust's slice of a sequence is a lazy iterable, not a sequence. That distinction is observable through `is sequence`."
+    },
+    {
+      "id": "test/is-sequence-range",
+      "surface": "container",
+      "form": "expression",
+      "source": "range(3) is sequence",
+      "expect": "boolean",
+      "notes": "range() is an iterable in Rust."
+    },
+    {
+      "id": "test/is-iterable-range",
+      "surface": "container",
+      "form": "expression",
+      "source": "range(3) is iterable",
+      "expect": "boolean",
+      "notes": "The iterable half of test/is-sequence-range."
+    },
+    {
+      "id": "test/is-mapping-map",
+      "surface": "container",
+      "form": "expression",
+      "source": "m is mapping",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "b",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "boolean",
+      "notes": "An ordered map must still report as a mapping."
+    },
+    {
+      "id": "test/is-iterable-map",
+      "surface": "container",
+      "form": "expression",
+      "source": "m is iterable",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "b",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "boolean",
+      "notes": "Maps are iterable (over keys)."
+    },
+    {
+      "id": "test/is-string-cmp-object",
+      "surface": "value_cmp",
+      "form": "expression",
+      "source": "color is string",
+      "inputs": [
+        {
+          "name": "color",
+          "value": {
+            "kind": "cmp_object",
+            "canonical": "RED",
+            "display": "Red"
+          }
+        }
+      ],
+      "expect": "boolean",
+      "notes": "An object that compares equal to a string is not itself a string."
+    },
+    {
+      "id": "test/is-defined-out-of-range-index",
+      "surface": "container",
+      "form": "expression",
+      "source": "xs[5] is defined",
+      "inputs": [
+        {
+          "name": "xs",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              },
+              {
+                "kind": "int",
+                "value": 3
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "boolean",
+      "notes": "Out-of-range subscript yields undefined rather than an error."
+    },
+    {
+      "id": "container/list-negative-index",
+      "surface": "container",
+      "form": "expression",
+      "source": "xs[-1]",
+      "inputs": [
+        {
+          "name": "xs",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              },
+              {
+                "kind": "int",
+                "value": 3
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "Negative subscripts index from the end."
+    },
+    {
+      "id": "container/list-index-underflow",
+      "surface": "container",
+      "form": "expression",
+      "source": "xs[-4] is defined",
+      "inputs": [
+        {
+          "name": "xs",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              },
+              {
+                "kind": "int",
+                "value": 3
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "boolean",
+      "notes": "A negative subscript past the start must not wrap around to a valid element."
+    },
+    {
+      "id": "container/list-index-float",
+      "surface": "container",
+      "form": "expression",
+      "source": "xs[1.0] is defined",
+      "inputs": [
+        {
+          "name": "xs",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              },
+              {
+                "kind": "int",
+                "value": 3
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "boolean",
+      "notes": "Whether an integral float is accepted as an index at all (the AsInt promotion question, observed from the container side)."
+    },
+    {
+      "id": "container/list-index-string",
+      "surface": "container",
+      "form": "expression",
+      "source": "xs['0'] is defined",
+      "inputs": [
+        {
+          "name": "xs",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              },
+              {
+                "kind": "int",
+                "value": 3
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "boolean",
+      "notes": "A numeric string is not an index."
+    },
+    {
+      "id": "container/string-index",
+      "surface": "string",
+      "form": "expression",
+      "source": "s[0]",
+      "inputs": [
+        {
+          "name": "s",
+          "value": {
+            "kind": "string",
+            "value": "abcdefghij"
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "Strings are subscriptable by character index."
+    },
+    {
+      "id": "container/string-negative-index",
+      "surface": "string",
+      "form": "expression",
+      "source": "s[-1]",
+      "inputs": [
+        {
+          "name": "s",
+          "value": {
+            "kind": "string",
+            "value": "abcdefghij"
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "Negative string subscript."
+    },
+    {
+      "id": "container/string-index-non-ascii",
+      "surface": "string",
+      "form": "expression",
+      "source": "u[1]",
+      "inputs": [
+        {
+          "name": "u",
+          "value": {
+            "kind": "string",
+            "value": "aéb"
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "String subscripts count characters, not bytes."
+    },
+    {
+      "id": "container/map-getitem",
+      "surface": "container",
+      "form": "expression",
+      "source": "m['b']",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "b",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              },
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 2
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "Subscript access into a mapping."
+    },
+    {
+      "id": "container/map-getattr",
+      "surface": "container",
+      "form": "expression",
+      "source": "m.a",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "b",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              },
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 2
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "Attribute access into a mapping."
+    },
+    {
+      "id": "container/map-getitem-missing",
+      "surface": "container",
+      "form": "expression",
+      "source": "m['z'] is defined",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "b",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "boolean",
+      "notes": "A missing key yields undefined."
+    },
+    {
+      "id": "container/nested-getitem",
+      "surface": "container",
+      "form": "expression",
+      "source": "nested['b']['d']",
+      "inputs": [
+        {
+          "name": "nested",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "b",
+                "value": {
+                  "kind": "map",
+                  "entries": [
+                    {
+                      "key": "d",
+                      "value": {
+                        "kind": "int",
+                        "value": 1
+                      }
+                    },
+                    {
+                      "key": "c",
+                      "value": {
+                        "kind": "int",
+                        "value": 2
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 3
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "Chained subscripts through nested mappings."
+    },
+    {
+      "id": "container/int-getitem",
+      "surface": "container",
+      "form": "expression",
+      "source": "5[0] is defined",
+      "expect": "boolean",
+      "notes": "Subscripting a number yields undefined rather than raising."
+    },
+    {
+      "id": "container/map-render-nested",
+      "surface": "container",
+      "form": "expression",
+      "source": "nested",
+      "inputs": [
+        {
+          "name": "nested",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "b",
+                "value": {
+                  "kind": "map",
+                  "entries": [
+                    {
+                      "key": "d",
+                      "value": {
+                        "kind": "int",
+                        "value": 1
+                      }
+                    },
+                    {
+                      "key": "c",
+                      "value": {
+                        "kind": "int",
+                        "value": 2
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 3
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "Insertion order must hold at every nesting depth."
+    },
+    {
+      "id": "container/map-render-inside-list",
+      "surface": "container",
+      "form": "expression",
+      "source": "[m]",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "b",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              },
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 2
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "A map nested in a sequence goes through the debug representation rather than display; the fork has two separate map formatters and they must agree with Rust's one."
+    },
+    {
+      "id": "container/map-render-numeric-string-key",
+      "surface": "container",
+      "form": "expression",
+      "source": "numkey",
+      "inputs": [
+        {
+          "name": "numkey",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "1",
+                "value": {
+                  "kind": "int",
+                  "value": 2
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "A string key that looks numeric is still a string key and must be quoted as one."
+    },
+    {
+      "id": "container/map-render-numeric-string-key-inside-list",
+      "surface": "container",
+      "form": "expression",
+      "source": "[numkey]",
+      "inputs": [
+        {
+          "name": "numkey",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "1",
+                "value": {
+                  "kind": "int",
+                  "value": 2
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "The debug-path counterpart of container/map-render-numeric-string-key."
+    },
+    {
+      "id": "container/map-for-key-order",
+      "surface": "container",
+      "form": "template",
+      "source": "{% for k in m %}{{ k }};{% endfor %}",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "b",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              },
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 2
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "Iterating a mapping yields keys in insertion order."
+    },
+    {
+      "id": "container/map-values-order",
+      "surface": "container",
+      "form": "template",
+      "source": "{% for k, v in m|items %}{{ v }};{% endfor %}",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "b",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              },
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 2
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "Values follow the same order as keys."
+    },
+    {
+      "id": "container/map-list-order",
+      "surface": "container",
+      "form": "expression",
+      "source": "m|list|join(',')",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "b",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              },
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 2
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "Order survives being materialized into a sequence."
+    },
+    {
+      "id": "container/map-reverse-order",
+      "surface": "container",
+      "form": "expression",
+      "source": "m|reverse|join(',')",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "b",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              },
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 2
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "Reversal is relative to insertion order, so it is a second, independent witness of that order."
+    },
+    {
+      "id": "container/map-first",
+      "surface": "container",
+      "form": "expression",
+      "source": "m|first",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "b",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              },
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 2
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "`first` on a mapping depends on iteration order."
+    },
+    {
+      "id": "container/map-length",
+      "surface": "container",
+      "form": "expression",
+      "source": "m|length",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "b",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              },
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 2
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "An ordered map must still report its size."
+    },
+    {
+      "id": "container/map-tojson-order",
+      "surface": "container",
+      "form": "expression",
+      "source": "m|tojson",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "b",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              },
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 2
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "JSON serialization order. BAML formats values into prompts, so this is prompt bytes, not a debugging nicety."
+    },
+    {
+      "id": "container/map-tojson-nested-order",
+      "surface": "container",
+      "form": "expression",
+      "source": "nested|tojson",
+      "inputs": [
+        {
+          "name": "nested",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "b",
+                "value": {
+                  "kind": "map",
+                  "entries": [
+                    {
+                      "key": "d",
+                      "value": {
+                        "kind": "int",
+                        "value": 1
+                      }
+                    },
+                    {
+                      "key": "c",
+                      "value": {
+                        "kind": "int",
+                        "value": 2
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 3
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "Nested JSON serialization order."
+    },
+    {
+      "id": "container/dict-literal-order",
+      "surface": "container",
+      "form": "expression",
+      "source": "{'b': 1, 'a': 2}",
+      "expect": "bytes",
+      "notes": "A map literal preserves source order, so ordering is a property of the engine's map value and not only of how a host builds one."
+    },
+    {
+      "id": "container/dict-literal-nested-order",
+      "surface": "container",
+      "form": "expression",
+      "source": "{'z': {'y': 1, 'x': 2}, 'a': 3}",
+      "expect": "bytes",
+      "notes": "Nested literal ordering."
+    },
+    {
+      "id": "container/dict-literal-duplicate-key",
+      "surface": "container",
+      "form": "expression",
+      "source": "{'b': 1, 'a': 2, 'b': 3}",
+      "expect": "bytes",
+      "notes": "A repeated key keeps its original position and takes the later value (IndexMap insert semantics)."
+    },
+    {
+      "id": "container/dict-literal-int-key",
+      "surface": "container",
+      "form": "expression",
+      "source": "{1: 'a'}",
+      "expect": "bytes",
+      "notes": "Rust maps are keyed by Value, so an integer key stays an integer. The fork's map is keyed by string."
+    },
+    {
+      "id": "container/map-loop-index",
+      "surface": "container",
+      "form": "template",
+      "source": "{% for k in m %}{{ loop.index }}:{{ k }};{% endfor %}",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "b",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              },
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 2
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "Loop metadata over a mapping, to catch an ordering fix that breaks iteration bookkeeping."
+    },
+    {
+      "id": "slice/list-start-stop",
+      "surface": "container",
+      "form": "expression",
+      "source": "ys[1:3]",
+      "inputs": [
+        {
+          "name": "ys",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 0
+              },
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              },
+              {
+                "kind": "int",
+                "value": 3
+              },
+              {
+                "kind": "int",
+                "value": 4
+              },
+              {
+                "kind": "int",
+                "value": 5
+              },
+              {
+                "kind": "int",
+                "value": 6
+              },
+              {
+                "kind": "int",
+                "value": 7
+              },
+              {
+                "kind": "int",
+                "value": 8
+              },
+              {
+                "kind": "int",
+                "value": 9
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "Baseline slice."
+    },
+    {
+      "id": "slice/list-open-start",
+      "surface": "container",
+      "form": "expression",
+      "source": "ys[:3]",
+      "inputs": [
+        {
+          "name": "ys",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 0
+              },
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              },
+              {
+                "kind": "int",
+                "value": 3
+              },
+              {
+                "kind": "int",
+                "value": 4
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "Omitted start."
+    },
+    {
+      "id": "slice/list-open-stop",
+      "surface": "container",
+      "form": "expression",
+      "source": "ys[3:]",
+      "inputs": [
+        {
+          "name": "ys",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 0
+              },
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              },
+              {
+                "kind": "int",
+                "value": 3
+              },
+              {
+                "kind": "int",
+                "value": 4
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "Omitted stop."
+    },
+    {
+      "id": "slice/list-negative-start",
+      "surface": "container",
+      "form": "expression",
+      "source": "ys[-2:]",
+      "inputs": [
+        {
+          "name": "ys",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 0
+              },
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              },
+              {
+                "kind": "int",
+                "value": 3
+              },
+              {
+                "kind": "int",
+                "value": 4
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "Negative start."
+    },
+    {
+      "id": "slice/list-negative-stop",
+      "surface": "container",
+      "form": "expression",
+      "source": "ys[:-3]",
+      "inputs": [
+        {
+          "name": "ys",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 0
+              },
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              },
+              {
+                "kind": "int",
+                "value": 3
+              },
+              {
+                "kind": "int",
+                "value": 4
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "Negative stop."
+    },
+    {
+      "id": "slice/list-underflow-start",
+      "surface": "container",
+      "form": "expression",
+      "source": "ys[-11:]",
+      "inputs": [
+        {
+          "name": "ys",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 0
+              },
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "A negative start past the beginning clamps to 0 rather than wrapping."
+    },
+    {
+      "id": "slice/list-underflow-stop",
+      "surface": "container",
+      "form": "expression",
+      "source": "ys[:-11]",
+      "inputs": [
+        {
+          "name": "ys",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 0
+              },
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "A negative stop past the beginning yields an empty slice."
+    },
+    {
+      "id": "slice/list-inverted-range",
+      "surface": "container",
+      "form": "expression",
+      "source": "ys[3:1]",
+      "inputs": [
+        {
+          "name": "ys",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 0
+              },
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              },
+              {
+                "kind": "int",
+                "value": 3
+              },
+              {
+                "kind": "int",
+                "value": 4
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "stop before start with a positive step: the length saturates at zero rather than going negative."
+    },
+    {
+      "id": "slice/list-start-beyond-len",
+      "surface": "container",
+      "form": "expression",
+      "source": "ys[9:12]",
+      "inputs": [
+        {
+          "name": "ys",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 0
+              },
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "Both bounds past the end."
+    },
+    {
+      "id": "slice/list-step",
+      "surface": "container",
+      "form": "expression",
+      "source": "ys[::2]",
+      "inputs": [
+        {
+          "name": "ys",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 0
+              },
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              },
+              {
+                "kind": "int",
+                "value": 3
+              },
+              {
+                "kind": "int",
+                "value": 4
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "Positive step."
+    },
+    {
+      "id": "slice/list-reverse",
+      "surface": "container",
+      "form": "expression",
+      "source": "ys[::-1]",
+      "inputs": [
+        {
+          "name": "ys",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 0
+              },
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              },
+              {
+                "kind": "int",
+                "value": 3
+              },
+              {
+                "kind": "int",
+                "value": 4
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "Full reverse."
+    },
+    {
+      "id": "slice/list-reverse-step",
+      "surface": "container",
+      "form": "expression",
+      "source": "ys[::-2]",
+      "inputs": [
+        {
+          "name": "ys",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 0
+              },
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              },
+              {
+                "kind": "int",
+                "value": 3
+              },
+              {
+                "kind": "int",
+                "value": 4
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "Reverse with a step."
+    },
+    {
+      "id": "slice/list-start-reverse",
+      "surface": "container",
+      "form": "expression",
+      "source": "ys[2::-2]",
+      "inputs": [
+        {
+          "name": "ys",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 0
+              },
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              },
+              {
+                "kind": "int",
+                "value": 3
+              },
+              {
+                "kind": "int",
+                "value": 4
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "Backwards from an explicit start to the beginning."
+    },
+    {
+      "id": "slice/list-bounded-reverse",
+      "surface": "container",
+      "form": "expression",
+      "source": "ys[4:2:-2]",
+      "inputs": [
+        {
+          "name": "ys",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 0
+              },
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              },
+              {
+                "kind": "int",
+                "value": 3
+              },
+              {
+                "kind": "int",
+                "value": 4
+              },
+              {
+                "kind": "int",
+                "value": 5
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "Backwards with both bounds; the exclusive-stop arithmetic is where the two implementations are most likely to differ by one."
+    },
+    {
+      "id": "slice/list-bounded-reverse-long",
+      "surface": "container",
+      "form": "expression",
+      "source": "ys[8:3:-2]",
+      "inputs": [
+        {
+          "name": "ys",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 0
+              },
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              },
+              {
+                "kind": "int",
+                "value": 3
+              },
+              {
+                "kind": "int",
+                "value": 4
+              },
+              {
+                "kind": "int",
+                "value": 5
+              },
+              {
+                "kind": "int",
+                "value": 6
+              },
+              {
+                "kind": "int",
+                "value": 7
+              },
+              {
+                "kind": "int",
+                "value": 8
+              },
+              {
+                "kind": "int",
+                "value": 9
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "A longer backwards slice, so an off-by-one shows up as a missing element rather than an empty result."
+    },
+    {
+      "id": "slice/list-reverse-negative-start",
+      "surface": "container",
+      "form": "expression",
+      "source": "ys[-2::-1]",
+      "inputs": [
+        {
+          "name": "ys",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 0
+              },
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              },
+              {
+                "kind": "int",
+                "value": 3
+              },
+              {
+                "kind": "int",
+                "value": 4
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "Negative start with a negative step."
+    },
+    {
+      "id": "slice/list-reverse-negative-stop",
+      "surface": "container",
+      "form": "expression",
+      "source": "ys[:-4:-1]",
+      "inputs": [
+        {
+          "name": "ys",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 0
+              },
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              },
+              {
+                "kind": "int",
+                "value": 3
+              },
+              {
+                "kind": "int",
+                "value": 4
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "Negative stop with a negative step."
+    },
+    {
+      "id": "slice/list-start-past-end-reverse",
+      "surface": "container",
+      "form": "expression",
+      "source": "ys[9::-1]",
+      "inputs": [
+        {
+          "name": "ys",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 0
+              },
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "A backwards start past the end clamps to the last element."
+    },
+    {
+      "id": "slice/step-zero",
+      "surface": "container",
+      "form": "expression",
+      "source": "ys[::0]",
+      "inputs": [
+        {
+          "name": "ys",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 0
+              },
+              {
+                "kind": "int",
+                "value": 1
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "error",
+      "notes": "A zero step is an error, not an empty slice or a hang."
+    },
+    {
+      "id": "slice/float-bounds",
+      "surface": "container",
+      "form": "expression",
+      "source": "ys[1.0:3.0]",
+      "inputs": [
+        {
+          "name": "ys",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 0
+              },
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              },
+              {
+                "kind": "int",
+                "value": 3
+              },
+              {
+                "kind": "int",
+                "value": 4
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "Whether integral floats are accepted as slice bounds (the AsInt promotion question from the slice side)."
+    },
+    {
+      "id": "slice/string-start-stop",
+      "surface": "string",
+      "form": "expression",
+      "source": "s[1:3]",
+      "inputs": [
+        {
+          "name": "s",
+          "value": {
+            "kind": "string",
+            "value": "abcdefghij"
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "String slicing by character."
+    },
+    {
+      "id": "slice/string-reverse",
+      "surface": "string",
+      "form": "expression",
+      "source": "s[::-1]",
+      "inputs": [
+        {
+          "name": "s",
+          "value": {
+            "kind": "string",
+            "value": "abcdefghij"
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "Reversed string."
+    },
+    {
+      "id": "slice/string-bounded-reverse",
+      "surface": "string",
+      "form": "expression",
+      "source": "s[8:3:-2]",
+      "inputs": [
+        {
+          "name": "s",
+          "value": {
+            "kind": "string",
+            "value": "abcdefghij"
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "The string counterpart of slice/list-bounded-reverse-long."
+    },
+    {
+      "id": "slice/string-negative",
+      "surface": "string",
+      "form": "expression",
+      "source": "s[-3:]",
+      "inputs": [
+        {
+          "name": "s",
+          "value": {
+            "kind": "string",
+            "value": "abcdefghij"
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "Negative string slice bound."
+    },
+    {
+      "id": "slice/string-non-ascii",
+      "surface": "string",
+      "form": "expression",
+      "source": "u[1:3]",
+      "inputs": [
+        {
+          "name": "u",
+          "value": {
+            "kind": "string",
+            "value": "aébç"
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "String slicing counts characters, so a multi-byte character must not be split."
+    },
+    {
+      "id": "slice/none",
+      "surface": "container",
+      "form": "expression",
+      "source": "nada[1:2]",
+      "inputs": [
+        {
+          "name": "nada",
+          "value": {
+            "kind": "null"
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "Rust slices none into an empty sequence rather than raising."
+    },
+    {
+      "id": "slice/undefined",
+      "surface": "container",
+      "form": "expression",
+      "source": "nope[1:2]",
+      "expect": "bytes",
+      "notes": "Slicing undefined, under lenient behaviour."
+    },
+    {
+      "id": "slice/map",
+      "surface": "container",
+      "form": "expression",
+      "source": "m[1:2]",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "b",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "error",
+      "notes": "A mapping cannot be sliced."
+    },
+    {
+      "id": "slice/int",
+      "surface": "container",
+      "form": "expression",
+      "source": "5[1:2]",
+      "expect": "error",
+      "notes": "A number cannot be sliced."
+    },
+    {
+      "id": "slice/then-index",
+      "surface": "container",
+      "form": "expression",
+      "source": "ys[2:][0]",
+      "inputs": [
+        {
+          "name": "ys",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 0
+              },
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              },
+              {
+                "kind": "int",
+                "value": 3
+              },
+              {
+                "kind": "int",
+                "value": 4
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "Indexing the result of a slice: in Rust that is indexing a lazy iterable, which is explicitly supported."
+    },
+    {
+      "id": "slice/render",
+      "surface": "container",
+      "form": "expression",
+      "source": "ys[1:3] ~ ''",
+      "inputs": [
+        {
+          "name": "ys",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 0
+              },
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              },
+              {
+                "kind": "int",
+                "value": 3
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "How a slice renders, which is where a sequence/iterable difference would show up in prompt bytes."
+    },
+    {
+      "id": "range/basic",
+      "surface": "container",
+      "form": "expression",
+      "source": "range(3)",
+      "expect": "bytes",
+      "notes": "range() renders eagerly on both sides even though Rust's is lazy."
+    },
+    {
+      "id": "range/list",
+      "surface": "container",
+      "form": "expression",
+      "source": "range(3)|list|join(',')",
+      "expect": "bytes",
+      "notes": "Materialized range."
+    },
+    {
+      "id": "range/start-stop-step",
+      "surface": "container",
+      "form": "expression",
+      "source": "range(1, 10, 3)|join(',')",
+      "expect": "bytes",
+      "notes": "Three-argument range."
+    },
+    {
+      "id": "range/negative-step",
+      "surface": "container",
+      "form": "expression",
+      "source": "range(10, 1, -3)|join(',')",
+      "expect": "bytes",
+      "notes": "Negative step; Rust computes the element count explicitly rather than iterating."
+    },
+    {
+      "id": "range/negative-step-empty",
+      "surface": "container",
+      "form": "expression",
+      "source": "range(1, 10, -3)|join(',')",
+      "expect": "bytes",
+      "notes": "A negative step going the wrong way yields nothing rather than looping."
+    },
+    {
+      "id": "range/empty",
+      "surface": "container",
+      "form": "expression",
+      "source": "range(0)|list|join(',')",
+      "expect": "bytes",
+      "notes": "Empty range."
+    },
+    {
+      "id": "range/step-zero",
+      "surface": "container",
+      "form": "expression",
+      "source": "range(0, 3, 0)",
+      "expect": "error",
+      "notes": "A zero step is an error."
+    },
+    {
+      "id": "range/index",
+      "surface": "container",
+      "form": "expression",
+      "source": "range(5)[2]",
+      "expect": "bytes",
+      "notes": "Indexing a range."
+    },
+    {
+      "id": "range/negative-index",
+      "surface": "container",
+      "form": "expression",
+      "source": "range(5)[-1]",
+      "expect": "bytes",
+      "notes": "Negative index into a range, which needs the iterable's length."
+    },
+    {
+      "id": "range/slice",
+      "surface": "container",
+      "form": "expression",
+      "source": "range(5)[1:3] ~ ''",
+      "expect": "bytes",
+      "notes": "Slicing a range (an iterable, not a sequence)."
+    },
+    {
+      "id": "range/eq-list",
+      "surface": "container",
+      "form": "expression",
+      "source": "range(3) == [0, 1, 2]",
+      "expect": "boolean",
+      "notes": "An iterable compares equal to a sequence with the same elements."
+    },
+    {
+      "id": "range/length",
+      "surface": "container",
+      "form": "expression",
+      "source": "range(3)|length",
+      "expect": "bytes",
+      "notes": "Range length."
+    },
+    {
+      "id": "range/too-many-elements",
+      "surface": "container",
+      "form": "expression",
+      "source": "range(200000)|length",
+      "expect": "error",
+      "notes": "Rust caps range at 100000 elements. A missing cap is a denial-of-service difference, not a cosmetic one."
+    },
+    {
+      "id": "display/list-mixed",
+      "surface": "container",
+      "form": "expression",
+      "source": "[none, true, 1.0, 'a']",
+      "expect": "bytes",
+      "notes": "The debug representation of each scalar kind inside a sequence."
+    },
+    {
+      "id": "display/list-undefined",
+      "surface": "container",
+      "form": "expression",
+      "source": "[nope]",
+      "expect": "bytes",
+      "notes": "Undefined inside a sequence renders as `undefined`, unlike at the top level."
+    },
+    {
+      "id": "display/list-nested",
+      "surface": "container",
+      "form": "expression",
+      "source": "[['a'], 'b']",
+      "expect": "bytes",
+      "notes": "Nested sequence quoting."
+    },
+    {
+      "id": "display/list-escapes",
+      "surface": "string",
+      "form": "expression",
+      "source": "['a\"b', 'c\\nd', 'é']",
+      "expect": "bytes",
+      "notes": "String escaping in the debug representation, including a non-ASCII character that must not be escaped away."
+    },
+    {
+      "id": "display/cmp-object-in-list",
+      "surface": "value_cmp",
+      "form": "expression",
+      "source": "[color]",
+      "inputs": [
+        {
+          "name": "color",
+          "value": {
+            "kind": "cmp_object",
+            "canonical": "RED",
+            "display": "Red"
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "A host object inside a sequence renders through its own display rather than being quoted."
+    },
+    {
+      "id": "display/empty-list",
+      "surface": "container",
+      "form": "expression",
+      "source": "[]",
+      "expect": "bytes",
+      "notes": "Empty sequence rendering."
+    },
+    {
+      "id": "display/empty-map",
+      "surface": "container",
+      "form": "expression",
+      "source": "m0",
+      "inputs": [
+        {
+          "name": "m0",
+          "value": {
+            "kind": "map",
+            "entries": []
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "Empty mapping rendering."
+    },
+    {
+      "id": "display/map-string-values",
+      "surface": "container",
+      "form": "expression",
+      "source": "{'a': 'x', 'b': none}",
+      "expect": "bytes",
+      "notes": "How map values are quoted in the display form."
+    },
+    {
+      "id": "container/map-reverse-twice",
+      "surface": "container",
+      "form": "expression",
+      "source": "m|reverse|reverse|join(',')",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "b",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              },
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 2
+                }
+              },
+              {
+                "key": "c",
+                "value": {
+                  "kind": "int",
+                  "value": 3
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "Reversing a mapping twice does reverse it, even though reversing it once does not: the first result enumerates differently from the mapping. This is what distinguishes the real behaviour from `reverse does nothing for maps`."
+    },
+    {
+      "id": "container/map-reverse-three-keys",
+      "surface": "container",
+      "form": "expression",
+      "source": "m|reverse|join(',')",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "b",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              },
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 2
+                }
+              },
+              {
+                "key": "c",
+                "value": {
+                  "kind": "int",
+                  "value": 3
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "Three keys, so `unreversed` and `reversed` are distinguishable from `sorted` -- with two keys, reverse-of-insertion and sorted can coincide."
+    },
+    {
+      "id": "container/map-dictsort",
+      "surface": "container",
+      "form": "expression",
+      "source": "m|dictsort|join(';')",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "b",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              },
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 2
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "dictsort sorts regardless of insertion order, so preserving order must not change it."
+    },
+    {
+      "id": "container/map-items-first",
+      "surface": "container",
+      "form": "expression",
+      "source": "m|items|first",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "b",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              },
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 2
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "The first pair of `items`, which also pins how a key/value pair renders."
+    },
+    {
+      "id": "container/dict-function-kwargs-order",
+      "surface": "container",
+      "form": "expression",
+      "source": "dict(b=1, a=2)",
+      "expect": "bytes",
+      "notes": "dict() builds a mapping from keyword arguments. Rust keeps their written order; this fork passes keyword arguments as a Go map, which loses it before the function is called."
+    },
+    {
+      "id": "container/slice-eq-list",
+      "surface": "container",
+      "form": "expression",
+      "source": "xs[1:3] == [2, 3]",
+      "inputs": [
+        {
+          "name": "xs",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              },
+              {
+                "kind": "int",
+                "value": 3
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "boolean",
+      "notes": "A slice compares equal to a sequence with the same items even though it is an iterable, so making slices lazy must not break equality."
+    },
+    {
+      "id": "truth/empty-slice",
+      "surface": "container",
+      "form": "expression",
+      "source": "'y' if xs[1:1] else 'n'",
+      "inputs": [
+        {
+          "name": "xs",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              },
+              {
+                "kind": "int",
+                "value": 3
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "An empty slice is falsy: an iterable's truthiness comes from its length when it has one."
+    },
+    {
+      "id": "truth/empty-range",
+      "surface": "container",
+      "form": "expression",
+      "source": "'y' if range(0) else 'n'",
+      "expect": "bytes",
+      "notes": "The same question for an empty range."
+    },
+    {
+      "id": "logic/and-const-falsy-left",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "0 and 'x'",
+      "expect": "bytes",
+      "notes": "`and` over two literals is constant-folded, and the fold yields a plain false rather than the falsy left operand."
+    },
+    {
+      "id": "logic/and-runtime-falsy-left",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "zero and 'x'",
+      "inputs": [
+        {
+          "name": "zero",
+          "value": {
+            "kind": "int",
+            "value": 0
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "The same expression with a runtime operand is not folded, and the VM yields the operand. The pair is what proves the difference is constant folding and not the `and` rule."
+    },
+    {
+      "id": "logic/and-runtime-falsy-right",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "sa and 0",
+      "inputs": [
+        {
+          "name": "sa",
+          "value": {
+            "kind": "string",
+            "value": "a"
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "Runtime counterpart of logic/and-returns-value: with a variable on the left the falsy right operand comes through as itself."
+    },
+    {
+      "id": "logic/and-nested-const",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "('a' and 0) and 1",
+      "expect": "bytes",
+      "notes": "Folding is recursive, so a folded inner `and` feeds the outer one as its folded value."
+    },
+    {
+      "id": "logic/and-const-with-failing-operand",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "0 and ('a' - 1)",
+      "expect": "bytes",
+      "notes": "An operand whose operation fails is not folded, so the whole expression is not folded either and the runtime rule applies -- yielding 0, not false. This is the boundary of the folding rule."
+    },
+    {
+      "id": "slice/non-integer-bound",
+      "surface": "container",
+      "form": "expression",
+      "source": "ys['a':2]",
+      "inputs": [
+        {
+          "name": "ys",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 0
+              },
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "error",
+      "notes": "A bound that is present but not an integer is an error. Treating it as an omitted bound would silently return a different slice."
+    },
+    {
+      "id": "cmp/float-eq-int-lossy-boundary-reverse",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "bigf == big",
+      "inputs": [
+        {
+          "name": "big",
+          "value": {
+            "kind": "int",
+            "value": 9007199254740993
+          }
+        },
+        {
+          "name": "bigf",
+          "value": {
+            "kind": "float",
+            "value": 9007199254740992.0
+          }
+        }
+      ],
+      "expect": "boolean",
+      "notes": "Reverse operand order of cmp/int-eq-float-lossy-boundary: the non-lossy rule has to apply from both sides."
+    },
+    {
+      "id": "cmp/nan-eq-zero",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "0.0 / 0.0 == 0",
+      "expect": "boolean",
+      "notes": "NaN is not equal to zero even though it is truthy, which is the pair of rules that makes NaN awkward."
+    },
+    {
+      "id": "valuecmp/object-eq-none",
+      "surface": "value_cmp",
+      "form": "expression",
+      "source": "color == none",
+      "inputs": [
+        {
+          "name": "color",
+          "value": {
+            "kind": "cmp_object",
+            "canonical": "RED",
+            "display": "Red"
+          }
+        }
+      ],
+      "expect": "boolean",
+      "notes": "The hook declines none, and none is only equal to none."
+    },
+    {
+      "id": "container/index-bool-true",
+      "surface": "container",
+      "form": "expression",
+      "source": "xs[true]",
+      "inputs": [
+        {
+          "name": "xs",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              },
+              {
+                "kind": "int",
+                "value": 3
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "A bool is a valid subscript: the engine's primitive integer conversion accepts it as 0 or 1 (argtypes.rs:410-433, reached through Value::as_i64). Rejecting it makes the subscript undefined, which reads as an out-of-range access rather than a conversion gap."
+    },
+    {
+      "id": "container/index-bool-false",
+      "surface": "container",
+      "form": "expression",
+      "source": "xs[false]",
+      "inputs": [
+        {
+          "name": "xs",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              },
+              {
+                "kind": "int",
+                "value": 3
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "The other bool: false indexes 0, which is distinguishable from a rejected conversion only because element 0 exists."
+    },
+    {
+      "id": "container/string-index-bool",
+      "surface": "string",
+      "form": "expression",
+      "source": "s[true]",
+      "inputs": [
+        {
+          "name": "s",
+          "value": {
+            "kind": "string",
+            "value": "abcdef"
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "The string subscript path converts the same way as the sequence path."
+    },
+    {
+      "id": "container/iterable-index-bool",
+      "surface": "container",
+      "form": "expression",
+      "source": "range(5)[true]",
+      "expect": "bytes",
+      "notes": "And so does the iterable path, which is a separate branch in both engines."
+    },
+    {
+      "id": "container/map-index-bool",
+      "surface": "container",
+      "form": "expression",
+      "source": "m[true] is defined",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "b",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "boolean",
+      "notes": "A mapping is not indexed by position, so a bool key is simply absent. This is the control for the three rows above: the conversion must not turn a mapping lookup into an index."
+    },
+    {
+      "id": "container/index-fractional-float",
+      "surface": "container",
+      "form": "expression",
+      "source": "xs[1.5] is defined",
+      "inputs": [
+        {
+          "name": "xs",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              },
+              {
+                "kind": "int",
+                "value": 3
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "boolean",
+      "notes": "A non-integral float does not convert, so it does not index."
+    },
+    {
+      "id": "container/index-huge-float",
+      "surface": "container",
+      "form": "expression",
+      "source": "xs[1e30] is defined",
+      "inputs": [
+        {
+          "name": "xs",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              },
+              {
+                "kind": "int",
+                "value": 3
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "boolean",
+      "notes": "A float beyond i64 does not convert either: the engine's guard is that its saturating cast round-trips, and a saturated i64::MAX does not equal 1e30. Relying on Go's float-to-int conversion here would be platform-dependent."
+    },
+    {
+      "id": "container/index-negative-float",
+      "surface": "container",
+      "form": "expression",
+      "source": "xs[-1.0]",
+      "inputs": [
+        {
+          "name": "xs",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              },
+              {
+                "kind": "int",
+                "value": 3
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "An integral float converts, and a negative one still counts from the end."
+    },
+    {
+      "id": "container/index-none",
+      "surface": "container",
+      "form": "expression",
+      "source": "xs[none] is defined",
+      "inputs": [
+        {
+          "name": "xs",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "boolean",
+      "notes": "none does not convert to an index. In a slice bound it means `omitted`; in a subscript it means undefined, and the two must not be confused."
+    },
+    {
+      "id": "slice/bool-start",
+      "surface": "container",
+      "form": "expression",
+      "source": "ys[true:] ~ ''",
+      "inputs": [
+        {
+          "name": "ys",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 0
+              },
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              },
+              {
+                "kind": "int",
+                "value": 3
+              },
+              {
+                "kind": "int",
+                "value": 4
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "A bool is a valid slice bound. Rejecting it turns a defined slice into an evaluation error, which is the more damaging direction of the same gap."
+    },
+    {
+      "id": "slice/bool-false-start",
+      "surface": "container",
+      "form": "expression",
+      "source": "ys[false:] ~ ''",
+      "inputs": [
+        {
+          "name": "ys",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 0
+              },
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "false is bound 0, which is the whole sequence -- and, unlike a rejected bound, is not an error."
+    },
+    {
+      "id": "slice/bool-stop",
+      "surface": "container",
+      "form": "expression",
+      "source": "ys[:true] ~ ''",
+      "inputs": [
+        {
+          "name": "ys",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 0
+              },
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "The stop bound converts the same way as the start bound."
+    },
+    {
+      "id": "slice/bool-step",
+      "surface": "container",
+      "form": "expression",
+      "source": "ys[::true] ~ ''",
+      "inputs": [
+        {
+          "name": "ys",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 0
+              },
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "And so does the step, where a rejected conversion would otherwise collide with the zero-step error."
+    },
+    {
+      "id": "slice/bool-both-bounds",
+      "surface": "container",
+      "form": "expression",
+      "source": "ys[true:false] ~ ''",
+      "inputs": [
+        {
+          "name": "ys",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 0
+              },
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "Both bounds as bools, giving start 1 and stop 0: an inverted range, so the result is empty rather than reversed."
+    },
+    {
+      "id": "slice/bool-start-negative-step",
+      "surface": "container",
+      "form": "expression",
+      "source": "ys[true::-1] ~ ''",
+      "inputs": [
+        {
+          "name": "ys",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 0
+              },
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "A converted bool bound also has to reach the backwards branch, which computes its indexes separately."
+    },
+    {
+      "id": "slice/float-step",
+      "surface": "container",
+      "form": "expression",
+      "source": "ys[::1.0] ~ ''",
+      "inputs": [
+        {
+          "name": "ys",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 0
+              },
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "An integral float step converts."
+    },
+    {
+      "id": "slice/float-bound-at-i64-max",
+      "surface": "container",
+      "form": "expression",
+      "source": "ys[9223372036854775808.0:] ~ ''",
+      "inputs": [
+        {
+          "name": "ys",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 0
+              },
+              {
+                "kind": "int",
+                "value": 1
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "2^63 is one past i64::MAX, and it still converts: the engine's saturating cast lands on i64::MAX, whose float value is 2^63, so its round-trip guard passes. The bound is then past the end, giving an empty slice rather than an error. This is the surprising half of the boundary rule and it is observable."
+    },
+    {
+      "id": "slice/float-bound-beyond-i64",
+      "surface": "container",
+      "form": "expression",
+      "source": "ys[1e30:]",
+      "inputs": [
+        {
+          "name": "ys",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 0
+              },
+              {
+                "kind": "int",
+                "value": 1
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "error",
+      "notes": "1e30 does not convert, because the saturated i64::MAX does not round-trip back to it. Together with the row above this pins the rule as a round-trip check rather than a range check -- and it must not be delegated to Go's float-to-int conversion, which is undefined out of range and was observed differing between amd64 and arm64."
+    },
+    {
+      "id": "slice/float-bound-at-i64-min",
+      "surface": "container",
+      "form": "expression",
+      "source": "ys[-9223372036854775808.0:] ~ ''",
+      "inputs": [
+        {
+          "name": "ys",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 0
+              },
+              {
+                "kind": "int",
+                "value": 1
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "-2^63 is exactly i64's minimum, so it converts, and a negative start that far past the beginning clamps to 0."
+    },
+    {
+      "id": "slice/fractional-step",
+      "surface": "container",
+      "form": "expression",
+      "source": "ys[::1.5]",
+      "inputs": [
+        {
+          "name": "ys",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 0
+              },
+              {
+                "kind": "int",
+                "value": 1
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "error",
+      "notes": "A non-integral step does not convert, and that is an error rather than a step of 1."
+    },
+    {
+      "id": "slice/string-step",
+      "surface": "container",
+      "form": "expression",
+      "source": "ys[::'2']",
+      "inputs": [
+        {
+          "name": "ys",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 0
+              },
+              {
+                "kind": "int",
+                "value": 1
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "error",
+      "notes": "A numeric string is not an integer here: the conversion does not parse."
+    },
+    {
+      "id": "slice/undefined-bound",
+      "surface": "container",
+      "form": "expression",
+      "source": "ys[nope:2]",
+      "inputs": [
+        {
+          "name": "ys",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 0
+              },
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "error",
+      "notes": "undefined is not an omitted bound -- only none is -- so it fails to convert, even under lenient undefined behaviour."
+    },
+    {
+      "id": "range/bool-stop",
+      "surface": "container",
+      "form": "expression",
+      "source": "range(true)|list ~ ''",
+      "expect": "bytes",
+      "notes": "range(true) is range(1). Ignoring a failed conversion here produced an empty range, which is a wrong answer that looks like a legitimate one."
+    },
+    {
+      "id": "range/bool-false",
+      "surface": "container",
+      "form": "expression",
+      "source": "range(false)|list ~ ''",
+      "expect": "bytes",
+      "notes": "range(false) is range(0), which is genuinely empty -- the row that distinguishes a converted false from a dropped argument."
+    },
+    {
+      "id": "range/bool-start",
+      "surface": "container",
+      "form": "expression",
+      "source": "range(true, 3)|list ~ ''",
+      "expect": "bytes",
+      "notes": "A bool in the start position of the two-argument form."
+    },
+    {
+      "id": "range/bool-step",
+      "surface": "container",
+      "form": "expression",
+      "source": "range(0, 3, true)|list ~ ''",
+      "expect": "bytes",
+      "notes": "A bool in the step position of the three-argument form."
+    },
+    {
+      "id": "range/bool-all-args",
+      "surface": "container",
+      "form": "expression",
+      "source": "range(false, true, true)|list ~ ''",
+      "expect": "bytes",
+      "notes": "All three arguments as bools at once."
+    },
+    {
+      "id": "range/float-arg",
+      "surface": "container",
+      "form": "expression",
+      "source": "range(1.0)|list ~ ''",
+      "expect": "bytes",
+      "notes": "An integral float argument converts."
+    },
+    {
+      "id": "range/fractional-arg",
+      "surface": "container",
+      "form": "expression",
+      "source": "range(1.5)",
+      "expect": "error",
+      "notes": "A non-integral float does not, and the failure is an error rather than a substituted zero."
+    },
+    {
+      "id": "range/string-arg",
+      "surface": "container",
+      "form": "expression",
+      "source": "range('2')",
+      "expect": "error",
+      "notes": "A numeric string is not an integer argument."
+    },
+    {
+      "id": "range/none-arg",
+      "surface": "container",
+      "form": "expression",
+      "source": "range(none)",
+      "expect": "error",
+      "notes": "Nor is none. Silently ranging to zero would hide a template bug."
+    },
+    {
+      "id": "str/repeat-bool",
+      "surface": "string",
+      "form": "expression",
+      "source": "'a' * true",
+      "expect": "bytes",
+      "notes": "String repetition converts its count with the same primitive integer conversion. The Rust engine handles both repetition branches before any numeric coercion, so this is a container operation living inside the multiplication operator, not arithmetic."
+    },
+    {
+      "id": "str/repeat-bool-reversed",
+      "surface": "string",
+      "form": "expression",
+      "source": "true * 'a'",
+      "expect": "bytes",
+      "notes": "Either operand may be the string, so the count conversion has to happen on both sides."
+    },
+    {
+      "id": "container/list-times-bool",
+      "surface": "container",
+      "form": "expression",
+      "source": "[1, 2] * true ~ ''",
+      "expect": "bytes",
+      "notes": "Sequence repetition, same conversion."
+    },
+    {
+      "id": "container/bool-times-list",
+      "surface": "container",
+      "form": "expression",
+      "source": "true * [1, 2] ~ ''",
+      "expect": "bytes",
+      "notes": "Reverse operand order of container/list-times-bool."
+    },
+    {
+      "id": "container/list-repeat-is-sequence",
+      "surface": "container",
+      "form": "expression",
+      "source": "([1, 2] * 2) is sequence",
+      "expect": "boolean",
+      "notes": "A repeated sequence is a lazy iterable, as a slice and a concatenation are. Without this row the three container operations that produce iterables could drift apart."
+    },
+    {
+      "id": "str/repeat-negative",
+      "surface": "string",
+      "form": "expression",
+      "source": "'a' * -1",
+      "expect": "error",
+      "notes": "A negative count does not convert -- the engine converts to an unsigned integer there -- so this is an error rather than an empty string."
+    },
+    {
+      "id": "str/repeat-fractional",
+      "surface": "string",
+      "form": "expression",
+      "source": "'a' * 2.5",
+      "expect": "error",
+      "notes": "A non-integral count does not convert either."
+    },
+    {
+      "id": "str/repeat-integral-float",
+      "surface": "string",
+      "form": "expression",
+      "source": "'a' * 2.0",
+      "expect": "bytes",
+      "notes": "An integral float count does convert, which is what makes str/repeat-fractional a rule rather than a rejection of floats."
+    },
+    {
+      "id": "cmp/iterable-gt-list",
+      "surface": "container",
+      "form": "expression",
+      "source": "range(2) > [0, 1]",
+      "expect": "boolean",
+      "notes": "An iterable and a sequence with the same items are equal, but ordering still separates them by kind. Both rules hold at once, and the pair is easy to break by making one of them consistent with the other."
+    },
+    {
+      "id": "cmp/list-lt-iterable",
+      "surface": "container",
+      "form": "expression",
+      "source": "[0, 1] < range(2)",
+      "expect": "boolean",
+      "notes": "Reverse operand order of cmp/iterable-gt-list."
+    },
+    {
+      "id": "cmp/slice-gt-list",
+      "surface": "container",
+      "form": "expression",
+      "source": "xs[1:3] > [2, 3]",
+      "inputs": [
+        {
+          "name": "xs",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              },
+              {
+                "kind": "int",
+                "value": 3
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "boolean",
+      "notes": "The same kind asymmetry for a slice, which is where it is most surprising: `xs[1:3] == [2, 3]` and `xs[1:3] > [2, 3]` are both true."
+    },
+    {
+      "id": "container/slice-plus-list",
+      "surface": "container",
+      "form": "expression",
+      "source": "(xs[1:3] + [9]) ~ ''",
+      "inputs": [
+        {
+          "name": "xs",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              },
+              {
+                "kind": "int",
+                "value": 3
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "Concatenating a slice onto a list: + accepts iterables, not only sequences, so making slices lazy must not break it. The parentheses matter: ~ binds tighter than +, so without them this reads as xs[1:3] + ([9] ~ '') and only pins an error."
+    },
+    {
+      "id": "container/list-plus-list-is-sequence",
+      "surface": "container",
+      "form": "expression",
+      "source": "([1] + [2]) is sequence",
+      "expect": "boolean",
+      "notes": "Sequence concatenation yields a lazy iterable, like slicing does."
+    },
+    {
+      "id": "contains/none-in-map",
+      "surface": "container",
+      "form": "expression",
+      "source": "none in m",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "b",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "boolean",
+      "notes": "A non-string key is looked up as itself, so it is absent from a string-keyed mapping rather than being stringified."
+    }
+  ]
+}

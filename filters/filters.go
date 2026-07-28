@@ -2,6 +2,7 @@
 package filters
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -757,14 +758,26 @@ func FilterReverse(_ State, val value.Value, _ []value.Value, _ map[string]value
 	}
 
 	items := val.Iter()
-	if items != nil {
-		result := make([]value.Value, len(items))
-		for i, item := range items {
-			result[len(items)-1-i] = item
-		}
-		return value.FromIterator(value.NewIterator("reversed", result)), nil
+	if items == nil {
+		return val, nil
 	}
-	return val, nil
+
+	// Reversing a mapping yields its keys in the mapping's own order, not
+	// reversed. That is not a shortcut: the Rust engine enumerates a map with a
+	// double-ended iterator and its `reverse` re-boxes that iterator without
+	// calling .rev() on it, so `m|reverse` iterates forward. Reversing the
+	// result then does reverse, because the result enumerates differently. Both
+	// halves are pinned by the corpus (container/map-reverse-order and
+	// container/map-reverse-twice).
+	if val.Kind() == value.KindMap {
+		return value.FromIterator(value.NewIterator("reversed", items)), nil
+	}
+
+	result := make([]value.Value, len(items))
+	for i, item := range items {
+		result[len(items)-1-i] = item
+	}
+	return value.FromIterator(value.NewIterator("reversed", result)), nil
 }
 
 // FilterSort sorts an iterable.
@@ -2145,17 +2158,27 @@ func FilterRound(_ State, val value.Value, args []value.Value, kwargs map[string
 //	</dl>
 func FilterItems(_ State, val value.Value, _ []value.Value, _ map[string]value.Value) (value.Value, error) {
 	if m, ok := val.AsMap(); ok {
-		keys := make([]string, 0, len(m))
-		for k := range m {
-			keys = append(keys, k)
+		// Pairs come out in the mapping's own order, which for an ordered
+		// mapping is insertion order: `{% for k, v in m|items %}` is prompt
+		// bytes, so this is the same order question as rendering the map.
+		keys, ok := val.MapKeys()
+		if !ok {
+			keys = make([]string, 0, len(m))
+			for k := range m {
+				keys = append(keys, k)
+			}
+			sort.Strings(keys)
 		}
-		sort.Strings(keys)
 
-		var result []value.Value
+		result := make([]value.Value, 0, len(keys))
 		for _, k := range keys {
+			item, exists := m[k]
+			if !exists {
+				item = val.GetItem(value.FromString(k))
+			}
 			result = append(result, value.FromSlice([]value.Value{
 				value.FromString(k),
-				m[k],
+				item,
 			}))
 		}
 		return value.FromSlice(result), nil
@@ -2184,9 +2207,14 @@ func FilterItems(_ State, val value.Value, _ []value.Value, _ map[string]value.V
 //   - case_sensitive: set to true for case-sensitive sorting (default: false)
 func FilterDictSort(_ State, val value.Value, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
 	if m, ok := val.AsMap(); ok {
-		keys := make([]string, 0, len(m))
-		for k := range m {
-			keys = append(keys, k)
+		// Start from the mapping's own order so that entries the sort considers
+		// equal keep it, rather than coming out in Go map order.
+		keys, ok := val.MapKeys()
+		if !ok {
+			keys = make([]string, 0, len(m))
+			for k := range m {
+				keys = append(keys, k)
+			}
 		}
 
 		if len(args) > 0 {
@@ -2386,11 +2414,9 @@ func pprintValue(val value.Value, indent int) string {
 		if len(m) == 0 {
 			return "{}"
 		}
-		keys := make([]string, 0, len(m))
-		for k := range m {
-			keys = append(keys, k)
-		}
-		sort.Strings(keys)
+		// The mapping's own order, so a pretty-printed map does not disagree
+		// with the same map rendered normally.
+		keys, _ := val.MapKeys()
 		var sb strings.Builder
 		sb.WriteString("{\n")
 		for _, k := range keys {
@@ -2491,22 +2517,58 @@ func valueToNative(v value.Value) interface{} {
 		}
 		return result
 	case value.KindMap:
-		m, _ := v.AsMap()
-		result := make(map[string]interface{})
-		for k, val := range m {
-			result[k] = valueToNative(val)
-		}
-		return result
+		return orderedNativeMap(v)
 	default:
-		if m, ok := v.AsMap(); ok {
-			result := make(map[string]interface{})
-			for k, val := range m {
-				result[k] = valueToNative(val)
-			}
-			return result
+		if _, ok := v.AsMap(); ok {
+			return orderedNativeMap(v)
 		}
 		return v.String()
 	}
+}
+
+// orderedNativeMap converts a mapping for JSON serialization while keeping the
+// engine's iteration order. encoding/json sorts the keys of a Go map, so an
+// ordered mapping has to be carried to the encoder as a type that writes itself.
+func orderedNativeMap(v value.Value) jsonObject {
+	keys, _ := v.MapKeys()
+	obj := make(jsonObject, 0, len(keys))
+	for _, k := range keys {
+		obj = append(obj, jsonMember{Key: k, Value: valueToNative(v.GetItem(value.FromString(k)))})
+	}
+	return obj
+}
+
+type jsonMember struct {
+	Key   string
+	Value interface{}
+}
+
+// jsonObject is a JSON object that serializes its members in order.
+type jsonObject []jsonMember
+
+// MarshalJSON writes the object in member order. Each key and value still goes
+// through encoding/json, so escaping is unchanged; only the order is ours.
+func (o jsonObject) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	buf.WriteByte('{')
+	for i, member := range o {
+		if i > 0 {
+			buf.WriteByte(',')
+		}
+		key, err := json.Marshal(member.Key)
+		if err != nil {
+			return nil, err
+		}
+		buf.Write(key)
+		buf.WriteByte(':')
+		val, err := json.Marshal(member.Value)
+		if err != nil {
+			return nil, err
+		}
+		buf.Write(val)
+	}
+	buf.WriteByte('}')
+	return buf.Bytes(), nil
 }
 
 func urlencodeString(input string) string {
