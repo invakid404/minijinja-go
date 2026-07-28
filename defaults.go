@@ -10,6 +10,28 @@ import (
 	"github.com/invakid404/minijinja-go/v2/value"
 )
 
+// The default registry is exactly the builtin set BAML's engine build enables.
+//
+// BAML compiles minijinja with `default-features = false` plus `macros,
+// builtins, debug, preserve_order, adjacent_loop_items, unicode, json,
+// unstable_machinery, custom_syntax, deserialization, serde`
+// (BoundaryML/baml@85247f45 engine/Cargo.toml:99-115), so the engine's
+// registry is `defaults.rs:64-236` under that feature set. Diffing it against
+// the Go port's original defaults left exactly five names the port had and the
+// engine does not, and they are deliberately **not** registered here:
+//
+//	filter    urlencode    gated behind the engine's `urlencode` feature, which BAML does not enable
+//	test      containing   not in minijinja 2.16.0 at all
+//	function  cycler       idem
+//	function  joiner       idem
+//	function  lipsum       idem
+//
+// Answering them would be the dangerous direction: a template BAML rejects
+// outright would silently render here. Leaving them unregistered produces the
+// engine's own unknown-filter/test/function error instead.
+// filters.FilterUrlencode and tests.TestContaining remain exported for callers
+// who opt in explicitly; nothing reaches them by default. The three functions
+// had no exported form and are gone. Corpus: `err/go-only-*`.
 func registerDefaultFilters(env *Environment) {
 	// String filters
 	env.AddFilter("upper", filters.FilterUpper)
@@ -68,9 +90,8 @@ func registerDefaultFilters(env *Environment) {
 	env.AddFilter("indent", filters.FilterIndent)
 	env.AddFilter("pprint", filters.FilterPprint)
 
-	// JSON and URL filters
+	// JSON filters
 	env.AddFilter("tojson", filters.FilterTojson)
-	env.AddFilter("urlencode", filters.FilterUrlencode)
 }
 
 func registerDefaultTests(env *Environment) {
@@ -109,7 +130,6 @@ func registerDefaultTests(env *Environment) {
 	env.AddTest("iterable", tests.TestIterable)
 	env.AddTest("startingwith", tests.TestStartingWith)
 	env.AddTest("endingwith", tests.TestEndingWith)
-	env.AddTest("containing", tests.TestContaining)
 	env.AddTest("safe", tests.TestSafe)
 	env.AddTest("escaped", tests.TestSafe) // alias
 	env.AddTest("sameas", tests.TestSameAs)
@@ -119,57 +139,58 @@ func registerDefaultTests(env *Environment) {
 	env.AddTest("test", tests.TestTest)
 }
 
+// registerDefaultFunctions registers the engine's four globals
+// (defaults.rs:211-236). `cycler`, `joiner` and `lipsum` are Go-port additions
+// and are withdrawn; see the note on registerDefaultFilters.
 func registerDefaultFunctions(env *Environment) {
 	env.AddFunction("range", fnRange)
 	env.AddFunction("dict", fnDict)
-	env.AddFunction("cycler", fnCycler)
-	env.AddFunction("joiner", fnJoiner)
 	env.AddFunction("namespace", fnNamespace)
 	env.AddFunction("debug", fnDebug)
-	env.AddFunction("lipsum", fnLipsum)
 }
 
 // --- Functions ---
 
-// rangeArg is the engine's `isize` ArgType conversion for a range bound
-// (functions.rs:326, value/argtypes.rs:410-435). A bound that does not convert
-// is an error, not a silent zero: `range(1.5)` and `range(9e99)` both fail
-// where the port previously produced an empty or wrong range.
-func rangeArg(v value.Value) (int64, error) {
-	i, ok := v.AsInt()
-	if !ok {
-		return 0, NewError(ErrInvalidOperation,
-			fmt.Sprintf("cannot convert %s to isize", v.Kind()))
-	}
-	return i, nil
-}
-
 func fnRange(_ *State, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
 	var start, stop, step int64 = 0, 0, 1
 
-	// Arguments go through the engine's primitive integer conversion, so a bool
-	// is an argument (range(true) is range(1)) and an integral float is an
-	// argument. A value that does not convert is an error: range(1.5) and
-	// range('2') must not quietly become an empty range.
-	if len(args) >= 1 && len(args) <= 3 {
-		bounds := make([]int64, len(args))
-		for i, arg := range args {
-			n, err := rangeArg(arg)
-			if err != nil {
-				return value.Undefined(), err
-			}
-			bounds[i] = n
+	// `range(lower: isize, upper: Option<isize>, step: Option<isize>)`
+	// (functions.rs:326-360): a non-integer argument is a conversion error,
+	// not a silently empty range.
+	rangeArg := func(v value.Value) (int64, error) {
+		n, ok := v.AsInt()
+		if !ok || !v.IsActualInt() {
+			return 0, NewError(ErrInvalidOperation, fmt.Sprintf("cannot convert %s to isize", v.Kind()))
 		}
-		switch len(bounds) {
-		case 1:
-			stop = bounds[0]
-		case 2:
-			start, stop = bounds[0], bounds[1]
-		case 3:
-			start, stop, step = bounds[0], bounds[1], bounds[2]
+		return n, nil
+	}
+	var err error
+	switch len(args) {
+	case 0:
+		return value.Undefined(), NewError(ErrMissingArgument, "missing argument")
+	case 1:
+		if stop, err = rangeArg(args[0]); err != nil {
+			return value.Undefined(), err
 		}
-	} else {
-		return value.FromIterator(value.NewIterator("range", nil)), nil
+	case 2:
+		if start, err = rangeArg(args[0]); err != nil {
+			return value.Undefined(), err
+		}
+		if stop, err = rangeArg(args[1]); err != nil {
+			return value.Undefined(), err
+		}
+	case 3:
+		if start, err = rangeArg(args[0]); err != nil {
+			return value.Undefined(), err
+		}
+		if stop, err = rangeArg(args[1]); err != nil {
+			return value.Undefined(), err
+		}
+		if step, err = rangeArg(args[2]); err != nil {
+			return value.Undefined(), err
+		}
+	default:
+		return value.Undefined(), NewError(ErrTooManyArguments, "received too many arguments")
 	}
 
 	if step == 0 {
@@ -233,90 +254,6 @@ func fnDict(_ *State, args []value.Value, kwargs map[string]value.Value) (value.
 		result[k] = v
 	}
 	return value.FromMap(result), nil
-}
-
-func fnCycler(_ *State, args []value.Value, _ map[string]value.Value) (value.Value, error) {
-	return value.FromObject(&cyclerObject{
-		items: args,
-		index: 0,
-	}), nil
-}
-
-// cyclerObject implements a cycler that cycles through values
-type cyclerObject struct {
-	items []value.Value
-	index int
-}
-
-func (c *cyclerObject) GetAttr(name string) value.Value {
-	switch name {
-	case "next":
-		return value.FromCallable(&cyclerNextCallable{cycler: c})
-	case "current":
-		if len(c.items) == 0 {
-			return value.Undefined()
-		}
-		idx := c.index
-		if idx == 0 {
-			idx = len(c.items)
-		}
-		return c.items[idx-1]
-	case "reset":
-		return value.FromCallable(&cyclerResetCallable{cycler: c})
-	}
-	return value.Undefined()
-}
-
-type cyclerNextCallable struct {
-	cycler *cyclerObject
-}
-
-func (c *cyclerNextCallable) Call(state value.State, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
-	_ = state
-	if len(c.cycler.items) == 0 {
-		return value.Undefined(), nil
-	}
-	result := c.cycler.items[c.cycler.index]
-	c.cycler.index = (c.cycler.index + 1) % len(c.cycler.items)
-	return result, nil
-}
-
-type cyclerResetCallable struct {
-	cycler *cyclerObject
-}
-
-func (c *cyclerResetCallable) Call(state value.State, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
-	_ = state
-	c.cycler.index = 0
-	return value.Undefined(), nil
-}
-
-func fnJoiner(_ *State, args []value.Value, _ map[string]value.Value) (value.Value, error) {
-	sep := ", "
-	if len(args) > 0 {
-		if s, ok := args[0].AsString(); ok {
-			sep = s
-		}
-	}
-	return value.FromCallable(&joinerCallable{
-		sep:   sep,
-		first: true,
-	}), nil
-}
-
-// joinerCallable implements a joiner that returns separator after first call
-type joinerCallable struct {
-	sep   string
-	first bool
-}
-
-func (j *joinerCallable) Call(state value.State, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
-	_ = state
-	if j.first {
-		j.first = false
-		return value.FromString(""), nil
-	}
-	return value.FromString(j.sep), nil
 }
 
 func fnNamespace(_ *State, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
@@ -418,31 +355,4 @@ func fnDebug(state *State, args []value.Value, _ map[string]value.Value) (value.
 	parts = append(parts, "}")
 
 	return value.FromString(strings.Join(parts, "\n")), nil
-}
-
-func fnLipsum(_ *State, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
-	n := int64(5)
-	if len(args) > 0 {
-		if nn, ok := args[0].AsInt(); ok {
-			n = nn
-		}
-	}
-	if nn, ok := kwargs["n"]; ok {
-		if nnn, ok := nn.AsInt(); ok {
-			n = nnn
-		}
-	}
-
-	lorem := "Lorem ipsum dolor sit amet, consectetur adipiscing elit. " +
-		"Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. " +
-		"Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris. "
-
-	var result strings.Builder
-	for i := int64(0); i < n; i++ {
-		if i > 0 {
-			result.WriteString("\n\n")
-		}
-		result.WriteString(lorem)
-	}
-	return value.FromSafeString("<p>" + result.String() + "</p>"), nil
 }
