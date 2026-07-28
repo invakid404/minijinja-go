@@ -1,0 +1,297 @@
+{
+  "schema_version": 1,
+  "rows": [
+    {
+      "id": "arith/int-add-small",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "1 + 2",
+      "expect": "bytes",
+      "notes": "Baseline sanity: both engines must agree on trivial integer addition."
+    },
+    {
+      "id": "arith/int-add-above-2pow53",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "big + 1",
+      "inputs": [
+        { "name": "big", "value": { "kind": "int", "value": 9007199254740993 } }
+      ],
+      "expect": "bytes",
+      "notes": "2^53+1. Rust does checked i128 arithmetic; the Go port launders integer Add through float64 (value/ops.go:37-72), which cannot represent the operand."
+    },
+    {
+      "id": "arith/int-mul-i64-edge",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "big * 2",
+      "inputs": [
+        { "name": "big", "value": { "kind": "int", "value": 4611686018427387904 } }
+      ],
+      "expect": "bytes",
+      "notes": "2^62 * 2 = 2^63, one past i64::MAX. Probes overflow/promotion behaviour at the i64 edge."
+    },
+    {
+      "id": "arith/floordiv-negative",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "-7 // 2",
+      "expect": "bytes",
+      "notes": "Floor division with a negative numerator."
+    },
+    {
+      "id": "arith/rem-negative",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "-7 % 2",
+      "expect": "bytes",
+      "notes": "Remainder sign convention: Rust remainder vs Go remainder vs Euclidean."
+    },
+    {
+      "id": "arith/pow-int",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "2 ** 10",
+      "expect": "bytes",
+      "notes": "Integer power; Go routes through math.Pow (value/ops.go:208-226)."
+    },
+    {
+      "id": "arith/div-by-zero",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "1 / 0",
+      "expect": "bytes",
+      "notes": "True division by zero. Rust minijinja divides as float and yields inf; the Go port raises. Whichever is right, the two must agree."
+    },
+    {
+      "id": "cmp/int-eq-float",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "1 == 1.0",
+      "expect": "boolean",
+      "notes": "Cross-numeric equality."
+    },
+    {
+      "id": "cmp/string-lt",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "'a' < 'b'",
+      "expect": "boolean",
+      "notes": "String ordering."
+    },
+    {
+      "id": "cmp/int-in-string",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "1 in '1'",
+      "expect": "boolean",
+      "notes": "Named in the forensic record as a place where BAML and stock Go disagree on containment coercion."
+    },
+    {
+      "id": "str/lower-dotted-capital-i",
+      "surface": "string",
+      "form": "expression",
+      "source": "s|lower",
+      "inputs": [{ "name": "s", "value": { "kind": "string", "value": "İ" } }],
+      "expect": "bytes",
+      "notes": "U+0130 LATIN CAPITAL LETTER I WITH DOT ABOVE. Rust str::to_lowercase applies full Unicode case mapping (i + U+0307); Go strings.ToLower applies simple case mapping."
+    },
+    {
+      "id": "str/upper-sharp-s",
+      "surface": "string",
+      "form": "expression",
+      "source": "s|upper",
+      "inputs": [{ "name": "s", "value": { "kind": "string", "value": "straße" } }],
+      "expect": "bytes",
+      "notes": "Multi-character uppercase expansion of U+00DF."
+    },
+    {
+      "id": "str/concat-tilde-number",
+      "surface": "string",
+      "form": "expression",
+      "source": "'a' ~ 1",
+      "expect": "bytes",
+      "notes": "Concatenation operator with a non-string operand."
+    },
+    {
+      "id": "container/list-index",
+      "surface": "container",
+      "form": "expression",
+      "source": "xs[0]",
+      "inputs": [
+        {
+          "name": "xs",
+          "value": {
+            "kind": "list",
+            "items": [
+              { "kind": "int", "value": 1 },
+              { "kind": "int", "value": 2 },
+              { "kind": "int", "value": 3 }
+            ]
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "Baseline sequence subscript."
+    },
+    {
+      "id": "container/list-slice",
+      "surface": "container",
+      "form": "expression",
+      "source": "xs[1:3]",
+      "inputs": [
+        {
+          "name": "xs",
+          "value": {
+            "kind": "list",
+            "items": [
+              { "kind": "int", "value": 1 },
+              { "kind": "int", "value": 2 },
+              { "kind": "int", "value": 3 }
+            ]
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "Slice bounds go through AsInt on both sides."
+    },
+    {
+      "id": "container/map-render-insertion-order",
+      "surface": "container",
+      "form": "expression",
+      "source": "m",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              { "key": "b", "value": { "kind": "int", "value": 1 } },
+              { "key": "a", "value": { "kind": "int", "value": 2 } }
+            ]
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "BAML builds the engine with preserve_order, so maps render in insertion order; the Go port's value.FromMap sorts keys (value/value.go:1291-1325)."
+    },
+    {
+      "id": "container/map-loop-insertion-order",
+      "surface": "container",
+      "form": "template",
+      "source": "{% for k, v in m|items %}{{ k }}={{ v }};{% endfor %}",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              { "key": "b", "value": { "kind": "int", "value": 1 } },
+              { "key": "a", "value": { "kind": "int", "value": 2 } }
+            ]
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "Same ordering question observed through iteration rather than display, in full-template form."
+    },
+    {
+      "id": "valuecmp/object-render",
+      "surface": "value_cmp",
+      "form": "expression",
+      "source": "color",
+      "inputs": [
+        {
+          "name": "color",
+          "value": { "kind": "cmp_object", "canonical": "RED", "display": "Red" }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "Control for the value_cmp rows: the object must display identically on both sides, so any comparison divergence is isolated to comparison dispatch."
+    },
+    {
+      "id": "valuecmp/object-eq-string",
+      "surface": "value_cmp",
+      "form": "expression",
+      "source": "color == 'RED'",
+      "inputs": [
+        {
+          "name": "color",
+          "value": { "kind": "cmp_object", "canonical": "RED", "display": "Red" }
+        }
+      ],
+      "expect": "boolean",
+      "notes": "The generic shape of the BAML #597 enum fence. BoundaryML's engine delta asks the object's value_cmp before ordinary equality; the Go port only dispatches object-to-object comparison (value/ops.go:420-425)."
+    },
+    {
+      "id": "valuecmp/string-eq-object",
+      "surface": "value_cmp",
+      "form": "expression",
+      "source": "'RED' == color",
+      "inputs": [
+        {
+          "name": "color",
+          "value": { "kind": "cmp_object", "canonical": "RED", "display": "Red" }
+        }
+      ],
+      "expect": "boolean",
+      "notes": "Reverse operand order: the Rust delta explicitly tries value_cmp from the right-hand side for commutativity."
+    },
+    {
+      "id": "valuecmp/string-in-object-list",
+      "surface": "value_cmp",
+      "form": "expression",
+      "source": "'RED' in [color]",
+      "inputs": [
+        {
+          "name": "color",
+          "value": { "kind": "cmp_object", "canonical": "RED", "display": "Red" }
+        }
+      ],
+      "expect": "boolean",
+      "notes": "Containment reaches the same equality dispatch."
+    },
+    {
+      "id": "valuecmp/object-eq-object",
+      "surface": "value_cmp",
+      "form": "expression",
+      "source": "color == other",
+      "inputs": [
+        {
+          "name": "color",
+          "value": { "kind": "cmp_object", "canonical": "RED", "display": "Red" }
+        },
+        {
+          "name": "other",
+          "value": { "kind": "cmp_object", "canonical": "RED", "display": "Rouge" }
+        }
+      ],
+      "expect": "boolean",
+      "notes": "Object-to-object identity by canonical value with different displays; this is the one comparison the Go port already dispatches."
+    },
+    {
+      "id": "err/unknown-filter",
+      "surface": "environment",
+      "form": "expression",
+      "source": "1|no_such_filter",
+      "expect": "error",
+      "notes": "Negative control: error category parity for an unregistered filter."
+    },
+    {
+      "id": "err/go-only-urlencode-filter",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'a b'|urlencode",
+      "expect": "error",
+      "notes": "BAML does not enable the urlencode feature, so the engine must reject it. The Go port ships urlencode as a default (defaults.go:13-130); a Go-only extra must not become a supported BAML behaviour."
+    },
+    {
+      "id": "err/syntax-incomplete-if",
+      "surface": "control",
+      "form": "template",
+      "source": "{% if %}x{% endif %}",
+      "expect": "error",
+      "notes": "Negative control: syntax error category parity."
+    }
+  ]
+}

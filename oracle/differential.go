@@ -1,0 +1,247 @@
+package oracle
+
+import (
+	"fmt"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"runtime"
+)
+
+// Default locations, relative to the oracle module root.
+const (
+	DefaultCorpusPath   = "corpus/seed.json"
+	DefaultLedgerPath   = "divergences.json"
+	DefaultRecordedPath = "recorded/rust-8cfc770.json"
+	DefaultHarnessBin   = "harness/target/release/mj-oracle-harness"
+)
+
+// Source says where the Rust-side outcomes came from.
+type Source string
+
+const (
+	// SourceLive means the Rust harness was executed for this run.
+	SourceLive Source = "live"
+	// SourceRecorded means a committed harness run was replayed. The recording
+	// carries the corpus digest it was produced from, so it cannot be replayed
+	// against a corpus it does not correspond to.
+	SourceRecorded Source = "recorded"
+)
+
+// Verdict is the differential result for one row.
+type Verdict string
+
+const (
+	// VerdictMatch: both engines produced the same outcome signature.
+	VerdictMatch Verdict = "match"
+	// VerdictKnownDivergence: they differ, and the ledger declares exactly
+	// this difference.
+	VerdictKnownDivergence Verdict = "known-divergence"
+	// VerdictNewDivergence: they differ and nothing declares it. This is the
+	// failure the differential exists to produce.
+	VerdictNewDivergence Verdict = "new-divergence"
+	// VerdictLedgerStale: the ledger declares a divergence that is no longer
+	// there, or that has changed shape.
+	VerdictLedgerStale Verdict = "ledger-stale"
+	// VerdictMissing: the Rust side has no outcome for this row.
+	VerdictMissing Verdict = "missing-harness-result"
+)
+
+// RowResult is the differential outcome for one corpus row.
+type RowResult struct {
+	Row     Row
+	Rust    Outcome
+	Go      Outcome
+	Verdict Verdict
+	Class   Class
+	Note    string
+}
+
+// Report is a full differential run.
+type Report struct {
+	Source     Source
+	Provenance Provenance
+	Corpus     *Corpus
+	Results    []RowResult
+}
+
+// Counts summarizes a report by verdict.
+func (r *Report) Counts() map[Verdict]int {
+	counts := make(map[Verdict]int)
+	for _, res := range r.Results {
+		counts[res.Verdict]++
+	}
+	return counts
+}
+
+// Failures returns the results that must fail a differential run.
+func (r *Report) Failures() []RowResult {
+	var out []RowResult
+	for _, res := range r.Results {
+		switch res.Verdict {
+		case VerdictNewDivergence, VerdictLedgerStale, VerdictMissing:
+			out = append(out, res)
+		}
+	}
+	return out
+}
+
+// LoadHarnessOutcomes obtains the Rust-side outcomes for a corpus.
+//
+// If a harness binary is available (MJ_ORACLE_HARNESS, or the default release
+// build) it is executed live. Otherwise the committed recording is replayed.
+// Either way the corpus digest in the provenance must match the corpus that was
+// loaded, so a stale recording is an error rather than a silently weaker test.
+func LoadHarnessOutcomes(root string, corpus *Corpus) (*HarnessOutput, Source, error) {
+	corpusPath := filepath.Join(root, DefaultCorpusPath)
+
+	// MJ_ORACLE_RECORDED_ONLY forces the replay path even when a harness is
+	// present. CI uses it in the no-Rust job to prove the differential still
+	// runs, and it is the fastest way to check a recording is not stale.
+	var bin string
+	if os.Getenv("MJ_ORACLE_RECORDED_ONLY") == "" {
+		bin = os.Getenv("MJ_ORACLE_HARNESS")
+		if bin == "" {
+			candidate := filepath.Join(root, DefaultHarnessBin)
+			if _, err := os.Stat(candidate); err == nil {
+				bin = candidate
+			}
+		}
+	}
+
+	var raw []byte
+	source := SourceRecorded
+	if bin != "" {
+		cmd := exec.Command(bin, corpusPath)
+		out, err := cmd.Output()
+		if err != nil {
+			return nil, "", fmt.Errorf("running harness %s: %w", bin, err)
+		}
+		raw = out
+		source = SourceLive
+	} else {
+		out, err := os.ReadFile(filepath.Join(root, DefaultRecordedPath))
+		if err != nil {
+			return nil, "", fmt.Errorf("no harness binary and no recording: %w", err)
+		}
+		raw = out
+	}
+
+	parsed, err := ParseHarnessOutput(raw)
+	if err != nil {
+		return nil, "", fmt.Errorf("harness output (%s): %w", source, err)
+	}
+	if parsed.Provenance.CorpusSHA256 != corpus.SHA256 {
+		return nil, "", fmt.Errorf(
+			"harness output (%s) was produced from corpus sha256 %s but the loaded corpus is %s; re-record with oracle/record.sh",
+			source, parsed.Provenance.CorpusSHA256, corpus.SHA256)
+	}
+	return parsed, source, nil
+}
+
+// Run executes the whole differential: every corpus row through the fork,
+// compared against the Rust engine's outcome, classified against the ledger.
+func Run(root string) (*Report, error) {
+	corpus, err := LoadCorpus(filepath.Join(root, DefaultCorpusPath))
+	if err != nil {
+		return nil, err
+	}
+	ledger, err := LoadLedger(filepath.Join(root, DefaultLedgerPath))
+	if err != nil {
+		return nil, err
+	}
+	harness, source, err := LoadHarnessOutcomes(root, corpus)
+	if err != nil {
+		return nil, err
+	}
+
+	report := &Report{
+		Source:     source,
+		Provenance: harness.Provenance,
+		Corpus:     corpus,
+	}
+
+	declared := make(map[string]bool)
+	for _, row := range corpus.Rows {
+		rust, ok := harness.Lookup(row.ID)
+		if !ok {
+			report.Results = append(report.Results, RowResult{
+				Row:     row,
+				Verdict: VerdictMissing,
+				Note:    "the Rust harness produced no result for this row",
+			})
+			continue
+		}
+		got := RunFork(row)
+		res := RowResult{Row: row, Rust: rust, Go: got}
+		entry, hasEntry := ledger.Lookup(row.ID)
+		if hasEntry {
+			declared[row.ID] = true
+		}
+
+		switch {
+		case rust.Equivalent(got):
+			res.Verdict = VerdictMatch
+			if hasEntry {
+				res.Verdict = VerdictLedgerStale
+				res.Class = entry.Class
+				res.Note = "declared as a divergence but the engines now agree; remove the ledger entry"
+			}
+		case !hasEntry:
+			res.Verdict = VerdictNewDivergence
+			res.Class = classify(rust, got)
+			res.Note = "undeclared divergence"
+		case entry.Rust != rust.Signature() || entry.Go != got.Signature():
+			res.Verdict = VerdictLedgerStale
+			res.Class = entry.Class
+			res.Note = fmt.Sprintf(
+				"divergence changed shape; ledger has rust=%q go=%q, run produced rust=%q go=%q",
+				entry.Rust, entry.Go, rust.Signature(), got.Signature())
+		default:
+			res.Verdict = VerdictKnownDivergence
+			res.Class = entry.Class
+			res.Note = entry.Summary
+		}
+		report.Results = append(report.Results, res)
+	}
+
+	// A ledger entry with no corresponding corpus row is also stale: the
+	// regression it names is no longer being run.
+	for _, entry := range ledger.Entries {
+		if declared[entry.ID] {
+			continue
+		}
+		report.Results = append(report.Results, RowResult{
+			Row:     Row{ID: entry.ID},
+			Verdict: VerdictLedgerStale,
+			Class:   entry.Class,
+			Note:    "ledger entry has no corpus row; the regression it names is not being run",
+		})
+	}
+
+	return report, nil
+}
+
+// classify gives an undeclared divergence a provisional label. Only the
+// harness-incomplete case can be decided automatically; everything else is an
+// engine difference until a later slice's BAML lane can say otherwise.
+func classify(rust, got Outcome) Class {
+	if rust.Status == StatusUnsupported || got.Status == StatusUnsupported {
+		return ClassHarnessIncomplete
+	}
+	return ClassEngine
+}
+
+// ModuleRoot returns the oracle module root, derived from this source file's
+// location so tests and the CLI agree regardless of working directory.
+// MJ_ORACLE_ROOT overrides it.
+func ModuleRoot() (string, error) {
+	if root := os.Getenv("MJ_ORACLE_ROOT"); root != "" {
+		return root, nil
+	}
+	_, file, _, ok := runtime.Caller(0)
+	if !ok {
+		return "", fmt.Errorf("cannot determine oracle module root; set MJ_ORACLE_ROOT")
+	}
+	return filepath.Dir(file), nil
+}

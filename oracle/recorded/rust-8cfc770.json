@@ -1,0 +1,230 @@
+{
+  "schema_version": 1,
+  "provenance": {
+    "engine_repo": "https://github.com/boundaryml/minijinja",
+    "engine_branch": "value-cmp",
+    "engine_rev": "8cfc770a5dffeda2de5b910d2b9f870d7edeff7c",
+    "engine_features": [
+      "macros",
+      "builtins",
+      "debug",
+      "preserve_order",
+      "adjacent_loop_items",
+      "unicode",
+      "json",
+      "unstable_machinery",
+      "custom_syntax",
+      "deserialization",
+      "serde"
+    ],
+    "harness_version": "1",
+    "os": "macos",
+    "arch": "aarch64",
+    "corpus_sha256": "183fa6d7623df0075b5d7a69b4e7dc8f7237ef63f14411b14faadd197a268b80"
+  },
+  "results": [
+    {
+      "id": "arith/int-add-small",
+      "outcome": {
+        "status": "ok",
+        "render": "3",
+        "boolean": null
+      }
+    },
+    {
+      "id": "arith/int-add-above-2pow53",
+      "outcome": {
+        "status": "ok",
+        "render": "9007199254740994",
+        "boolean": null
+      }
+    },
+    {
+      "id": "arith/int-mul-i64-edge",
+      "outcome": {
+        "status": "ok",
+        "render": "9223372036854775808",
+        "boolean": null
+      }
+    },
+    {
+      "id": "arith/floordiv-negative",
+      "outcome": {
+        "status": "ok",
+        "render": "-4",
+        "boolean": null
+      }
+    },
+    {
+      "id": "arith/rem-negative",
+      "outcome": {
+        "status": "ok",
+        "render": "1",
+        "boolean": null
+      }
+    },
+    {
+      "id": "arith/pow-int",
+      "outcome": {
+        "status": "ok",
+        "render": "1024",
+        "boolean": null
+      }
+    },
+    {
+      "id": "arith/div-by-zero",
+      "outcome": {
+        "status": "ok",
+        "render": "inf",
+        "boolean": null
+      }
+    },
+    {
+      "id": "cmp/int-eq-float",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "cmp/string-lt",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "cmp/int-in-string",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "str/lower-dotted-capital-i",
+      "outcome": {
+        "status": "ok",
+        "render": "i̇",
+        "boolean": null
+      }
+    },
+    {
+      "id": "str/upper-sharp-s",
+      "outcome": {
+        "status": "ok",
+        "render": "STRASSE",
+        "boolean": null
+      }
+    },
+    {
+      "id": "str/concat-tilde-number",
+      "outcome": {
+        "status": "ok",
+        "render": "a1",
+        "boolean": null
+      }
+    },
+    {
+      "id": "container/list-index",
+      "outcome": {
+        "status": "ok",
+        "render": "1",
+        "boolean": null
+      }
+    },
+    {
+      "id": "container/list-slice",
+      "outcome": {
+        "status": "ok",
+        "render": "[2, 3]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "container/map-render-insertion-order",
+      "outcome": {
+        "status": "ok",
+        "render": "{\"b\": 1, \"a\": 2}",
+        "boolean": null
+      }
+    },
+    {
+      "id": "container/map-loop-insertion-order",
+      "outcome": {
+        "status": "ok",
+        "render": "b=1;a=2;",
+        "boolean": null
+      }
+    },
+    {
+      "id": "valuecmp/object-render",
+      "outcome": {
+        "status": "ok",
+        "render": "Red",
+        "boolean": null
+      }
+    },
+    {
+      "id": "valuecmp/object-eq-string",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "valuecmp/string-eq-object",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "valuecmp/string-in-object-list",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "valuecmp/object-eq-object",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "err/unknown-filter",
+      "outcome": {
+        "status": "error",
+        "category": "unknown_filter",
+        "kind": "UnknownFilter",
+        "message": "unknown filter: filter no_such_filter is unknown (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "err/go-only-urlencode-filter",
+      "outcome": {
+        "status": "error",
+        "category": "unknown_filter",
+        "kind": "UnknownFilter",
+        "message": "unknown filter: filter urlencode is unknown (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "err/syntax-incomplete-if",
+      "outcome": {
+        "status": "error",
+        "category": "syntax",
+        "kind": "SyntaxError",
+        "message": "syntax error: unexpected end of block (in corpus.txt:1)"
+      }
+    }
+  ]
+}

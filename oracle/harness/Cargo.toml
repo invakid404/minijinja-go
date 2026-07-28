@@ -1,0 +1,42 @@
+[package]
+name = "mj-oracle-harness"
+version = "0.1.0"
+edition = "2021"
+publish = false
+description = "Differential-oracle harness: runs a corpus row through BAML's Rust minijinja engine fork and emits the exact outcome as JSON."
+
+# TEST-ONLY. Nothing here is part of the github.com/invakid404/minijinja-go/v2
+# Go module surface; the Go side talks to this binary over stdout JSON only.
+# The fork itself stays pure Go and CGO-free.
+
+[[bin]]
+name = "mj-oracle-harness"
+path = "src/main.rs"
+
+[dependencies]
+# BAML's engine fork, pinned to the exact revision BAML v0.223 builds against.
+# Its sole delta over upstream minijinja 2.16.0 is the generic `value_cmp`
+# dispatch (boundaryml/minijinja@8cfc770).
+#
+# The feature list mirrors BoundaryML/baml@85247f45 engine/Cargo.toml:99-115
+# verbatim, including `default-features = false` and the deliberate omission of
+# `multi_template` and `loader`.
+minijinja = { git = "https://github.com/boundaryml/minijinja.git", rev = "8cfc770a5dffeda2de5b910d2b9f870d7edeff7c", default-features = false, features = [
+  "macros",
+  "builtins",
+  "debug",
+  "preserve_order",
+  "adjacent_loop_items",
+  "unicode",
+  "json",
+  "unstable_machinery",
+  "custom_syntax",
+  "deserialization",
+  "serde",
+] }
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["preserve_order"] }
+sha2 = "0.10"
+
+[profile.release]
+debug = false
