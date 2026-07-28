@@ -22,7 +22,7 @@ Before the loop
 {%- endcall %}
 After the loop`
 
-func customLoop(state *minijinja.State, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
+func customLoop(state *minijinja.State, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
 	if len(args) != 1 {
 		return value.Undefined(), minijinja.NewError(minijinja.ErrInvalidOperation, "custom_loop expects a number")
 	}
@@ -32,7 +32,7 @@ func customLoop(state *minijinja.State, args []value.Value, kwargs map[string]va
 		return value.Undefined(), minijinja.NewError(minijinja.ErrInvalidOperation, "custom_loop expects a number")
 	}
 
-	callerValue, ok := kwargs["caller"]
+	callerValue, ok := kwargs.Get("caller")
 	if !ok {
 		return value.Undefined(), minijinja.NewError(minijinja.ErrInvalidOperation, "caller must be callable")
 	}

@@ -116,7 +116,7 @@ func TestPathJoinCallback(t *testing.T) {
 func TestAutoEscapeDefaults(t *testing.T) {
 	env := NewEnvironment()
 	var captured AutoEscape
-	env.AddFunction("capture", func(state *State, args []Value, kwargs map[string]Value) (Value, error) {
+	env.AddFunction("capture", func(state *State, args []Value, kwargs *value.OrderedMap) (Value, error) {
 		captured = state.AutoEscape()
 		return value.FromString("ok"), nil
 	})

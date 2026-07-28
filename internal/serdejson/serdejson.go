@@ -50,6 +50,11 @@ func (e *encoder) newline(depth int) {
 }
 
 func (e *encoder) encode(val value.Value, depth int) error {
+	// An invalid value serializes as null, as it does through serde.
+	if _, ok := value.InvalidError(val); ok {
+		e.buf.WriteString("null")
+		return nil
+	}
 	switch val.Kind() {
 	case value.KindUndefined, value.KindNone:
 		e.buf.WriteString("null")

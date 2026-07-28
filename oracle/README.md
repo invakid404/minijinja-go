@@ -213,12 +213,25 @@ is not here and arrives as its own profile in a later slice.
 
 ### Where the corpus stands
 
-363 rows: 353 agree, 10 diverge and every one of the 10 is declared — none of
-them in the template lane or the numeric lane, whose rows all agree with the
-engine. The `value_cmp` rows are the generic form of BAML's #597 enum fence: a
-host object with a canonical comparison identity (`RED`) and a different display
-(`Red`). Its display row agrees on both engines, which is what isolates the
-remaining four rows to comparison dispatch rather than to the fixture.
+1454 rows: 1450 agree, 4 diverge and every one of the 4 is declared. None is in
+the template, numeric, coercion or argument-contract lane, whose rows all agree
+with the engine:
+
+- `container/dict-function-kwargs-order` — keyword arguments reach a function as
+  a Go map, so `dict(b=1, a=2)` loses the order the engine keeps. Opened by
+  slice 4, owned by slice 5, and **carried rather than closed**: the fix is the
+  callable signature carrying an ordered mapping, which is a change to the
+  public object protocol. See PATCHES.md, *Named gap: keyword-argument order*.
+- `test/divisibleby-zero` — deliberate and permanent: the engine PANICS on a
+  zero divisor and the fork refuses with an error instead.
+- `syntax/bad-escape-capital-u`, `syntax/bad-escape-rust-unicode` — the lexer's
+  string escapes, owned by the error surface. Both sit in the builtins lane
+  because that is where they were found, not because they are builtins.
+
+Error TEXT is checked as well as error category: `messages_test.go` compares the
+message both engines produce for every row that fails on both sides — 469 of
+them — and carries two declared wording exceptions, one owned by slice 4's value
+model and one by the error surface.
 
 `arith/int-mul-i64-edge` used to be **architecture-dependent**: the fork rendered
 `9223372036854775807` on darwin/arm64 and `-9223372036854775808` on linux/amd64
@@ -240,6 +253,21 @@ undeclared numeric mismatch fails the first; declaring it fails the second. The
 class is the whole `numeric` lane plus every row with surface `arithmetic`, so a
 numeric regression cannot escape into the seed lane. A later slice adds its own
 lane the same way as it lands.
+
+**The builtins lane does not have that gate, and the omission is deliberate.**
+Its two lanes (`builtins`, `argcontract`) hold four ledger entries and none of
+them is a decline being hidden:
+
+| Row | Why it is not a numeric-style failure |
+| --- | --- |
+| `test/divisibleby-zero` | The engine PANICS; the fork errors. A gate demanding byte-exactness here would demand reproducing a panic. |
+| `container/dict-function-kwargs-order` | Opened by slice 4 against a signature this slice does not change. Closing it is a public-API change, not a builtin fix. |
+| `syntax/bad-escape-capital-u`, `syntax/bad-escape-rust-unicode` | Lexer rows that merely live in this lane; the error surface owns them. |
+
+So the builtins gate is stated rather than automated: **every row that is about a
+builtin agrees byte for byte, including its error text.** A reviewer checking
+that claim should read the ledger, not a passing test — which is exactly why the
+four entries above are enumerated here.
 
 ## Rust is test-only
 

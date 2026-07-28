@@ -4,6 +4,7 @@ package filters
 import (
 	"context"
 	"fmt"
+	"iter"
 	"math"
 	"math/big"
 	"net/url"
@@ -32,7 +33,7 @@ type State interface {
 }
 
 // FilterFunc is the signature for filter functions.
-type FilterFunc func(state State, val value.Value, args []value.Value, kwargs map[string]value.Value) (value.Value, error)
+type FilterFunc func(state State, val value.Value, args []value.Value, kwargs *value.OrderedMap) (value.Value, error)
 
 // TestFunc is the signature for test functions.
 type TestFunc func(state State, val value.Value, args []value.Value) (bool, error)
@@ -70,7 +71,7 @@ func undefinedBehavior(state State) value.UndefinedBehavior {
 //
 // The mapping is Rust's full case mapping, not Go's simple one: "ß"
 // uppercases to "SS". See internal/unicodecase.
-func FilterUpper(_ State, val value.Value, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
+func FilterUpper(_ State, val value.Value, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
 	if err := noArgs(args, kwargs); err != nil {
 		return value.Undefined(), err
 	}
@@ -92,17 +93,17 @@ func stringArg(val value.Value) (string, error) {
 
 // noArgs rejects any argument, the way a filter whose Rust signature takes
 // only the value does (argtypes.rs:230-238).
-func noArgs(args []value.Value, kwargs map[string]value.Value) error {
-	if len(args) > 0 || len(kwargs) > 0 {
-		return mjerrors.NewError(mjerrors.ErrTooManyArguments, "received too many arguments")
+func noArgs(args []value.Value, kwargs *value.OrderedMap) error {
+	if len(args) > 0 || kwargs.Len() > 0 {
+		return mjerrors.NewError(mjerrors.ErrTooManyArguments, "too many arguments")
 	}
 	return nil
 }
 
 // maxArgs rejects more than n positional arguments.
-func maxArgs(args []value.Value, kwargs map[string]value.Value, n int) error {
-	if len(args) > n || len(kwargs) > 0 {
-		return mjerrors.NewError(mjerrors.ErrTooManyArguments, "received too many arguments")
+func maxArgs(args []value.Value, kwargs *value.OrderedMap, n int) error {
+	if len(args) > n || kwargs.Len() > 0 {
+		return mjerrors.NewError(mjerrors.ErrTooManyArguments, "too many arguments")
 	}
 	return nil
 }
@@ -128,6 +129,21 @@ func tryIter(val value.Value, msg string) ([]value.Value, error) {
 	}
 }
 
+// iterArg is tryIter with the engine's own message. Every filter that walks
+// its subject goes through it, so a non-iterable is an invalid operation
+// rather than a silent pass-through.
+func iterArg(val value.Value) ([]value.Value, error) {
+	return tryIter(val, fmt.Sprintf("%s is not iterable", val.Kind()))
+}
+
+// listArg is iterArg for the filters whose subject is a `Vec<Value>` PARAMETER
+// rather than something they iterate themselves (`min`, `max`, `sort` —
+// filters.rs:246-305). The engine reports the ArgType conversion there, not the
+// iteration, and the two messages differ.
+func listArg(val value.Value) ([]value.Value, error) {
+	return tryIter(val, "cannot convert value to list")
+}
+
 // isIterable reports whether the engine can iterate a value at all. It is the
 // predicate behind the `iterable` test, and none and undefined satisfy it.
 func isIterable(val value.Value) bool {
@@ -150,7 +166,7 @@ func isIterable(val value.Value) bool {
 //
 // Like FilterUpper this is Rust's full case mapping, including the Greek
 // final-sigma rule: "ΑΣ" lowercases to "ας".
-func FilterLower(_ State, val value.Value, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
+func FilterLower(_ State, val value.Value, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
 	if err := noArgs(args, kwargs); err != nil {
 		return value.Undefined(), err
 	}
@@ -176,7 +192,7 @@ func FilterLower(_ State, val value.Value, args []value.Value, kwargs map[string
 //
 //	{{ "hello WORLD"|capitalize }}
 //	  -> "Hello world"
-func FilterCapitalize(_ State, val value.Value, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
+func FilterCapitalize(_ State, val value.Value, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
 	if err := noArgs(args, kwargs); err != nil {
 		return value.Undefined(), err
 	}
@@ -214,7 +230,7 @@ func Capitalize(s string) string {
 //	<h1>{{ chapter.title|title }}</h1>
 //	{{ "hello world"|title }}
 //	  -> "Hello World"
-func FilterTitle(_ State, val value.Value, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
+func FilterTitle(_ State, val value.Value, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
 	if err := noArgs(args, kwargs); err != nil {
 		return value.Undefined(), err
 	}
@@ -285,22 +301,20 @@ func isASCIIPunctuation(r rune) bool {
 //
 // Without an argument this trims Unicode whitespace (Rust's str::trim), not
 // the four ASCII space characters: a no-break space is trimmed too.
-func FilterTrim(_ State, val value.Value, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
-	if len(kwargs) > 0 {
-		return value.Undefined(), mjerrors.NewError(mjerrors.ErrTooManyArguments, "received too many arguments")
-	}
+func FilterTrim(_ State, val value.Value, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
 	s, err := stringArg(val)
 	if err != nil {
 		return value.Undefined(), err
 	}
-	if len(args) > 1 {
-		return value.Undefined(), mjerrors.NewError(mjerrors.ErrTooManyArguments, "received too many arguments")
+	a := NewArgs(args, kwargs)
+	chars, given, err := a.OptCoerceStr()
+	if err != nil {
+		return value.Undefined(), err
 	}
-	if len(args) == 1 && !args[0].IsNone() && !args[0].IsUndefined() {
-		chars, err := stringArg(args[0])
-		if err != nil {
-			return value.Undefined(), err
-		}
+	if err := a.Done(); err != nil {
+		return value.Undefined(), err
+	}
+	if given {
 		return value.FromString(strings.Trim(s, chars)), nil
 	}
 	return value.FromString(unicodecase.TrimSpace(s)), nil
@@ -326,26 +340,24 @@ func FilterTrim(_ State, val value.Value, args []value.Value, kwargs map[string]
 // The engine's `replace` takes exactly two arguments (filters.rs:258-265).
 // Jinja2's optional count is NOT part of it, so a third argument is an error
 // rather than a silently supported extension.
-func FilterReplace(_ State, val value.Value, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
-	if len(kwargs) > 0 {
-		return value.Undefined(), mjerrors.NewError(mjerrors.ErrTooManyArguments, "received too many arguments")
-	}
+func FilterReplace(_ State, val value.Value, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
 	s, err := stringArg(val)
 	if err != nil {
 		return value.Undefined(), err
 	}
-	if len(args) < 2 {
-		return value.Undefined(), mjerrors.NewError(mjerrors.ErrMissingArgument, "missing argument")
-	}
-	if len(args) > 2 {
-		return value.Undefined(), mjerrors.NewError(mjerrors.ErrTooManyArguments, "received too many arguments")
-	}
-	from, err := stringArg(args[0])
+	// Both parameters are `Cow<'_, str>`, so a keyword argument occupies the
+	// next one and fails as a string conversion rather than as an arity error:
+	// `"ab"|replace(nope=1)` is an invalid operation, not too many arguments.
+	a := NewArgs(args, kwargs)
+	from, err := a.CoerceStr()
 	if err != nil {
 		return value.Undefined(), err
 	}
-	to, err := stringArg(args[1])
+	to, err := a.CoerceStr()
 	if err != nil {
+		return value.Undefined(), err
+	}
+	if err := a.Done(); err != nil {
 		return value.Undefined(), err
 	}
 	return value.FromString(strings.ReplaceAll(s, from, to)), nil
@@ -356,17 +368,17 @@ func FilterReplace(_ State, val value.Value, args []value.Value, kwargs map[stri
 // Example:
 //
 //	{{ "%s, %s!"|format(greeting, name) }}
-func FilterFormat(_ State, val value.Value, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
+func FilterFormat(_ State, val value.Value, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
 	formatStr, ok := val.AsString()
 	if !ok {
 		// `&str`, so a non-string format string is an error rather than being
 		// stringified (argtypes.rs:469-480).
 		return value.Undefined(), mjerrors.NewError(mjerrors.ErrInvalidOperation, "value is not a string")
 	}
-	if len(kwargs) > 0 {
+	if kwargs.Len() > 0 {
 		// `Rest<Value>` collects positional arguments only; a keyword
 		// argument arrives as a trailing Kwargs value and is not consumed.
-		args = append(append([]value.Value(nil), args...), value.FromMap(kwargs))
+		args = append(append([]value.Value(nil), args...), value.FromOrderedMap(kwargs))
 	}
 	formatted, err := pyformat.Format(pyformat.StylePrintf, formatStr, args, nil)
 	if err != nil {
@@ -391,33 +403,32 @@ func FilterFormat(_ State, val value.Value, args []value.Value, kwargs map[strin
 //	{{ my_variable|default("default value") }}
 //	{{ ""|default("empty", true) }}
 //	  -> "empty"
-func FilterDefault(_ State, val value.Value, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
-	if len(kwargs) > 0 {
-		return value.Undefined(), mjerrors.NewError(mjerrors.ErrTooManyArguments, "too many keyword arguments")
+func FilterDefault(_ State, val value.Value, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
+	a := NewArgs(args, kwargs)
+	other, hasOther, err := a.OptValue()
+	if err != nil {
+		return value.Undefined(), err
+	}
+	lax, err := a.OptBool()
+	if err != nil {
+		return value.Undefined(), err
+	}
+	if err := a.Done(); err != nil {
+		return value.Undefined(), err
 	}
 
+	fallback := func() value.Value {
+		if hasOther {
+			return other
+		}
+		return value.FromString("")
+	}
 	if val.IsUndefined() {
-		if len(args) > 0 {
-			return args[0], nil
-		}
-		return value.FromString(""), nil
+		return fallback(), nil
 	}
-
-	// Check boolean flag for empty check
-	checkBool := false
-	if len(args) > 1 {
-		if b, ok := args[1].AsBool(); ok {
-			checkBool = b
-		}
+	if lax && !val.IsTrue() {
+		return fallback(), nil
 	}
-
-	if checkBool && !val.IsTrue() {
-		if len(args) > 0 {
-			return args[0], nil
-		}
-		return value.FromString(""), nil
-	}
-
 	return val, nil
 }
 
@@ -437,7 +448,7 @@ func FilterDefault(_ State, val value.Value, args []value.Value, kwargs map[stri
 //
 // Warning: Only use this filter on values you trust to contain safe HTML.
 // Using it on untrusted content can lead to security vulnerabilities.
-func FilterSafe(_ State, val value.Value, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
+func FilterSafe(_ State, val value.Value, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
 	if err := noArgs(args, kwargs); err != nil {
 		return value.Undefined(), err
 	}
@@ -463,7 +474,7 @@ func FilterSafe(_ State, val value.Value, args []value.Value, kwargs map[string]
 //	{{ user_input|escape }}
 //	{{ "<script>alert('xss')</script>"|e }}
 //	  -> "&lt;script&gt;alert('xss')&lt;/script&gt;"
-func FilterEscape(_ State, val value.Value, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
+func FilterEscape(_ State, val value.Value, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
 	if err := noArgs(args, kwargs); err != nil {
 		return value.Undefined(), err
 	}
@@ -516,7 +527,7 @@ func EscapeHTML(s string) string {
 //
 //	{{ 42|string }}
 //	  -> "42"
-func FilterString(_ State, val value.Value, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
+func FilterString(_ State, val value.Value, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
 	if err := noArgs(args, kwargs); err != nil {
 		return value.Undefined(), err
 	}
@@ -543,7 +554,7 @@ func FilterString(_ State, val value.Value, args []value.Value, kwargs map[strin
 //	  -> true
 //	{{ ""|bool }}
 //	  -> false
-func FilterBool(state State, val value.Value, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
+func FilterBool(state State, val value.Value, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
 	if err := noArgs(args, kwargs); err != nil {
 		return value.Undefined(), err
 	}
@@ -576,38 +587,25 @@ func FilterBool(state State, val value.Value, args []value.Value, kwargs map[str
 //	  -> ["a", "b", "c"]
 //	{{ "a,b,c,d"|split(",", 2) }}
 //	  -> ["a", "b", "c,d"]
-func FilterSplit(_ State, val value.Value, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
-	if len(kwargs) > 0 {
-		return value.Undefined(), mjerrors.NewError(mjerrors.ErrTooManyArguments, "received too many arguments")
-	}
+func FilterSplit(_ State, val value.Value, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
+	// The engine's subject type here is `Arc<str>`, which — unlike the
+	// `Cow<'_, str>` the casing filters take — requires a real string
+	// (argtypes.rs:482-517).
 	s, ok := val.AsString()
 	if !ok {
-		// The engine's argument type here is `Arc<str>`, which — unlike the
-		// `Cow<'_, str>` the casing filters take — requires a real string
-		// (argtypes.rs:482-517).
-		return value.Undefined(), mjerrors.NewError(mjerrors.ErrInvalidOperation, "value is not a string")
+		return value.Undefined(), invalidOp("value is not a string")
 	}
-	if len(args) > 2 {
-		return value.Undefined(), mjerrors.NewError(mjerrors.ErrTooManyArguments, "received too many arguments")
+	a := NewArgs(args, kwargs)
+	sep, hasSep, err := a.OptStr()
+	if err != nil {
+		return value.Undefined(), err
 	}
-
-	var sep string
-	var hasSep bool
-	if len(args) > 0 && !args[0].IsNone() && !args[0].IsUndefined() {
-		sep, hasSep = args[0].AsString()
-		if !hasSep {
-			return value.Undefined(), mjerrors.NewError(mjerrors.ErrInvalidOperation, "value is not a string")
-		}
+	maxSplits, hasMax, err := a.OptInt("i64")
+	if err != nil {
+		return value.Undefined(), err
 	}
-
-	var maxSplits int64
-	var hasMax bool
-	if len(args) > 1 && !args[1].IsNone() && !args[1].IsUndefined() {
-		maxSplits, hasMax = args[1].AsInt()
-		if !hasMax || !args[1].IsActualInt() {
-			return value.Undefined(), mjerrors.NewError(mjerrors.ErrInvalidOperation,
-				fmt.Sprintf("cannot convert %s to i64", args[1].Kind()))
-		}
+	if err := a.Done(); err != nil {
+		return value.Undefined(), err
 	}
 
 	parts := Split(s, sep, hasSep, maxSplits, hasMax)
@@ -615,7 +613,17 @@ func FilterSplit(_ State, val value.Value, args []value.Value, kwargs map[string
 	for i, p := range parts {
 		result[i] = value.FromString(p)
 	}
-	return value.FromIterator(value.NewIterator("split", result)), nil
+	// `make_object_iterable`, which renders as `<iterator>` rather than as a
+	// list until something iterates it (filters.rs:475-484).
+	return value.MakeIterable(func() iter.Seq[value.Value] {
+		return func(yield func(value.Value) bool) {
+			for _, item := range result {
+				if !yield(item) {
+					return
+				}
+			}
+		}
+	}), nil
 }
 
 // Split is the `split` filter's transform, shared with pycompat's str.split
@@ -724,7 +732,7 @@ func splitWhitespaceN(s string, n int) []string {
 //
 //	{{ "foo\nbar\nbaz"|lines }}
 //	  -> ["foo", "bar", "baz"]
-func FilterLines(_ State, val value.Value, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
+func FilterLines(_ State, val value.Value, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
 	if err := noArgs(args, kwargs); err != nil {
 		return value.Undefined(), err
 	}
@@ -780,7 +788,7 @@ func Lines(s string) []string {
 //	<p>{{ users|length }} users found</p>
 //	{{ "hello"|length }}
 //	  -> 5
-func FilterLength(_ State, val value.Value, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
+func FilterLength(_ State, val value.Value, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
 	if err := noArgs(args, kwargs); err != nil {
 		return value.Undefined(), err
 	}
@@ -806,7 +814,7 @@ func FilterLength(_ State, val value.Value, args []value.Value, kwargs map[strin
 //	  <dt>primary email
 //	  <dd>{{ user.email_addresses|first|default('no email') }}
 //	</dl>
-func FilterFirst(_ State, val value.Value, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
+func FilterFirst(_ State, val value.Value, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
 	if err := noArgs(args, kwargs); err != nil {
 		return value.Undefined(), err
 	}
@@ -851,7 +859,7 @@ func FilterFirst(_ State, val value.Value, args []value.Value, kwargs map[string
 //	    <dd>{{ update.status }}
 //	  </dl>
 //	{% endwith %}
-func FilterLast(_ State, val value.Value, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
+func FilterLast(_ State, val value.Value, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
 	if err := noArgs(args, kwargs); err != nil {
 		return value.Undefined(), err
 	}
@@ -862,8 +870,11 @@ func FilterLast(_ State, val value.Value, args []value.Value, kwargs map[string]
 		}
 		return value.FromString(string(runes[len(runes)-1])), nil
 	}
+	// `last` accepts only a string, a sequence or an iterable
+	// (filters.rs:716-728) — unlike `first`, which reaches for the value as an
+	// object and therefore also works on a mapping.
 	switch val.Kind() {
-	case value.KindSeq, value.KindIterable, value.KindMap, value.KindPlain:
+	case value.KindSeq, value.KindIterable:
 		items := val.Iter()
 		if len(items) > 0 {
 			return items[len(items)-1], nil
@@ -892,7 +903,7 @@ func FilterLast(_ State, val value.Value, args []value.Value, kwargs map[string]
 //	{% endfor %}
 //	{{ "hello"|reverse }}
 //	  -> "olleh"
-func FilterReverse(_ State, val value.Value, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
+func FilterReverse(_ State, val value.Value, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
 	if err := noArgs(args, kwargs); err != nil {
 		return value.Undefined(), err
 	}
@@ -905,7 +916,7 @@ func FilterReverse(_ State, val value.Value, args []value.Value, kwargs map[stri
 	}
 
 	// none and undefined reverse to themselves; a value that cannot be
-	// enumerated at all is an error (value/mod.rs:1400-1440).
+	// enumerated at all is an error (value/mod.rs:1400-1462).
 	switch val.Kind() {
 	case value.KindNone, value.KindUndefined:
 		return val, nil
@@ -916,10 +927,15 @@ func FilterReverse(_ State, val value.Value, args []value.Value, kwargs map[stri
 		// calling .rev() on it, so `m|reverse` iterates forward. Reversing the
 		// result then does reverse, because the result enumerates differently. Both
 		// halves are pinned by the corpus (container/map-reverse-order and
-		// container/map-reverse-twice).
+		// container/map-reverse-twice), and `contract/filter-reverse-map` and
+		// `-map-items` pin the same asymmetry from the argument-contract side.
 		return value.FromIterator(value.NewIterator("reversed", val.Iter())), nil
 	case value.KindSeq, value.KindIterable, value.KindPlain:
 		items := val.Iter()
+		if items == nil && val.Kind() == value.KindPlain {
+			return value.Undefined(), mjerrors.NewError(mjerrors.ErrInvalidOperation,
+				fmt.Sprintf("cannot reverse values of type %s", val.Kind()))
+		}
 		result := make([]value.Value, len(items))
 		for i, item := range items {
 			result[len(items)-1-i] = item
@@ -927,7 +943,7 @@ func FilterReverse(_ State, val value.Value, args []value.Value, kwargs map[stri
 		return value.FromIterator(value.NewIterator("reversed", result)), nil
 	default:
 		return value.Undefined(), mjerrors.NewError(mjerrors.ErrInvalidOperation,
-			fmt.Sprintf("cannot reverse value of type %s", val.Kind()))
+			fmt.Sprintf("cannot reverse values of type %s", val.Kind()))
 	}
 }
 
@@ -951,36 +967,29 @@ func FilterReverse(_ State, val value.Value, args []value.Value, kwargs map[stri
 //	{{ users|sort(attribute="age") }}
 //	{{ users|sort(attribute="age", reverse=true) }}
 //	{{ cities|sort(attribute="name, state") }}
-func FilterSort(state State, val value.Value, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
-	items := val.Iter()
-	if items == nil {
-		return val, nil
+func FilterSort(state State, val value.Value, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
+	a := NewArgs(args, kwargs).Kwargs()
+	reverse, _, err := a.GetBool("reverse")
+	if err != nil {
+		return value.Undefined(), err
+	}
+	caseSensitive, _, err := a.GetBool("case_sensitive")
+	if err != nil {
+		return value.Undefined(), err
+	}
+	attrName, _, err := a.GetStr("attribute")
+	if err != nil {
+		return value.Undefined(), err
+	}
+	if err := a.Done(); err != nil {
+		return value.Undefined(), err
 	}
 
-	if len(args) > 0 {
-		return value.Undefined(), mjerrors.NewError(mjerrors.ErrTooManyArguments, "too many arguments")
-	}
+	sortKeys := splitAttributeKeys(attrName)
 
-	reverse := false
-	if r, ok := kwargs["reverse"]; ok {
-		if b, ok := r.AsBool(); ok {
-			reverse = b
-		}
-	}
-
-	caseSensitive := false
-	if cs, ok := kwargs["case_sensitive"]; ok {
-		if b, ok := cs.AsBool(); ok {
-			caseSensitive = b
-		}
-	}
-
-	// Get attribute for sorting
-	var attrName string
-	if attr, ok := kwargs["attribute"]; ok {
-		if s, ok := attr.AsString(); ok {
-			attrName = s
-		}
+	items, err := listArg(val)
+	if err != nil {
+		return value.Undefined(), err
 	}
 
 	result := make([]value.Value, len(items))
@@ -989,10 +998,22 @@ func FilterSort(state State, val value.Value, args []value.Value, kwargs map[str
 	sort.SliceStable(result, func(i, j int) bool {
 		a, b := result[i], result[j]
 
-		// Apply attribute if specified
-		if attrName != "" {
-			a = getDeepAttr(a, attrName)
-			b = getDeepAttr(b, attrName)
+		// A comma-separated attribute is a COMPOSITE key, compared
+		// element by element (filters.rs:785-819): `sort(attribute="age, name")`
+		// orders by age and breaks ties by name, which one path lookup cannot
+		// do.
+		if len(sortKeys) == 1 {
+			a = getDeepAttr(a, sortKeys[0])
+			b = getDeepAttr(b, sortKeys[0])
+		} else if len(sortKeys) > 1 {
+			aParts := make([]value.Value, len(sortKeys))
+			bParts := make([]value.Value, len(sortKeys))
+			for i, key := range sortKeys {
+				aParts[i] = getDeepAttr(a, key)
+				bParts[i] = getDeepAttr(b, key)
+			}
+			a = value.FromSlice(aParts)
+			b = value.FromSlice(bParts)
 		}
 
 		// Case-insensitive string comparison
@@ -1019,6 +1040,21 @@ func FilterSort(state State, val value.Value, args []value.Value, kwargs map[str
 	})
 
 	return value.FromSlice(result), nil
+}
+
+// splitAttributeKeys splits a sort attribute into its comma-separated parts,
+// trimming each. An empty attribute yields no keys, and a single key is the
+// common fast path (filters.rs:785-797).
+func splitAttributeKeys(attr string) []string {
+	if attr == "" {
+		return nil
+	}
+	parts := strings.Split(attr, ",")
+	keys := make([]string, 0, len(parts))
+	for _, part := range parts {
+		keys = append(keys, strings.TrimSpace(part))
+	}
+	return keys
 }
 
 // getDeepAttr gets a nested attribute (supports "a.b.0" syntax)
@@ -1059,9 +1095,14 @@ func parseInt(s string) (int64, error) {
 //	{{ ["a", "b", "c"]|join(", ") }}
 //	  -> "a, b, c"
 //	{{ items|join }}
-func FilterJoin(_ State, val value.Value, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
-	if len(kwargs) > 0 {
-		return value.Undefined(), mjerrors.NewError(mjerrors.ErrTooManyArguments, "received too many arguments")
+func FilterJoin(_ State, val value.Value, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
+	a := NewArgs(args, kwargs)
+	sep, _, err := a.OptCoerceStr()
+	if err != nil {
+		return value.Undefined(), err
+	}
+	if err := a.Done(); err != nil {
+		return value.Undefined(), err
 	}
 	// none and undefined join to the empty string before anything else is
 	// considered (filters.rs:429-432).
@@ -1071,17 +1112,6 @@ func FilterJoin(_ State, val value.Value, args []value.Value, kwargs map[string]
 	items, err := tryIter(val, fmt.Sprintf("cannot join value of type %s", val.Kind()))
 	if err != nil {
 		return value.Undefined(), err
-	}
-
-	sep := ""
-	if len(args) > 0 {
-		sep, err = stringArg(args[0])
-		if err != nil {
-			return value.Undefined(), err
-		}
-	}
-	if len(args) > 1 {
-		return value.Undefined(), mjerrors.NewError(mjerrors.ErrTooManyArguments, "received too many arguments")
 	}
 
 	parts := make([]string, len(items))
@@ -1108,7 +1138,10 @@ func FilterJoin(_ State, val value.Value, args []value.Value, kwargs map[string]
 //	  -> ["a", "b", "c"]
 //	{{ range(5)|list }}
 //	  -> [0, 1, 2, 3, 4]
-func FilterList(state State, val value.Value, _ []value.Value, _ map[string]value.Value) (value.Value, error) {
+func FilterList(state State, val value.Value, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
+	if err := NewArgs(args, kwargs).Done(); err != nil {
+		return value.Undefined(), err
+	}
 	if val.IsUndefined() {
 		behavior := undefinedBehavior(state)
 		if (behavior == value.UndefinedStrict || behavior == value.UndefinedSemiStrict) && !val.IsSilentUndefined() {
@@ -1143,26 +1176,23 @@ func FilterList(state State, val value.Value, _ []value.Value, _ map[string]valu
 //	{{ ["a", "b", "a", "c"]|unique }}
 //	  -> ["a", "b", "c"]
 //	{{ users|unique(attribute="city") }}
-func FilterUnique(_ State, val value.Value, _ []value.Value, kwargs map[string]value.Value) (value.Value, error) {
-	items := val.Iter()
-	if items == nil {
-		return val, nil
+func FilterUnique(_ State, val value.Value, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
+	a := NewArgs(args, kwargs).Kwargs()
+	caseSensitive, _, err := a.GetBool("case_sensitive")
+	if err != nil {
+		return value.Undefined(), err
+	}
+	attrName, _, err := a.GetStr("attribute")
+	if err != nil {
+		return value.Undefined(), err
+	}
+	if err := a.Done(); err != nil {
+		return value.Undefined(), err
 	}
 
-	caseSensitive := false
-	if cs, ok := kwargs["case_sensitive"]; ok {
-		if b, ok := cs.AsBool(); ok {
-			caseSensitive = b
-		}
-	}
-
-	attrName := ""
-	if attr, ok := kwargs["attribute"]; ok {
-		if s, ok := attr.AsString(); ok {
-			attrName = s
-		} else {
-			return value.Undefined(), mjerrors.NewError(mjerrors.ErrInvalidOperation, "attribute must be a string")
-		}
+	items, err := iterArg(val)
+	if err != nil {
+		return value.Undefined(), err
 	}
 
 	seen := make(map[string]bool)
@@ -1173,10 +1203,13 @@ func FilterUnique(_ State, val value.Value, _ []value.Value, kwargs map[string]v
 			valueToCompare = getDeepAttr(item, attrName)
 		}
 
+		// `s.to_lowercase()` (filters.rs:1517-1523), which is FULL case
+		// mapping: "İ" and "i̇" fold together, where Go's simple ToLower keeps
+		// them apart. Also, the attribute lookup above is a path.
 		var key string
 		if !caseSensitive {
 			if s, ok := valueToCompare.AsString(); ok {
-				key = strings.ToLower(s)
+				key = value.FromString(unicodecase.ToLower(s)).Repr()
 			} else {
 				key = valueToCompare.Repr()
 			}
@@ -1204,9 +1237,15 @@ func FilterUnique(_ State, val value.Value, _ []value.Value, kwargs map[string]v
 //
 //	{{ [1, 2, 3, 4]|min }}
 //	  -> 1
-func FilterMin(_ State, val value.Value, _ []value.Value, _ map[string]value.Value) (value.Value, error) {
-	items := val.Iter()
-	if items == nil || len(items) == 0 {
+func FilterMin(_ State, val value.Value, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
+	if err := NewArgs(args, kwargs).Done(); err != nil {
+		return value.Undefined(), err
+	}
+	items, err := listArg(val)
+	if err != nil {
+		return value.Undefined(), err
+	}
+	if len(items) == 0 {
 		return value.Undefined(), nil
 	}
 
@@ -1232,9 +1271,15 @@ func FilterMin(_ State, val value.Value, _ []value.Value, _ map[string]value.Val
 //
 //	{{ [1, 2, 3, 4]|max }}
 //	  -> 4
-func FilterMax(_ State, val value.Value, _ []value.Value, _ map[string]value.Value) (value.Value, error) {
-	items := val.Iter()
-	if items == nil || len(items) == 0 {
+func FilterMax(_ State, val value.Value, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
+	if err := NewArgs(args, kwargs).Done(); err != nil {
+		return value.Undefined(), err
+	}
+	items, err := listArg(val)
+	if err != nil {
+		return value.Undefined(), err
+	}
+	if len(items) == 0 {
 		return value.Undefined(), nil
 	}
 
@@ -1269,11 +1314,11 @@ func FilterMax(_ State, val value.Value, _ []value.Value, _ map[string]value.Val
 // BAML replaces this filter in its own environment with one that has an
 // asymmetric int/float rule; that belongs to the deferred BAML profile, not
 // here.
-func FilterSum(_ State, val value.Value, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
-	if len(args) > 0 || len(kwargs) > 0 {
-		return value.Undefined(), mjerrors.NewError(mjerrors.ErrTooManyArguments, "received too many arguments")
+func FilterSum(_ State, val value.Value, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
+	if len(args) > 0 || kwargs.Len() > 0 {
+		return value.Undefined(), mjerrors.NewError(mjerrors.ErrTooManyArguments, "too many arguments")
 	}
-	items, err := tryIter(val, fmt.Sprintf("cannot convert %s to an iterator", val.Kind()))
+	items, err := iterArg(val)
 	if err != nil {
 		return value.Undefined(), err
 	}
@@ -1317,23 +1362,27 @@ func FilterSum(_ State, val value.Value, args []value.Value, kwargs map[string]v
 //	  </tr>
 //	{% endfor %}
 //	</table>
-func FilterBatch(_ State, val value.Value, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
-	if len(kwargs) > 0 {
-		return value.Undefined(), mjerrors.NewError(mjerrors.ErrTooManyArguments, "too many keyword arguments")
-	}
-	items, err := tryIter(val, fmt.Sprintf("cannot convert %s to an iterator", val.Kind()))
+func FilterBatch(_ State, val value.Value, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
+	a := NewArgs(args, kwargs)
+	lineCount, err := countArg(a)
 	if err != nil {
 		return value.Undefined(), err
 	}
-
-	lineCount, err := countArg(args, 0)
+	fill, hasFill, err := a.OptValue()
+	if err != nil {
+		return value.Undefined(), err
+	}
+	if err := a.Done(); err != nil {
+		return value.Undefined(), err
+	}
+	items, err := iterArg(val)
 	if err != nil {
 		return value.Undefined(), err
 	}
 
 	fillWith := value.Undefined()
-	if len(args) > 1 {
-		fillWith = args[1]
+	if hasFill {
+		fillWith = fill
 	}
 
 	var result []value.Value
@@ -1381,45 +1430,44 @@ func FilterBatch(_ State, val value.Value, args []value.Value, kwargs map[string
 //
 // countArg is the `count: usize` argument `batch` and `slice` take: it must be
 // present, non-negative and non-zero (filters.rs:945-953).
-func countArg(args []value.Value, i int) (int, error) {
-	if i >= len(args) {
-		return 0, mjerrors.NewError(mjerrors.ErrMissingArgument, "missing argument")
+func countArg(a *Args) (int, error) {
+	n, err := a.Int("usize")
+	if err != nil {
+		return 0, err
 	}
-	n, ok := args[i].AsInt()
-	if !ok || !args[i].IsActualInt() || n < 0 {
-		return 0, mjerrors.NewError(mjerrors.ErrInvalidOperation,
-			fmt.Sprintf("cannot convert %s to usize", args[i].Kind()))
+	if n < 0 {
+		return 0, invalidOp("cannot convert number to usize")
 	}
 	if n == 0 {
-		return 0, mjerrors.NewError(mjerrors.ErrInvalidOperation, "count cannot be 0")
+		return 0, invalidOp("count cannot be 0")
 	}
 	return int(n), nil
 }
 
-func FilterSlice(_ State, val value.Value, args []value.Value, _ map[string]value.Value) (value.Value, error) {
-	items, err := tryIter(val, fmt.Sprintf("cannot convert %s to an iterator", val.Kind()))
+func FilterSlice(_ State, val value.Value, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
+	a := NewArgs(args, kwargs)
+	sliceCount, err := countArg(a)
+	if err != nil {
+		return value.Undefined(), err
+	}
+	fill, hasFill, err := a.OptValue()
+	if err != nil {
+		return value.Undefined(), err
+	}
+	if err := a.Done(); err != nil {
+		return value.Undefined(), err
+	}
+	items, err := iterArg(val)
 	if err != nil {
 		return value.Undefined(), err
 	}
 
-	sliceCount, err := countArg(args, 0)
-	if err != nil {
-		return value.Undefined(), err
-	}
-
-	fillWith := value.Undefined()
-	if len(args) > 1 {
-		fillWith = args[1]
-	}
-
-	// Calculate slice sizes
+	// filters.rs:888-925: `items_per_slice` is the floor, the first
+	// `slices_with_extra` slices take one more, and the filler is appended to
+	// every slice that did NOT take an extra item.
 	length := len(items)
 	baseSize := length / sliceCount
 	remainder := length % sliceCount
-	maxSize := baseSize
-	if remainder > 0 {
-		maxSize++
-	}
 
 	var result []value.Value
 	offset := 0
@@ -1432,11 +1480,10 @@ func FilterSlice(_ State, val value.Value, args []value.Value, _ map[string]valu
 		slice := make([]value.Value, size)
 		copy(slice, items[offset:offset+size])
 
-		// Fill slices to the maximum size when requested
-		if !fillWith.IsUndefined() && len(slice) < maxSize {
-			for len(slice) < maxSize {
-				slice = append(slice, fillWith)
-			}
+		// The filler goes to every slice that did not take an extra item,
+		// even when that makes it longer than the others.
+		if hasFill && i >= remainder {
+			slice = append(slice, fill)
 		}
 
 		result = append(result, value.FromSlice(slice))
@@ -1468,34 +1515,54 @@ func FilterSlice(_ State, val value.Value, args []value.Value, _ map[string]valu
 // Keyword arguments:
 //   - attribute: name or dotted path of attribute to extract
 //   - default: value to use when attribute is missing
-func FilterMap(state State, val value.Value, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
-	items := val.Iter()
-	if items == nil {
-		return val, nil
+func FilterMap(state State, val value.Value, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
+	// `map(state, value, args: Rest<Value>)`, which is then split back into
+	// positional arguments and keyword arguments (filters.rs:1293-1353). The
+	// attribute form takes no positional arguments at all, and the filter form
+	// requires a string name.
+	a := NewArgs(args, kwargs).Kwargs()
+	rest := a.Rest()
+	attrValue, hasAttr := a.Get("attribute")
+	defaultVal, hasDefault := a.Get("default")
+	if !hasDefault {
+		defaultVal = value.Undefined()
 	}
 
-	// Check for filter name as first positional arg
-	var filterName string
-	if len(args) > 0 {
-		if s, ok := args[0].AsString(); ok {
-			filterName = s
-		}
-	}
-
-	// Get attribute name
 	var attrName string
-	attrValue := value.Undefined()
-	if attr, ok := kwargs["attribute"]; ok {
-		attrValue = attr
-		if s, ok := attr.AsString(); ok {
+	var filterName string
+	attributeForm := hasAttr && !attrValue.IsUndefined() && !attrValue.IsNone()
+	if attributeForm {
+		// The attribute form takes no positional arguments at all.
+		if len(rest) > 0 {
+			return value.Undefined(), tooMany()
+		}
+		if s, ok := attrValue.AsString(); ok {
 			attrName = s
 		}
+	} else {
+		attrValue = value.Undefined()
+		if len(rest) == 0 {
+			return value.Undefined(), invalidOp("filter name is required")
+		}
+		name, ok := rest[0].AsString()
+		if !ok {
+			return value.Undefined(), invalidOp("filter name must be a string")
+		}
+		filterName = name
+	}
+	// Only the attribute branch asserts that every keyword was used
+	// (filters.rs:1329); the filter branch never looks at them again, so an
+	// unknown keyword is silently accepted there. Reproduced rather than
+	// tidied up: the corpus row `contract/filter-map-keyword` pins it.
+	if attributeForm {
+		if err := a.Done(); err != nil {
+			return value.Undefined(), err
+		}
 	}
 
-	// Get default value
-	defaultVal := value.Undefined()
-	if def, ok := kwargs["default"]; ok {
-		defaultVal = def
+	items, err := iterArg(val)
+	if err != nil {
+		return value.Undefined(), err
 	}
 
 	var result []value.Value
@@ -1515,15 +1582,15 @@ func FilterMap(state State, val value.Value, args []value.Value, kwargs map[stri
 			// Filter mapping
 			filterFn, ok := state.GetFilter(filterName)
 			if !ok {
-				return value.Undefined(), mjerrors.NewError(mjerrors.ErrUnknownFilter, filterName)
+				return value.Undefined(), mjerrors.NewError(mjerrors.ErrUnknownFilter, "unknown filter")
 			}
 			var err error
-			mapped, err = filterFn(state, item, args[1:], kwargs)
+			mapped, err = filterFn(state, item, rest[1:], nil)
 			if err != nil {
-				return val, err
+				return value.Undefined(), err
 			}
 		} else {
-			return value.Undefined(), mjerrors.NewError(mjerrors.ErrMissingArgument, "missing argument")
+			return value.Undefined(), invalidOp("filter name is required")
 		}
 		result = append(result, mapped)
 	}
@@ -1565,18 +1632,23 @@ func normalizeTestName(name string) string {
 //	  -> [1, 3]
 //	{{ [false, null, 42]|select }}
 //	  -> [42]
-func FilterSelect(state State, val value.Value, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
-	items := val.Iter()
-	if items == nil {
-		return val, nil
+func FilterSelect(state State, val value.Value, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
+	// `(state, value, test_name: Option<Cow<str>>, args: Rest<Value>)`: a
+	// keyword argument lands in test_name, where a map is not a string.
+	a := NewArgs(args, kwargs)
+	name, hasName, err := a.OptCoerceStr()
+	if err != nil {
+		return value.Undefined(), err
+	}
+	testArgs := a.Rest()
+	testName := ""
+	if hasName {
+		testName = normalizeTestName(name)
 	}
 
-	// Get test name if provided
-	var testName string
-	if len(args) > 0 {
-		if s, ok := args[0].AsString(); ok {
-			testName = normalizeTestName(s)
-		}
+	items, err := iterArg(val)
+	if err != nil {
+		return value.Undefined(), err
 	}
 
 	var result []value.Value
@@ -1585,12 +1657,12 @@ func FilterSelect(state State, val value.Value, args []value.Value, kwargs map[s
 		if testName != "" {
 			testFn, ok := state.GetTest(testName)
 			if !ok {
-				return value.Undefined(), mjerrors.NewError(mjerrors.ErrUnknownTest, testName)
+				return value.Undefined(), mjerrors.NewError(mjerrors.ErrUnknownTest, "unknown test")
 			}
 			var err error
-			keep, err = testFn(state, item, args[1:])
+			keep, err = testFn(state, item, testArgs)
 			if err != nil {
-				return val, err
+				return value.Undefined(), err
 			}
 		} else {
 			keep = item.IsTrue()
@@ -1616,18 +1688,23 @@ func FilterSelect(state State, val value.Value, args []value.Value, kwargs map[s
 //
 //	{{ [1, 2, 3, 4]|reject("odd") }}
 //	  -> [2, 4]
-func FilterReject(state State, val value.Value, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
-	items := val.Iter()
-	if items == nil {
-		return val, nil
+func FilterReject(state State, val value.Value, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
+	// `(state, value, test_name: Option<Cow<str>>, args: Rest<Value>)`: a
+	// keyword argument lands in test_name, where a map is not a string.
+	a := NewArgs(args, kwargs)
+	name, hasName, err := a.OptCoerceStr()
+	if err != nil {
+		return value.Undefined(), err
+	}
+	testArgs := a.Rest()
+	testName := ""
+	if hasName {
+		testName = normalizeTestName(name)
 	}
 
-	// Get test name if provided
-	var testName string
-	if len(args) > 0 {
-		if s, ok := args[0].AsString(); ok {
-			testName = normalizeTestName(s)
-		}
+	items, err := iterArg(val)
+	if err != nil {
+		return value.Undefined(), err
 	}
 
 	var result []value.Value
@@ -1636,12 +1713,12 @@ func FilterReject(state State, val value.Value, args []value.Value, kwargs map[s
 		if testName != "" {
 			testFn, ok := state.GetTest(testName)
 			if !ok {
-				return value.Undefined(), mjerrors.NewError(mjerrors.ErrUnknownTest, testName)
+				return value.Undefined(), mjerrors.NewError(mjerrors.ErrUnknownTest, "unknown test")
 			}
 			var err error
-			reject, err = testFn(state, item, args[1:])
+			reject, err = testFn(state, item, testArgs)
 			if err != nil {
-				return val, err
+				return value.Undefined(), err
 			}
 		} else {
 			reject = item.IsTrue()
@@ -1669,38 +1746,40 @@ func FilterReject(state State, val value.Value, args []value.Value, kwargs map[s
 //	  -> all users where x.is_active is true
 //	{{ users|selectattr("id", "even") }}
 //	  -> users with even IDs
-func FilterSelectAttr(state State, val value.Value, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
-	items := val.Iter()
-	if items == nil {
-		return val, nil
+func FilterSelectAttr(state State, val value.Value, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
+	a := NewArgs(args, kwargs)
+	attrName, err := a.CoerceStr()
+	if err != nil {
+		return value.Undefined(), err
+	}
+	name, hasName, err := a.OptCoerceStr()
+	if err != nil {
+		return value.Undefined(), err
+	}
+	testArgs := a.Rest()
+	testName := ""
+	if hasName {
+		testName = normalizeTestName(name)
 	}
 
-	if len(args) < 1 {
-		return value.Undefined(), mjerrors.NewError(mjerrors.ErrMissingArgument, "missing argument")
-	}
-	attrName, _ := args[0].AsString()
-
-	// Get test name if provided (second arg)
-	var testName string
-	if len(args) > 1 {
-		if s, ok := args[1].AsString(); ok {
-			testName = normalizeTestName(s)
-		}
+	items, err := iterArg(val)
+	if err != nil {
+		return value.Undefined(), err
 	}
 
 	var result []value.Value
 	for _, item := range items {
-		attr := item.GetAttr(attrName)
+		attr := getDeepAttr(item, attrName)
 		var keep bool
 		if testName != "" {
 			testFn, ok := state.GetTest(testName)
 			if !ok {
-				return value.Undefined(), mjerrors.NewError(mjerrors.ErrUnknownTest, testName)
+				return value.Undefined(), mjerrors.NewError(mjerrors.ErrUnknownTest, "unknown test")
 			}
 			var err error
-			keep, err = testFn(state, attr, args[2:])
+			keep, err = testFn(state, attr, testArgs)
 			if err != nil {
-				return val, err
+				return value.Undefined(), err
 			}
 		} else {
 			keep = attr.IsTrue()
@@ -1728,38 +1807,40 @@ func FilterSelectAttr(state State, val value.Value, args []value.Value, kwargs m
 //	  -> all users where x.is_active is false
 //	{{ users|rejectattr("id", "even") }}
 //	  -> users with odd IDs
-func FilterRejectAttr(state State, val value.Value, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
-	items := val.Iter()
-	if items == nil {
-		return val, nil
+func FilterRejectAttr(state State, val value.Value, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
+	a := NewArgs(args, kwargs)
+	attrName, err := a.CoerceStr()
+	if err != nil {
+		return value.Undefined(), err
+	}
+	name, hasName, err := a.OptCoerceStr()
+	if err != nil {
+		return value.Undefined(), err
+	}
+	testArgs := a.Rest()
+	testName := ""
+	if hasName {
+		testName = normalizeTestName(name)
 	}
 
-	if len(args) < 1 {
-		return value.Undefined(), mjerrors.NewError(mjerrors.ErrMissingArgument, "missing argument")
-	}
-	attrName, _ := args[0].AsString()
-
-	// Get test name if provided (second arg)
-	var testName string
-	if len(args) > 1 {
-		if s, ok := args[1].AsString(); ok {
-			testName = normalizeTestName(s)
-		}
+	items, err := iterArg(val)
+	if err != nil {
+		return value.Undefined(), err
 	}
 
 	var result []value.Value
 	for _, item := range items {
-		attr := item.GetAttr(attrName)
+		attr := getDeepAttr(item, attrName)
 		var reject bool
 		if testName != "" {
 			testFn, ok := state.GetTest(testName)
 			if !ok {
-				return value.Undefined(), mjerrors.NewError(mjerrors.ErrUnknownTest, testName)
+				return value.Undefined(), mjerrors.NewError(mjerrors.ErrUnknownTest, "unknown test")
 			}
 			var err error
-			reject, err = testFn(state, attr, args[2:])
+			reject, err = testFn(state, attr, testArgs)
 			if err != nil {
-				return val, err
+				return value.Undefined(), err
 			}
 		} else {
 			reject = attr.IsTrue()
@@ -1796,43 +1877,43 @@ func FilterRejectAttr(state State, val value.Value, args []value.Value, kwargs m
 //   - attribute: name or dotted path of attribute to group by
 //   - default: value to use when attribute is missing
 //   - case_sensitive: if true, sort in a case-sensitive manner (default: false)
-func FilterGroupBy(_ State, val value.Value, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
-	items := val.Iter()
-	if items == nil {
-		return val, nil
+func FilterGroupBy(_ State, val value.Value, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
+	// `groupby(value, attribute: Option<&str>, kwargs)` (filters.rs:1404-1417).
+	// The Kwargs parameter is extracted from the end BEFORE the positional
+	// ones are filled (argtypes.rs:199-210), so `groupby(attribute="city")`
+	// leaves the positional attribute slot empty rather than putting a map in
+	// it.
+	ga := NewArgs(args, kwargs).Kwargs()
+	attrName, hasAttr, err := ga.OptStr()
+	if err != nil {
+		return value.Undefined(), err
 	}
-
-	// Get attribute name
-	var attrName string
-	if len(args) > 0 {
-		if s, ok := args[0].AsString(); ok {
-			attrName = s
+	defaultVal, hasDefault := ga.Get("default")
+	if !hasDefault {
+		defaultVal = value.Undefined()
+	}
+	caseSensitive, _, err := ga.GetBool("case_sensitive")
+	if err != nil {
+		return value.Undefined(), err
+	}
+	if !hasAttr {
+		// The attribute may come as a keyword instead, and it is required
+		// either way.
+		attrName, hasAttr, err = ga.GetStr("attribute")
+		if err != nil {
+			return value.Undefined(), err
+		}
+		if !hasAttr {
+			return value.Undefined(), missing()
 		}
 	}
-	if attr, ok := kwargs["attribute"]; ok {
-		if s, ok := attr.AsString(); ok {
-			attrName = s
-		}
-	}
-	if attrName == "" {
-		return value.Undefined(), mjerrors.NewError(mjerrors.ErrMissingArgument, "missing argument")
+	if err := ga.Done(); err != nil {
+		return value.Undefined(), err
 	}
 
-	// Get default value
-	defaultVal := value.Undefined()
-	if def, ok := kwargs["default"]; ok {
-		defaultVal = def
-	}
-	if len(args) > 1 && defaultVal.IsUndefined() {
-		defaultVal = args[1]
-	}
-
-	// Case sensitivity
-	caseSensitive := false
-	if cs, ok := kwargs["case_sensitive"]; ok {
-		if b, ok := cs.AsBool(); ok {
-			caseSensitive = b
-		}
+	items, err := iterArg(val)
+	if err != nil {
+		return value.Undefined(), err
 	}
 
 	// Sort items by group key
@@ -2001,80 +2082,91 @@ func (g *groupObject) String() string {
 //	{% for user in shard0|chain(shard1, shard2) %}
 //	  {{ user.name }}
 //	{% endfor %}
-func FilterChain(_ State, val value.Value, args []value.Value, _ map[string]value.Value) (value.Value, error) {
-	allValues := append([]value.Value{val}, args...)
+func FilterChain(_ State, val value.Value, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
+	// `chain(value, others: Rest<Value>)` (filters.rs:1556-1583): a keyword
+	// argument is one more operand, not something to ignore.
+	others := NewArgs(args, kwargs).Rest()
+	allValues := append([]value.Value{val}, others...)
 
 	allMaps := true
 	allSeq := true
 	for _, v := range allValues {
-		if _, ok := v.AsMap(); !ok {
+		if v.Kind() != value.KindMap {
 			allMaps = false
 		}
-		if _, ok := v.AsSlice(); !ok {
+		if v.Kind() != value.KindSeq {
 			allSeq = false
 		}
 	}
 
+	// All mappings merge into one mapping, all sequences into one sequence.
 	if allMaps {
 		merged := make(map[string]value.Value)
 		for _, v := range allValues {
 			m, _ := v.AsMap()
-			for k, val := range m {
-				merged[k] = val
+			for k, item := range m {
+				merged[k] = item
 			}
 		}
 		return value.FromMap(merged), nil
 	}
-
-	// Get items from first value
-	items := val.Iter()
-	if items == nil {
-		items = []value.Value{}
-	}
-
-	// Chain all arguments
-	for _, arg := range args {
-		argItems := arg.Iter()
-		if argItems != nil {
-			items = append(items, argItems...)
-		}
-	}
-
 	if allSeq {
+		var items []value.Value
+		for _, v := range allValues {
+			items = append(items, v.Iter()...)
+		}
 		return value.FromSlice(items), nil
 	}
 
-	// Return as iterable to support length, indexing, etc.
+	// Anything else is a lazy chained iterable, and an operand that cannot be
+	// iterated is yielded as an invalid value rather than dropped: the engine
+	// keeps the failure visible in the stream (filters.rs:1574-1581), so
+	// `{{ 42|chain([1])|list }}` is
+	// `[<invalid value: invalid operation: number is not iterable>, 1]`.
+	// Being an iterable and not a sequence, it has no length and no index,
+	// which is why `42|chain([1])|length` is an invalid operation.
+	var items []value.Value
+	for _, v := range allValues {
+		operand, err := tryIter(v, fmt.Sprintf("%s is not iterable", v.Kind()))
+		if err != nil {
+			items = append(items, value.Invalid(err))
+			continue
+		}
+		items = append(items, operand...)
+	}
 	return value.FromObject(&chainObject{items: items}), nil
 }
 
-// chainObject allows chained iterables to support length and indexing
+// chainObject is the lazy chained iterable `|chain` produces when its operands
+// are not all mappings or all sequences. It is an ITERABLE, not a sequence:
+// the engine's has no length and no index either.
 type chainObject struct {
 	items []value.Value
 }
+
+var (
+	_ value.Object         = (*chainObject)(nil)
+	_ value.IterableObject = (*chainObject)(nil)
+	_ value.ObjectWithRepr = (*chainObject)(nil)
+)
 
 func (c *chainObject) GetAttr(name string) value.Value {
 	return value.Undefined()
 }
 
-func (c *chainObject) Iter() []value.Value {
-	return c.items
-}
+// String renders the way the engine's lazy iterable does.
+func (c *chainObject) String() string { return "<iterator>" }
 
-func (c *chainObject) Len() (int, bool) {
-	return len(c.items), true
-}
+func (c *chainObject) ObjectRepr() value.ObjectRepr { return value.ObjectReprIterable }
 
-func (c *chainObject) GetItem(key value.Value) value.Value {
-	if idx, ok := key.AsInt(); ok {
-		if idx < 0 {
-			idx = int64(len(c.items)) + idx
-		}
-		if idx >= 0 && idx < int64(len(c.items)) {
-			return c.items[idx]
+func (c *chainObject) Iterate() iter.Seq[value.Value] {
+	return func(yield func(value.Value) bool) {
+		for _, item := range c.items {
+			if !yield(item) {
+				return
+			}
 		}
 	}
-	return value.Undefined()
 }
 
 // FilterZip zips multiple iterables into tuples.
@@ -2094,26 +2186,35 @@ func (c *chainObject) GetItem(key value.Value) value.Value {
 //	  -> [(1, "a"), (2, "b"), (3, "c")]
 //	{{ [1, 2]|zip(["a", "b", "c"], ["x", "y", "z"]) }}
 //	  -> [(1, "a", "x"), (2, "b", "y")]
-func FilterZip(_ State, val value.Value, args []value.Value, _ map[string]value.Value) (value.Value, error) {
-	// Collect all sequences
-	seqs := [][]value.Value{val.Iter()}
-	for _, arg := range args {
-		seqs = append(seqs, arg.Iter())
+func FilterZip(_ State, val value.Value, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
+	// `zip(value, others: Rest<Value>)`: every operand is iterated, so a
+	// non-iterable anywhere is an invalid operation rather than an empty
+	// result.
+	zipArg := func(v value.Value) ([]value.Value, error) {
+		return tryIter(v, fmt.Sprintf("zip filter argument must be iterable, got %s", v.Kind()))
+	}
+	first, err := zipArg(val)
+	if err != nil {
+		return value.Undefined(), err
+	}
+	seqs := [][]value.Value{first}
+	for _, arg := range NewArgs(args, kwargs).Rest() {
+		items, err := zipArg(arg)
+		if err != nil {
+			return value.Undefined(), err
+		}
+		seqs = append(seqs, items)
 	}
 
 	// Find minimum length
 	minLen := math.MaxInt
 	for _, seq := range seqs {
-		if seq == nil {
-			minLen = 0
-			break
-		}
 		if len(seq) < minLen {
 			minLen = len(seq)
 		}
 	}
 
-	if minLen == 0 || minLen == math.MaxInt {
+	if minLen <= 0 || minLen == math.MaxInt {
 		return value.FromSlice(nil), nil
 	}
 
@@ -2147,7 +2248,7 @@ func FilterZip(_ State, val value.Value, args []value.Value, _ map[string]value.
 // converts to a number: a bool or a string cannot be absoluted at all, and an
 // integer is absoluted exactly. Asking `AsInt` instead answered 1 for `true`
 // and lost precision past 2^53.
-func FilterAbs(_ State, val value.Value, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
+func FilterAbs(_ State, val value.Value, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
 	if err := noArgs(args, kwargs); err != nil {
 		return value.Undefined(), err
 	}
@@ -2192,14 +2293,19 @@ func FilterAbs(_ State, val value.Value, args []value.Value, kwargs map[string]v
 //
 //	{{ "42"|int }}
 //	  -> 42
-func FilterInt(_ State, val value.Value, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
+func FilterInt(_ State, val value.Value, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
 	if err := noArgs(args, kwargs); err != nil {
+		return value.Undefined(), err
+	}
+	// `int` and `float` are the two filters that reveal an invalid value's
+	// error themselves (filters.rs:580, 600).
+	if err, ok := value.InvalidError(val); ok {
 		return value.Undefined(), err
 	}
 	if len(args) > 0 {
 		return value.Undefined(), mjerrors.NewError(mjerrors.ErrTooManyArguments, "too many arguments")
 	}
-	if len(kwargs) > 0 {
+	if kwargs.Len() > 0 {
 		return value.Undefined(), mjerrors.NewError(mjerrors.ErrTooManyArguments, "too many keyword arguments")
 	}
 
@@ -2233,7 +2339,7 @@ func FilterInt(_ State, val value.Value, args []value.Value, kwargs map[string]v
 		}
 		f, err := strconv.ParseFloat(s, 64)
 		if err != nil {
-			return value.Undefined(), mjerrors.NewError(mjerrors.ErrInvalidOperation, err.Error())
+			return value.Undefined(), invalidOp("invalid float literal")
 		}
 		out, _ := value.FromI128(value.F64ToI128(f))
 		return out, nil
@@ -2257,14 +2363,17 @@ func FilterInt(_ State, val value.Value, args []value.Value, kwargs map[string]v
 //
 //	{{ "42.5"|float }}
 //	  -> 42.5
-func FilterFloat(_ State, val value.Value, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
+func FilterFloat(_ State, val value.Value, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
 	if err := noArgs(args, kwargs); err != nil {
+		return value.Undefined(), err
+	}
+	if err, ok := value.InvalidError(val); ok {
 		return value.Undefined(), err
 	}
 	if len(args) > 0 {
 		return value.Undefined(), mjerrors.NewError(mjerrors.ErrTooManyArguments, "too many arguments")
 	}
-	if len(kwargs) > 0 {
+	if kwargs.Len() > 0 {
 		return value.Undefined(), mjerrors.NewError(mjerrors.ErrTooManyArguments, "too many keyword arguments")
 	}
 
@@ -2281,11 +2390,11 @@ func FilterFloat(_ State, val value.Value, args []value.Value, kwargs map[string
 		return value.FromFloat(0.0), nil
 	}
 	if s, ok := val.AsString(); ok {
-		if f, err := strconv.ParseFloat(s, 64); err == nil {
-			return value.FromFloat(f), nil
-		} else {
-			return value.Undefined(), mjerrors.NewError(mjerrors.ErrInvalidOperation, err.Error())
+		f, err := strconv.ParseFloat(s, 64)
+		if err != nil {
+			return value.Undefined(), invalidOp("invalid float literal")
 		}
+		return value.FromFloat(f), nil
 	}
 
 	return value.Undefined(), mjerrors.NewError(mjerrors.ErrInvalidOperation, fmt.Sprintf("cannot convert %s to float", val.Kind()))
@@ -2306,13 +2415,16 @@ func FilterFloat(_ State, val value.Value, args []value.Value, kwargs map[string
 //	  -> 43.0
 //	{{ 42.55|round(1) }}
 //	  -> 42.6
-func FilterRound(_ State, val value.Value, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
-	if len(args) > 1 {
-		return value.Undefined(), mjerrors.NewError(mjerrors.ErrTooManyArguments, "too many arguments")
+func FilterRound(_ State, val value.Value, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
+	a := NewArgs(args, kwargs)
+	prec, _, err := a.OptInt("i32")
+	if err != nil {
+		return value.Undefined(), err
 	}
-	if len(kwargs) > 0 {
-		return value.Undefined(), mjerrors.NewError(mjerrors.ErrTooManyArguments, "too many keyword arguments")
+	if err := a.Done(); err != nil {
+		return value.Undefined(), err
 	}
+	precision := int(prec)
 
 	if val.IsActualInt() {
 		return val, nil
@@ -2321,15 +2433,6 @@ func FilterRound(_ State, val value.Value, args []value.Value, kwargs map[string
 	f, ok := val.AsFloat()
 	if !ok {
 		return value.Undefined(), mjerrors.NewError(mjerrors.ErrInvalidOperation, fmt.Sprintf("cannot round value (%s)", val.Kind()))
-	}
-
-	precision := 0
-	if len(args) > 0 {
-		if p, ok := args[0].AsInt(); ok {
-			precision = int(p)
-		} else {
-			return value.Undefined(), mjerrors.NewError(mjerrors.ErrInvalidOperation, "precision must be an integer")
-		}
 	}
 
 	multiplier := math.Pow(10, float64(precision))
@@ -2356,7 +2459,7 @@ func FilterRound(_ State, val value.Value, args []value.Value, kwargs map[string
 //	  <dd>{{ value }}
 //	{% endfor %}
 //	</dl>
-func FilterItems(_ State, val value.Value, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
+func FilterItems(_ State, val value.Value, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
 	if err := noArgs(args, kwargs); err != nil {
 		return value.Undefined(), err
 	}
@@ -2409,7 +2512,26 @@ func FilterItems(_ State, val value.Value, args []value.Value, kwargs map[string
 //   - by: set to "value" to sort by value instead of key (default: "key")
 //   - reverse: set to true to sort in descending order
 //   - case_sensitive: set to true for case-sensitive sorting (default: false)
-func FilterDictSort(_ State, val value.Value, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
+func FilterDictSort(_ State, val value.Value, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
+	// `dictsort(v: &Value, kwargs: Kwargs)` (filters.rs:319-360).
+	a := NewArgs(args, kwargs).Kwargs()
+	by, _, err := a.GetStr("by")
+	if err != nil {
+		return value.Undefined(), err
+	}
+	reverse, _, err := a.GetBool("reverse")
+	if err != nil {
+		return value.Undefined(), err
+	}
+	caseSensitive, _, err := a.GetBool("case_sensitive")
+	if err != nil {
+		return value.Undefined(), err
+	}
+	if err := a.Done(); err != nil {
+		return value.Undefined(), err
+	}
+	byValue := by == "value"
+
 	if m, ok := val.AsMap(); ok {
 		// Start from the mapping's own order so that entries the sort considers
 		// equal keep it, rather than coming out in Go map order.
@@ -2421,40 +2543,16 @@ func FilterDictSort(_ State, val value.Value, args []value.Value, kwargs map[str
 			}
 		}
 
-		if len(args) > 0 {
-			return value.Undefined(), mjerrors.NewError(mjerrors.ErrTooManyArguments, "too many arguments")
-		}
-
-		byValue := false
-		if b, ok := kwargs["by"]; ok {
-			if s, ok := b.AsString(); ok && s == "value" {
-				byValue = true
-			}
-		}
-
-		reverse := false
-		if b, ok := kwargs["reverse"]; ok {
-			if bb, ok := b.AsBool(); ok {
-				reverse = bb
-			}
-		}
-
-		caseSensitive := false
-		if cs, ok := kwargs["case_sensitive"]; ok {
-			if b, ok := cs.AsBool(); ok {
-				caseSensitive = b
-			}
-		}
-
 		cmpValues := func(a, b value.Value) int {
 			if !caseSensitive {
 				if s1, ok := a.AsString(); ok {
 					if s2, ok := b.AsString(); ok {
-						lowerCmp := strings.Compare(strings.ToLower(s1), strings.ToLower(s2))
-						if lowerCmp != 0 {
-							return lowerCmp
-						}
-						return strings.Compare(s1, s2)
+						// `unicase::UniCase` compares case-insensitively and
+						// says EQUAL for "a" and "A" (filters.rs:284-307). The
+						// port broke that tie on raw bytes, which reordered
+						// keys the engine leaves alone: with a stable sort the
+						// mapping's own order survives.
+						return strings.Compare(unicodecase.ToLower(s1), unicodecase.ToLower(s2))
 					}
 				}
 			}
@@ -2465,7 +2563,7 @@ func FilterDictSort(_ State, val value.Value, args []value.Value, kwargs map[str
 		}
 
 		if byValue {
-			sort.Slice(keys, func(i, j int) bool {
+			sort.SliceStable(keys, func(i, j int) bool {
 				cmp := cmpValues(m[keys[i]], m[keys[j]])
 				if reverse {
 					return cmp > 0
@@ -2473,7 +2571,7 @@ func FilterDictSort(_ State, val value.Value, args []value.Value, kwargs map[str
 				return cmp < 0
 			})
 		} else {
-			sort.Slice(keys, func(i, j int) bool {
+			sort.SliceStable(keys, func(i, j int) bool {
 				cmp := cmpValues(value.FromString(keys[i]), value.FromString(keys[j]))
 				if reverse {
 					return cmp > 0
@@ -2491,7 +2589,9 @@ func FilterDictSort(_ State, val value.Value, args []value.Value, kwargs map[str
 		}
 		return value.FromSlice(result), nil
 	}
-	return value.FromSlice(nil), nil
+	// Like `items`, this is a mapping operation: anything else is an invalid
+	// operation rather than an empty list.
+	return value.Undefined(), invalidOp("cannot convert value into pair list")
 }
 
 // FilterAttr looks up an attribute by name.
@@ -2508,15 +2608,18 @@ func FilterDictSort(_ State, val value.Value, args []value.Value, kwargs map[str
 //
 //	{{ value|attr("key") }}
 //	  -> same as value["key"] or value.key
-func FilterAttr(_ State, val value.Value, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
-	if err := maxArgs(args, kwargs, 1); err != nil {
+func FilterAttr(_ State, val value.Value, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
+	a := NewArgs(args, kwargs)
+	key, err := a.Value()
+	if err != nil {
 		return value.Undefined(), err
 	}
-	if len(args) < 1 {
-		return value.Undefined(), mjerrors.NewError(mjerrors.ErrMissingArgument, "missing argument")
+	if err := a.Done(); err != nil {
+		return value.Undefined(), err
 	}
-	name, _ := args[0].AsString()
-	return val.GetAttr(name), nil
+	// `attr` is the `[]` operator (filters.rs:645-647), so a non-string key is
+	// a lookup by that value rather than an error.
+	return val.GetItem(key), nil
 }
 
 // FilterIndent indents each line of a string with spaces.
@@ -2536,36 +2639,34 @@ func FilterAttr(_ State, val value.Value, args []value.Value, kwargs map[string]
 //	{{ yaml_content|indent(2) }}
 //	{{ yaml_content|indent(2, true) }}
 //	{{ yaml_content|indent(2, true, true) }}
-func FilterIndent(_ State, val value.Value, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
-	s, ok := val.AsString()
-	if !ok {
-		return val, nil
+func FilterIndent(_ State, val value.Value, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
+	// `indent(value: String, width: usize, indent_first_line: Option<bool>,
+	// indent_blank_lines: Option<bool>)` (filters.rs:1066-1101): the subject is
+	// stringified and the width is required.
+	s, err := stringArg(val)
+	if err != nil {
+		return value.Undefined(), err
 	}
-
-	if len(kwargs) > 0 {
-		return value.Undefined(), mjerrors.NewError(mjerrors.ErrTooManyArguments, "too many keyword arguments")
+	a := NewArgs(args, kwargs)
+	w, err := a.Int("usize")
+	if err != nil {
+		return value.Undefined(), err
 	}
-
-	width := 4
-	if len(args) > 0 {
-		if w, ok := args[0].AsInt(); ok {
-			width = int(w)
-		}
+	if w < 0 {
+		return value.Undefined(), invalidOp("cannot convert number to usize")
 	}
-
-	first := false
-	if len(args) > 1 {
-		if b, ok := args[1].AsBool(); ok {
-			first = b
-		}
+	first, err := a.OptBool()
+	if err != nil {
+		return value.Undefined(), err
 	}
-
-	blank := false
-	if len(args) > 2 {
-		if b, ok := args[2].AsBool(); ok {
-			blank = b
-		}
+	blank, err := a.OptBool()
+	if err != nil {
+		return value.Undefined(), err
 	}
+	if err := a.Done(); err != nil {
+		return value.Undefined(), err
+	}
+	width := int(w)
 
 	indent := strings.Repeat(" ", width)
 	lines := strings.Split(s, "\n")
@@ -2594,7 +2695,7 @@ func FilterIndent(_ State, val value.Value, args []value.Value, kwargs map[strin
 // Template usage:
 //
 //	<pre>{{ complex_object|pprint }}</pre>
-func FilterPprint(_ State, val value.Value, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
+func FilterPprint(_ State, val value.Value, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
 	if err := noArgs(args, kwargs); err != nil {
 		return value.Undefined(), err
 	}
@@ -2663,28 +2764,33 @@ func pprintValue(val value.Value, indent int) string {
 //
 // Keyword arguments:
 //   - indent: true for 2-space indent, or integer for custom indent
-func FilterTojson(_ State, val value.Value, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
+func FilterTojson(_ State, val value.Value, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
 	// `tojson(value, indent: Option<Value>, kwargs)`: `true` means two spaces,
 	// `false` means compact, and a number is a literal width
 	// (filters.rs:1007-1020).
 	indentArg := value.Undefined()
 	switch {
 	case len(args) > 1:
-		return value.Undefined(), mjerrors.NewError(mjerrors.ErrTooManyArguments, "received too many arguments")
+		return value.Undefined(), mjerrors.NewError(mjerrors.ErrTooManyArguments, "too many arguments")
 	case len(args) == 1:
 		indentArg = args[0]
 	}
-	if kw, ok := kwargs["indent"]; ok {
-		if len(args) > 0 {
-			return value.Undefined(), mjerrors.NewError(mjerrors.ErrTooManyArguments, "received too many arguments")
+	// The Kwargs parameter is consumed AFTER the positional one is filled, so
+	// `tojson(2, indent=2)` leaves `indent` unused rather than being an arity
+	// error: the engine reports the unknown keyword (value/argtypes.rs
+	// assert_all_used), not "too many arguments".
+	unused := make([]string, 0, kwargs.Len())
+	for _, name := range kwargs.Keys() {
+		if name == "indent" && len(args) == 0 {
+			indentArg, _ = kwargs.Get(name)
+			continue
 		}
-		indentArg = kw
+		unused = append(unused, name)
 	}
-	for name := range kwargs {
-		if name != "indent" {
-			return value.Undefined(), mjerrors.NewError(mjerrors.ErrTooManyArguments,
-				fmt.Sprintf("unknown keyword argument '%s'", name))
-		}
+	if len(unused) > 0 {
+		// In keyword order, which is the engine's: the first unused one.
+		return value.Undefined(), mjerrors.NewError(mjerrors.ErrTooManyArguments,
+			fmt.Sprintf("unknown keyword argument '%s'", unused[0]))
 	}
 
 	indent := -1
@@ -2733,7 +2839,7 @@ func urlencodeString(input string) string {
 //	<a href="/search?{{ {"q": "my search", "lang": "en"}|urlencode }}">
 //	{{ "hello world"|urlencode }}
 //	  -> "hello%20world"
-func FilterUrlencode(_ State, val value.Value, _ []value.Value, _ map[string]value.Value) (value.Value, error) {
+func FilterUrlencode(_ State, val value.Value, _ []value.Value, _ *value.OrderedMap) (value.Value, error) {
 	// Check if it's a map (dict) - encode as query string
 	if m, ok := val.AsMap(); ok {
 		var parts []string

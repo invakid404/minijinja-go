@@ -1,0 +1,5038 @@
+{
+  "schema_version": 1,
+  "rows": [
+    {
+      "id": "contract/filter-safe-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'x'|safe"
+    },
+    {
+      "id": "contract/filter-safe-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'x'|safe(1)",
+      "expect": "error",
+      "notes": "One positional argument beyond the engine's signature."
+    },
+    {
+      "id": "contract/filter-safe-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'x'|safe(nope_kw=1)",
+      "expect": "error",
+      "notes": "An unknown keyword argument, which the engine never ignores."
+    },
+    {
+      "id": "contract/filter-escape-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'<'|escape"
+    },
+    {
+      "id": "contract/filter-escape-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'<'|escape(1)",
+      "expect": "error",
+      "notes": "One positional argument beyond the engine's signature."
+    },
+    {
+      "id": "contract/filter-escape-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'<'|escape(nope_kw=1)",
+      "expect": "error",
+      "notes": "An unknown keyword argument, which the engine never ignores."
+    },
+    {
+      "id": "contract/filter-e-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'<'|e"
+    },
+    {
+      "id": "contract/filter-e-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'<'|e(1)",
+      "expect": "error",
+      "notes": "One positional argument beyond the engine's signature."
+    },
+    {
+      "id": "contract/filter-e-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'<'|e(nope_kw=1)",
+      "expect": "error",
+      "notes": "An unknown keyword argument, which the engine never ignores."
+    },
+    {
+      "id": "contract/filter-upper-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'x'|upper"
+    },
+    {
+      "id": "contract/filter-upper-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'x'|upper(1)",
+      "expect": "error",
+      "notes": "One positional argument beyond the engine's signature."
+    },
+    {
+      "id": "contract/filter-upper-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'x'|upper(nope_kw=1)",
+      "expect": "error",
+      "notes": "An unknown keyword argument, which the engine never ignores."
+    },
+    {
+      "id": "contract/filter-lower-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'X'|lower"
+    },
+    {
+      "id": "contract/filter-lower-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'X'|lower(1)",
+      "expect": "error",
+      "notes": "One positional argument beyond the engine's signature."
+    },
+    {
+      "id": "contract/filter-lower-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'X'|lower(nope_kw=1)",
+      "expect": "error",
+      "notes": "An unknown keyword argument, which the engine never ignores."
+    },
+    {
+      "id": "contract/filter-title-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'x y'|title"
+    },
+    {
+      "id": "contract/filter-title-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'x y'|title(1)",
+      "expect": "error",
+      "notes": "One positional argument beyond the engine's signature."
+    },
+    {
+      "id": "contract/filter-title-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'x y'|title(nope_kw=1)",
+      "expect": "error",
+      "notes": "An unknown keyword argument, which the engine never ignores."
+    },
+    {
+      "id": "contract/filter-capitalize-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'x'|capitalize"
+    },
+    {
+      "id": "contract/filter-capitalize-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'x'|capitalize(1)",
+      "expect": "error",
+      "notes": "One positional argument beyond the engine's signature."
+    },
+    {
+      "id": "contract/filter-capitalize-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'x'|capitalize(nope_kw=1)",
+      "expect": "error",
+      "notes": "An unknown keyword argument, which the engine never ignores."
+    },
+    {
+      "id": "contract/filter-replace-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'ab'|replace('a', 'b')"
+    },
+    {
+      "id": "contract/filter-replace-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'ab'|replace('a', 'b', 1)",
+      "expect": "error",
+      "notes": "One positional argument beyond the engine's signature."
+    },
+    {
+      "id": "contract/filter-replace-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'ab'|replace('a', 'b', nope_kw=1)",
+      "expect": "error",
+      "notes": "An unknown keyword argument, which the engine never ignores."
+    },
+    {
+      "id": "contract/filter-length-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'ab'|length"
+    },
+    {
+      "id": "contract/filter-length-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'ab'|length(1)",
+      "expect": "error",
+      "notes": "One positional argument beyond the engine's signature."
+    },
+    {
+      "id": "contract/filter-length-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'ab'|length(nope_kw=1)",
+      "expect": "error",
+      "notes": "An unknown keyword argument, which the engine never ignores."
+    },
+    {
+      "id": "contract/filter-count-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'ab'|count"
+    },
+    {
+      "id": "contract/filter-count-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'ab'|count(1)",
+      "expect": "error",
+      "notes": "One positional argument beyond the engine's signature."
+    },
+    {
+      "id": "contract/filter-count-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'ab'|count(nope_kw=1)",
+      "expect": "error",
+      "notes": "An unknown keyword argument, which the engine never ignores."
+    },
+    {
+      "id": "contract/filter-dictsort-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "dict(a=1)|dictsort"
+    },
+    {
+      "id": "contract/filter-dictsort-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "dict(a=1)|dictsort(1)",
+      "expect": "error",
+      "notes": "One positional argument beyond the engine's signature."
+    },
+    {
+      "id": "contract/filter-dictsort-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "dict(a=1)|dictsort(nope_kw=1)",
+      "expect": "error",
+      "notes": "An unknown keyword argument, which the engine never ignores."
+    },
+    {
+      "id": "contract/filter-dictsort-noniterable",
+      "surface": "environment",
+      "form": "expression",
+      "source": "42|dictsort",
+      "expect": "error",
+      "notes": "A subject the engine cannot iterate. Answering here would be the dangerous direction: the fork used to pass the value through."
+    },
+    {
+      "id": "contract/filter-items-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "dict(a=1)|items"
+    },
+    {
+      "id": "contract/filter-items-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "dict(a=1)|items(1)",
+      "expect": "error",
+      "notes": "One positional argument beyond the engine's signature."
+    },
+    {
+      "id": "contract/filter-items-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "dict(a=1)|items(nope_kw=1)",
+      "expect": "error",
+      "notes": "An unknown keyword argument, which the engine never ignores."
+    },
+    {
+      "id": "contract/filter-items-noniterable",
+      "surface": "environment",
+      "form": "expression",
+      "source": "42|items",
+      "expect": "error",
+      "notes": "A subject the engine cannot iterate. Answering here would be the dangerous direction: the fork used to pass the value through."
+    },
+    {
+      "id": "contract/filter-reverse-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[1, 2]|reverse"
+    },
+    {
+      "id": "contract/filter-reverse-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[1, 2]|reverse(1)",
+      "expect": "error",
+      "notes": "One positional argument beyond the engine's signature."
+    },
+    {
+      "id": "contract/filter-reverse-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[1, 2]|reverse(nope_kw=1)",
+      "expect": "error",
+      "notes": "An unknown keyword argument, which the engine never ignores."
+    },
+    {
+      "id": "contract/filter-reverse-noniterable",
+      "surface": "environment",
+      "form": "expression",
+      "source": "42|reverse",
+      "expect": "error",
+      "notes": "A subject the engine cannot iterate. Answering here would be the dangerous direction: the fork used to pass the value through."
+    },
+    {
+      "id": "contract/filter-trim-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "' x '|trim"
+    },
+    {
+      "id": "contract/filter-trim-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "' x '|trim('a', 'b')",
+      "expect": "error",
+      "notes": "One positional argument beyond the engine's signature."
+    },
+    {
+      "id": "contract/filter-trim-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "' x '|trim(nope_kw=1)",
+      "expect": "error",
+      "notes": "An unknown keyword argument, which the engine never ignores."
+    },
+    {
+      "id": "contract/filter-join-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[1, 2]|join('-')"
+    },
+    {
+      "id": "contract/filter-join-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[1, 2]|join('-', '+')",
+      "expect": "error",
+      "notes": "One positional argument beyond the engine's signature."
+    },
+    {
+      "id": "contract/filter-join-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[1, 2]|join('-', nope_kw=1)",
+      "expect": "error",
+      "notes": "An unknown keyword argument, which the engine never ignores."
+    },
+    {
+      "id": "contract/filter-join-noniterable",
+      "surface": "environment",
+      "form": "expression",
+      "source": "42|join('-')",
+      "expect": "error",
+      "notes": "A subject the engine cannot iterate. Answering here would be the dangerous direction: the fork used to pass the value through."
+    },
+    {
+      "id": "contract/filter-split-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'a b'|split(' ')"
+    },
+    {
+      "id": "contract/filter-split-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'a b'|split(' ', 1, 2)",
+      "expect": "error",
+      "notes": "One positional argument beyond the engine's signature."
+    },
+    {
+      "id": "contract/filter-split-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'a b'|split(' ', nope_kw=1)",
+      "expect": "error",
+      "notes": "An unknown keyword argument, which the engine never ignores."
+    },
+    {
+      "id": "contract/filter-split-wrongtype",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'a b'|split(1)",
+      "expect": "error",
+      "notes": "An argument of the wrong type for the engine's signature."
+    },
+    {
+      "id": "contract/filter-lines-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'a\\nb'|lines"
+    },
+    {
+      "id": "contract/filter-lines-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'a\\nb'|lines(1)",
+      "expect": "error",
+      "notes": "One positional argument beyond the engine's signature."
+    },
+    {
+      "id": "contract/filter-lines-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'a\\nb'|lines(nope_kw=1)",
+      "expect": "error",
+      "notes": "An unknown keyword argument, which the engine never ignores."
+    },
+    {
+      "id": "contract/filter-default-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "undefined_x|default(1)"
+    },
+    {
+      "id": "contract/filter-default-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "undefined_x|default(1, true, 2)",
+      "expect": "error",
+      "notes": "One positional argument beyond the engine's signature."
+    },
+    {
+      "id": "contract/filter-default-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "undefined_x|default(1, nope_kw=1)",
+      "expect": "error",
+      "notes": "An unknown keyword argument, which the engine never ignores."
+    },
+    {
+      "id": "contract/filter-d-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "undefined_x|d(1)"
+    },
+    {
+      "id": "contract/filter-d-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "undefined_x|d(1, true, 2)",
+      "expect": "error",
+      "notes": "One positional argument beyond the engine's signature."
+    },
+    {
+      "id": "contract/filter-d-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "undefined_x|d(1, nope_kw=1)",
+      "expect": "error",
+      "notes": "An unknown keyword argument, which the engine never ignores."
+    },
+    {
+      "id": "contract/filter-round-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "1.5|round(1)"
+    },
+    {
+      "id": "contract/filter-round-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "1.5|round(1, 2)",
+      "expect": "error",
+      "notes": "One positional argument beyond the engine's signature."
+    },
+    {
+      "id": "contract/filter-round-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "1.5|round(1, nope_kw=1)",
+      "expect": "error",
+      "notes": "An unknown keyword argument, which the engine never ignores."
+    },
+    {
+      "id": "contract/filter-round-wrongtype",
+      "surface": "environment",
+      "form": "expression",
+      "source": "1.5|round('x')",
+      "expect": "error",
+      "notes": "An argument of the wrong type for the engine's signature."
+    },
+    {
+      "id": "contract/filter-abs-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "-1|abs"
+    },
+    {
+      "id": "contract/filter-abs-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "-1|abs(1)",
+      "expect": "error",
+      "notes": "One positional argument beyond the engine's signature."
+    },
+    {
+      "id": "contract/filter-abs-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "-1|abs(nope_kw=1)",
+      "expect": "error",
+      "notes": "An unknown keyword argument, which the engine never ignores."
+    },
+    {
+      "id": "contract/filter-int-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'1'|int"
+    },
+    {
+      "id": "contract/filter-int-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'1'|int(1)",
+      "expect": "error",
+      "notes": "One positional argument beyond the engine's signature."
+    },
+    {
+      "id": "contract/filter-int-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'1'|int(nope_kw=1)",
+      "expect": "error",
+      "notes": "An unknown keyword argument, which the engine never ignores."
+    },
+    {
+      "id": "contract/filter-float-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'1.5'|float"
+    },
+    {
+      "id": "contract/filter-float-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'1.5'|float(1)",
+      "expect": "error",
+      "notes": "One positional argument beyond the engine's signature."
+    },
+    {
+      "id": "contract/filter-float-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'1.5'|float(nope_kw=1)",
+      "expect": "error",
+      "notes": "An unknown keyword argument, which the engine never ignores."
+    },
+    {
+      "id": "contract/filter-attr-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "dict(a=1)|attr('a')"
+    },
+    {
+      "id": "contract/filter-attr-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "dict(a=1)|attr('a', 'b')",
+      "expect": "error",
+      "notes": "One positional argument beyond the engine's signature."
+    },
+    {
+      "id": "contract/filter-attr-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "dict(a=1)|attr('a', nope_kw=1)",
+      "expect": "error",
+      "notes": "An unknown keyword argument, which the engine never ignores."
+    },
+    {
+      "id": "contract/filter-first-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[1]|first"
+    },
+    {
+      "id": "contract/filter-first-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[1]|first(1)",
+      "expect": "error",
+      "notes": "One positional argument beyond the engine's signature."
+    },
+    {
+      "id": "contract/filter-first-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[1]|first(nope_kw=1)",
+      "expect": "error",
+      "notes": "An unknown keyword argument, which the engine never ignores."
+    },
+    {
+      "id": "contract/filter-first-noniterable",
+      "surface": "environment",
+      "form": "expression",
+      "source": "42|first",
+      "expect": "error",
+      "notes": "A subject the engine cannot iterate. Answering here would be the dangerous direction: the fork used to pass the value through."
+    },
+    {
+      "id": "contract/filter-last-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[1]|last"
+    },
+    {
+      "id": "contract/filter-last-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[1]|last(1)",
+      "expect": "error",
+      "notes": "One positional argument beyond the engine's signature."
+    },
+    {
+      "id": "contract/filter-last-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[1]|last(nope_kw=1)",
+      "expect": "error",
+      "notes": "An unknown keyword argument, which the engine never ignores."
+    },
+    {
+      "id": "contract/filter-last-noniterable",
+      "surface": "environment",
+      "form": "expression",
+      "source": "42|last",
+      "expect": "error",
+      "notes": "A subject the engine cannot iterate. Answering here would be the dangerous direction: the fork used to pass the value through."
+    },
+    {
+      "id": "contract/filter-min-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[1, 2]|min"
+    },
+    {
+      "id": "contract/filter-min-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[1, 2]|min(2)",
+      "expect": "error",
+      "notes": "One positional argument beyond the engine's signature."
+    },
+    {
+      "id": "contract/filter-min-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[1, 2]|min(nope_kw=1)",
+      "expect": "error",
+      "notes": "An unknown keyword argument, which the engine never ignores."
+    },
+    {
+      "id": "contract/filter-min-noniterable",
+      "surface": "environment",
+      "form": "expression",
+      "source": "42|min",
+      "expect": "error",
+      "notes": "A subject the engine cannot iterate. Answering here would be the dangerous direction: the fork used to pass the value through."
+    },
+    {
+      "id": "contract/filter-max-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[1, 2]|max"
+    },
+    {
+      "id": "contract/filter-max-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[1, 2]|max(2)",
+      "expect": "error",
+      "notes": "One positional argument beyond the engine's signature."
+    },
+    {
+      "id": "contract/filter-max-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[1, 2]|max(nope_kw=1)",
+      "expect": "error",
+      "notes": "An unknown keyword argument, which the engine never ignores."
+    },
+    {
+      "id": "contract/filter-max-noniterable",
+      "surface": "environment",
+      "form": "expression",
+      "source": "42|max",
+      "expect": "error",
+      "notes": "A subject the engine cannot iterate. Answering here would be the dangerous direction: the fork used to pass the value through."
+    },
+    {
+      "id": "contract/filter-sort-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[2, 1]|sort"
+    },
+    {
+      "id": "contract/filter-sort-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[2, 1]|sort(1)",
+      "expect": "error",
+      "notes": "One positional argument beyond the engine's signature."
+    },
+    {
+      "id": "contract/filter-sort-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[2, 1]|sort(nope_kw=1)",
+      "expect": "error",
+      "notes": "An unknown keyword argument, which the engine never ignores."
+    },
+    {
+      "id": "contract/filter-sort-noniterable",
+      "surface": "environment",
+      "form": "expression",
+      "source": "42|sort",
+      "expect": "error",
+      "notes": "A subject the engine cannot iterate. Answering here would be the dangerous direction: the fork used to pass the value through."
+    },
+    {
+      "id": "contract/filter-list-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[1]|list"
+    },
+    {
+      "id": "contract/filter-list-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[1]|list(1)",
+      "expect": "error",
+      "notes": "One positional argument beyond the engine's signature."
+    },
+    {
+      "id": "contract/filter-list-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[1]|list(nope_kw=1)",
+      "expect": "error",
+      "notes": "An unknown keyword argument, which the engine never ignores."
+    },
+    {
+      "id": "contract/filter-list-noniterable",
+      "surface": "environment",
+      "form": "expression",
+      "source": "42|list",
+      "expect": "error",
+      "notes": "A subject the engine cannot iterate. Answering here would be the dangerous direction: the fork used to pass the value through."
+    },
+    {
+      "id": "contract/filter-string-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "1|string"
+    },
+    {
+      "id": "contract/filter-string-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "1|string(1)",
+      "expect": "error",
+      "notes": "One positional argument beyond the engine's signature."
+    },
+    {
+      "id": "contract/filter-string-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "1|string(nope_kw=1)",
+      "expect": "error",
+      "notes": "An unknown keyword argument, which the engine never ignores."
+    },
+    {
+      "id": "contract/filter-bool-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "1|bool"
+    },
+    {
+      "id": "contract/filter-bool-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "1|bool(1)",
+      "expect": "error",
+      "notes": "One positional argument beyond the engine's signature."
+    },
+    {
+      "id": "contract/filter-bool-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "1|bool(nope_kw=1)",
+      "expect": "error",
+      "notes": "An unknown keyword argument, which the engine never ignores."
+    },
+    {
+      "id": "contract/filter-batch-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[1, 2]|batch(1)"
+    },
+    {
+      "id": "contract/filter-batch-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[1, 2]|batch(1, '-', 2)",
+      "expect": "error",
+      "notes": "One positional argument beyond the engine's signature."
+    },
+    {
+      "id": "contract/filter-batch-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[1, 2]|batch(1, nope_kw=1)",
+      "expect": "error",
+      "notes": "An unknown keyword argument, which the engine never ignores."
+    },
+    {
+      "id": "contract/filter-batch-wrongtype",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[1, 2]|batch('x')",
+      "expect": "error",
+      "notes": "An argument of the wrong type for the engine's signature."
+    },
+    {
+      "id": "contract/filter-batch-noniterable",
+      "surface": "environment",
+      "form": "expression",
+      "source": "42|batch(1)",
+      "expect": "error",
+      "notes": "A subject the engine cannot iterate. Answering here would be the dangerous direction: the fork used to pass the value through."
+    },
+    {
+      "id": "contract/filter-slice-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[1, 2]|slice(1)"
+    },
+    {
+      "id": "contract/filter-slice-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[1, 2]|slice(1, '-', 2)",
+      "expect": "error",
+      "notes": "One positional argument beyond the engine's signature."
+    },
+    {
+      "id": "contract/filter-slice-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[1, 2]|slice(1, nope_kw=1)",
+      "expect": "error",
+      "notes": "An unknown keyword argument, which the engine never ignores."
+    },
+    {
+      "id": "contract/filter-slice-wrongtype",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[1, 2]|slice('x')",
+      "expect": "error",
+      "notes": "An argument of the wrong type for the engine's signature."
+    },
+    {
+      "id": "contract/filter-slice-noniterable",
+      "surface": "environment",
+      "form": "expression",
+      "source": "42|slice(1)",
+      "expect": "error",
+      "notes": "A subject the engine cannot iterate. Answering here would be the dangerous direction: the fork used to pass the value through."
+    },
+    {
+      "id": "contract/filter-sum-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[1, 2]|sum"
+    },
+    {
+      "id": "contract/filter-sum-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[1, 2]|sum(1)",
+      "expect": "error",
+      "notes": "One positional argument beyond the engine's signature."
+    },
+    {
+      "id": "contract/filter-sum-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[1, 2]|sum(nope_kw=1)",
+      "expect": "error",
+      "notes": "An unknown keyword argument, which the engine never ignores."
+    },
+    {
+      "id": "contract/filter-sum-noniterable",
+      "surface": "environment",
+      "form": "expression",
+      "source": "42|sum",
+      "expect": "error",
+      "notes": "A subject the engine cannot iterate. Answering here would be the dangerous direction: the fork used to pass the value through."
+    },
+    {
+      "id": "contract/filter-indent-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'a\\nb'|indent(2)"
+    },
+    {
+      "id": "contract/filter-indent-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'a\\nb'|indent(2, true, true, 1)",
+      "expect": "error",
+      "notes": "One positional argument beyond the engine's signature."
+    },
+    {
+      "id": "contract/filter-indent-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'a\\nb'|indent(2, nope_kw=1)",
+      "expect": "error",
+      "notes": "An unknown keyword argument, which the engine never ignores."
+    },
+    {
+      "id": "contract/filter-indent-wrongtype",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'a\\nb'|indent('x')",
+      "expect": "error",
+      "notes": "An argument of the wrong type for the engine's signature."
+    },
+    {
+      "id": "contract/filter-select-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[1]|select('odd')"
+    },
+    {
+      "id": "contract/filter-select-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[1]|select('odd', nope_kw=1)",
+      "expect": "error",
+      "notes": "An unknown keyword argument, which the engine never ignores."
+    },
+    {
+      "id": "contract/filter-select-wrongtype",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[1]|select(1)",
+      "expect": "error",
+      "notes": "An argument of the wrong type for the engine's signature."
+    },
+    {
+      "id": "contract/filter-select-noniterable",
+      "surface": "environment",
+      "form": "expression",
+      "source": "42|select('odd')",
+      "expect": "error",
+      "notes": "A subject the engine cannot iterate. Answering here would be the dangerous direction: the fork used to pass the value through."
+    },
+    {
+      "id": "contract/filter-reject-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[1]|reject('odd')"
+    },
+    {
+      "id": "contract/filter-reject-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[1]|reject('odd', nope_kw=1)",
+      "expect": "error",
+      "notes": "An unknown keyword argument, which the engine never ignores."
+    },
+    {
+      "id": "contract/filter-reject-wrongtype",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[1]|reject(1)",
+      "expect": "error",
+      "notes": "An argument of the wrong type for the engine's signature."
+    },
+    {
+      "id": "contract/filter-reject-noniterable",
+      "surface": "environment",
+      "form": "expression",
+      "source": "42|reject('odd')",
+      "expect": "error",
+      "notes": "A subject the engine cannot iterate. Answering here would be the dangerous direction: the fork used to pass the value through."
+    },
+    {
+      "id": "contract/filter-selectattr-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[dict(a=1)]|selectattr('a')"
+    },
+    {
+      "id": "contract/filter-selectattr-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[dict(a=1)]|selectattr('a', nope_kw=1)",
+      "expect": "error",
+      "notes": "An unknown keyword argument, which the engine never ignores."
+    },
+    {
+      "id": "contract/filter-selectattr-noniterable",
+      "surface": "environment",
+      "form": "expression",
+      "source": "42|selectattr('a')",
+      "expect": "error",
+      "notes": "A subject the engine cannot iterate. Answering here would be the dangerous direction: the fork used to pass the value through."
+    },
+    {
+      "id": "contract/filter-rejectattr-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[dict(a=1)]|rejectattr('a')"
+    },
+    {
+      "id": "contract/filter-rejectattr-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[dict(a=1)]|rejectattr('a', nope_kw=1)",
+      "expect": "error",
+      "notes": "An unknown keyword argument, which the engine never ignores."
+    },
+    {
+      "id": "contract/filter-rejectattr-noniterable",
+      "surface": "environment",
+      "form": "expression",
+      "source": "42|rejectattr('a')",
+      "expect": "error",
+      "notes": "A subject the engine cannot iterate. Answering here would be the dangerous direction: the fork used to pass the value through."
+    },
+    {
+      "id": "contract/filter-map-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[1]|map('abs')"
+    },
+    {
+      "id": "contract/filter-map-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[1]|map('abs', nope_kw=1)",
+      "expect": "error",
+      "notes": "An unknown keyword argument, which the engine never ignores."
+    },
+    {
+      "id": "contract/filter-map-wrongtype",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[1]|map(1)",
+      "expect": "error",
+      "notes": "An argument of the wrong type for the engine's signature."
+    },
+    {
+      "id": "contract/filter-map-noniterable",
+      "surface": "environment",
+      "form": "expression",
+      "source": "42|map('abs')",
+      "expect": "error",
+      "notes": "A subject the engine cannot iterate. Answering here would be the dangerous direction: the fork used to pass the value through."
+    },
+    {
+      "id": "contract/filter-groupby-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[dict(a=1)]|groupby('a')"
+    },
+    {
+      "id": "contract/filter-groupby-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[dict(a=1)]|groupby('a', 1)",
+      "expect": "error",
+      "notes": "One positional argument beyond the engine's signature."
+    },
+    {
+      "id": "contract/filter-groupby-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[dict(a=1)]|groupby('a', nope_kw=1)",
+      "expect": "error",
+      "notes": "An unknown keyword argument, which the engine never ignores."
+    },
+    {
+      "id": "contract/filter-groupby-wrongtype",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[dict(a=1)]|groupby(1)",
+      "expect": "error",
+      "notes": "An argument of the wrong type for the engine's signature."
+    },
+    {
+      "id": "contract/filter-groupby-noniterable",
+      "surface": "environment",
+      "form": "expression",
+      "source": "42|groupby('a')",
+      "expect": "error",
+      "notes": "A subject the engine cannot iterate. Answering here would be the dangerous direction: the fork used to pass the value through."
+    },
+    {
+      "id": "contract/filter-unique-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[1, 1]|unique"
+    },
+    {
+      "id": "contract/filter-unique-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[1, 1]|unique(2)",
+      "expect": "error",
+      "notes": "One positional argument beyond the engine's signature."
+    },
+    {
+      "id": "contract/filter-unique-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[1, 1]|unique(nope_kw=1)",
+      "expect": "error",
+      "notes": "An unknown keyword argument, which the engine never ignores."
+    },
+    {
+      "id": "contract/filter-unique-noniterable",
+      "surface": "environment",
+      "form": "expression",
+      "source": "42|unique",
+      "expect": "error",
+      "notes": "A subject the engine cannot iterate. Answering here would be the dangerous direction: the fork used to pass the value through."
+    },
+    {
+      "id": "contract/filter-chain-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[1]|chain([2])"
+    },
+    {
+      "id": "contract/filter-chain-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[1]|chain([2], nope_kw=1)",
+      "expect": "error",
+      "notes": "An unknown keyword argument, which the engine never ignores."
+    },
+    {
+      "id": "contract/filter-zip-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[1]|zip([2])"
+    },
+    {
+      "id": "contract/filter-zip-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[1]|zip([2], nope_kw=1)",
+      "expect": "error",
+      "notes": "An unknown keyword argument, which the engine never ignores."
+    },
+    {
+      "id": "contract/filter-zip-noniterable",
+      "surface": "environment",
+      "form": "expression",
+      "source": "42|zip([2])",
+      "expect": "error",
+      "notes": "A subject the engine cannot iterate. Answering here would be the dangerous direction: the fork used to pass the value through."
+    },
+    {
+      "id": "contract/filter-pprint-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[1]|pprint"
+    },
+    {
+      "id": "contract/filter-pprint-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[1]|pprint(1)",
+      "expect": "error",
+      "notes": "One positional argument beyond the engine's signature."
+    },
+    {
+      "id": "contract/filter-pprint-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[1]|pprint(nope_kw=1)",
+      "expect": "error",
+      "notes": "An unknown keyword argument, which the engine never ignores."
+    },
+    {
+      "id": "contract/filter-format-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'%s'|format('x')"
+    },
+    {
+      "id": "contract/filter-format-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'%s'|format('x', nope_kw=1)",
+      "expect": "error",
+      "notes": "An unknown keyword argument, which the engine never ignores."
+    },
+    {
+      "id": "contract/filter-tojson-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "dict(a=1)|tojson"
+    },
+    {
+      "id": "contract/filter-tojson-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "dict(a=1)|tojson(2, 2)",
+      "expect": "error",
+      "notes": "One positional argument beyond the engine's signature."
+    },
+    {
+      "id": "contract/filter-tojson-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "dict(a=1)|tojson(nope_kw=1)",
+      "expect": "error",
+      "notes": "An unknown keyword argument, which the engine never ignores."
+    },
+    {
+      "id": "contract/filter-tojson-wrongtype",
+      "surface": "environment",
+      "form": "expression",
+      "source": "dict(a=1)|tojson('x')",
+      "expect": "error",
+      "notes": "An argument of the wrong type for the engine's signature."
+    },
+    {
+      "id": "contract/test-defined-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "1 is defined",
+      "expect": "boolean"
+    },
+    {
+      "id": "contract/test-defined-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "1 is defined('extra')",
+      "expect": "error",
+      "notes": "A test's arity is fixed by its Rust signature."
+    },
+    {
+      "id": "contract/test-defined-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "1 is defined(nope_kw=1)",
+      "notes": "Keyword arguments reach a test as one trailing value, so this is an argument error for a one-argument test and a map argument for a zero-argument one."
+    },
+    {
+      "id": "contract/test-undefined-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "nope_x is undefined",
+      "expect": "boolean"
+    },
+    {
+      "id": "contract/test-undefined-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "nope_x is undefined('extra')",
+      "expect": "error",
+      "notes": "A test's arity is fixed by its Rust signature."
+    },
+    {
+      "id": "contract/test-undefined-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "nope_x is undefined(nope_kw=1)",
+      "notes": "Keyword arguments reach a test as one trailing value, so this is an argument error for a one-argument test and a map argument for a zero-argument one."
+    },
+    {
+      "id": "contract/test-none-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "none is none",
+      "expect": "boolean"
+    },
+    {
+      "id": "contract/test-none-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "none is none('extra')",
+      "expect": "error",
+      "notes": "A test's arity is fixed by its Rust signature."
+    },
+    {
+      "id": "contract/test-none-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "none is none(nope_kw=1)",
+      "notes": "Keyword arguments reach a test as one trailing value, so this is an argument error for a one-argument test and a map argument for a zero-argument one."
+    },
+    {
+      "id": "contract/test-safe-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'x' is safe",
+      "expect": "boolean"
+    },
+    {
+      "id": "contract/test-safe-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'x' is safe('extra')",
+      "expect": "error",
+      "notes": "A test's arity is fixed by its Rust signature."
+    },
+    {
+      "id": "contract/test-safe-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'x' is safe(nope_kw=1)",
+      "notes": "Keyword arguments reach a test as one trailing value, so this is an argument error for a one-argument test and a map argument for a zero-argument one."
+    },
+    {
+      "id": "contract/test-escaped-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'x' is escaped",
+      "expect": "boolean"
+    },
+    {
+      "id": "contract/test-escaped-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'x' is escaped('extra')",
+      "expect": "error",
+      "notes": "A test's arity is fixed by its Rust signature."
+    },
+    {
+      "id": "contract/test-escaped-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'x' is escaped(nope_kw=1)",
+      "notes": "Keyword arguments reach a test as one trailing value, so this is an argument error for a one-argument test and a map argument for a zero-argument one."
+    },
+    {
+      "id": "contract/test-boolean-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "true is boolean",
+      "expect": "boolean"
+    },
+    {
+      "id": "contract/test-boolean-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "true is boolean('extra')",
+      "expect": "error",
+      "notes": "A test's arity is fixed by its Rust signature."
+    },
+    {
+      "id": "contract/test-boolean-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "true is boolean(nope_kw=1)",
+      "notes": "Keyword arguments reach a test as one trailing value, so this is an argument error for a one-argument test and a map argument for a zero-argument one."
+    },
+    {
+      "id": "contract/test-odd-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "1 is odd",
+      "expect": "boolean"
+    },
+    {
+      "id": "contract/test-odd-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "1 is odd('extra')",
+      "expect": "error",
+      "notes": "A test's arity is fixed by its Rust signature."
+    },
+    {
+      "id": "contract/test-odd-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "1 is odd(nope_kw=1)",
+      "notes": "Keyword arguments reach a test as one trailing value, so this is an argument error for a one-argument test and a map argument for a zero-argument one."
+    },
+    {
+      "id": "contract/test-even-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "2 is even",
+      "expect": "boolean"
+    },
+    {
+      "id": "contract/test-even-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "2 is even('extra')",
+      "expect": "error",
+      "notes": "A test's arity is fixed by its Rust signature."
+    },
+    {
+      "id": "contract/test-even-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "2 is even(nope_kw=1)",
+      "notes": "Keyword arguments reach a test as one trailing value, so this is an argument error for a one-argument test and a map argument for a zero-argument one."
+    },
+    {
+      "id": "contract/test-divisibleby-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "6 is divisibleby(3)",
+      "expect": "boolean"
+    },
+    {
+      "id": "contract/test-divisibleby-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "6 is divisibleby(3, 'extra')",
+      "expect": "error",
+      "notes": "A test's arity is fixed by its Rust signature."
+    },
+    {
+      "id": "contract/test-divisibleby-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "6 is divisibleby(3, nope_kw=1)",
+      "expect": "error",
+      "notes": "Keyword arguments reach a test as one trailing value, so this is an argument error for a one-argument test and a map argument for a zero-argument one."
+    },
+    {
+      "id": "contract/test-divisibleby-wrongtype",
+      "surface": "environment",
+      "form": "expression",
+      "source": "6 is divisibleby('x')",
+      "expect": "error"
+    },
+    {
+      "id": "contract/test-number-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "1 is number",
+      "expect": "boolean"
+    },
+    {
+      "id": "contract/test-number-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "1 is number('extra')",
+      "expect": "error",
+      "notes": "A test's arity is fixed by its Rust signature."
+    },
+    {
+      "id": "contract/test-number-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "1 is number(nope_kw=1)",
+      "notes": "Keyword arguments reach a test as one trailing value, so this is an argument error for a one-argument test and a map argument for a zero-argument one."
+    },
+    {
+      "id": "contract/test-integer-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "1 is integer",
+      "expect": "boolean"
+    },
+    {
+      "id": "contract/test-integer-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "1 is integer('extra')",
+      "expect": "error",
+      "notes": "A test's arity is fixed by its Rust signature."
+    },
+    {
+      "id": "contract/test-integer-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "1 is integer(nope_kw=1)",
+      "notes": "Keyword arguments reach a test as one trailing value, so this is an argument error for a one-argument test and a map argument for a zero-argument one."
+    },
+    {
+      "id": "contract/test-int-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "1 is int",
+      "expect": "boolean"
+    },
+    {
+      "id": "contract/test-int-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "1 is int('extra')",
+      "expect": "error",
+      "notes": "A test's arity is fixed by its Rust signature."
+    },
+    {
+      "id": "contract/test-int-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "1 is int(nope_kw=1)",
+      "notes": "Keyword arguments reach a test as one trailing value, so this is an argument error for a one-argument test and a map argument for a zero-argument one."
+    },
+    {
+      "id": "contract/test-float-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "1.5 is float",
+      "expect": "boolean"
+    },
+    {
+      "id": "contract/test-float-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "1.5 is float('extra')",
+      "expect": "error",
+      "notes": "A test's arity is fixed by its Rust signature."
+    },
+    {
+      "id": "contract/test-float-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "1.5 is float(nope_kw=1)",
+      "notes": "Keyword arguments reach a test as one trailing value, so this is an argument error for a one-argument test and a map argument for a zero-argument one."
+    },
+    {
+      "id": "contract/test-string-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'x' is string",
+      "expect": "boolean"
+    },
+    {
+      "id": "contract/test-string-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'x' is string('extra')",
+      "expect": "error",
+      "notes": "A test's arity is fixed by its Rust signature."
+    },
+    {
+      "id": "contract/test-string-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'x' is string(nope_kw=1)",
+      "notes": "Keyword arguments reach a test as one trailing value, so this is an argument error for a one-argument test and a map argument for a zero-argument one."
+    },
+    {
+      "id": "contract/test-sequence-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[1] is sequence",
+      "expect": "boolean"
+    },
+    {
+      "id": "contract/test-sequence-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[1] is sequence('extra')",
+      "expect": "error",
+      "notes": "A test's arity is fixed by its Rust signature."
+    },
+    {
+      "id": "contract/test-sequence-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[1] is sequence(nope_kw=1)",
+      "notes": "Keyword arguments reach a test as one trailing value, so this is an argument error for a one-argument test and a map argument for a zero-argument one."
+    },
+    {
+      "id": "contract/test-iterable-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[1] is iterable",
+      "expect": "boolean"
+    },
+    {
+      "id": "contract/test-iterable-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[1] is iterable('extra')",
+      "expect": "error",
+      "notes": "A test's arity is fixed by its Rust signature."
+    },
+    {
+      "id": "contract/test-iterable-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[1] is iterable(nope_kw=1)",
+      "notes": "Keyword arguments reach a test as one trailing value, so this is an argument error for a one-argument test and a map argument for a zero-argument one."
+    },
+    {
+      "id": "contract/test-mapping-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "dict(a=1) is mapping",
+      "expect": "boolean"
+    },
+    {
+      "id": "contract/test-mapping-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "dict(a=1) is mapping('extra')",
+      "expect": "error",
+      "notes": "A test's arity is fixed by its Rust signature."
+    },
+    {
+      "id": "contract/test-mapping-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "dict(a=1) is mapping(nope_kw=1)",
+      "notes": "Keyword arguments reach a test as one trailing value, so this is an argument error for a one-argument test and a map argument for a zero-argument one."
+    },
+    {
+      "id": "contract/test-startingwith-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'ab' is startingwith('a')",
+      "expect": "boolean"
+    },
+    {
+      "id": "contract/test-startingwith-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'ab' is startingwith('a', 'extra')",
+      "expect": "error",
+      "notes": "A test's arity is fixed by its Rust signature."
+    },
+    {
+      "id": "contract/test-startingwith-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'ab' is startingwith('a', nope_kw=1)",
+      "expect": "error",
+      "notes": "Keyword arguments reach a test as one trailing value, so this is an argument error for a one-argument test and a map argument for a zero-argument one."
+    },
+    {
+      "id": "contract/test-endingwith-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'ab' is endingwith('b')",
+      "expect": "boolean"
+    },
+    {
+      "id": "contract/test-endingwith-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'ab' is endingwith('b', 'extra')",
+      "expect": "error",
+      "notes": "A test's arity is fixed by its Rust signature."
+    },
+    {
+      "id": "contract/test-endingwith-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'ab' is endingwith('b', nope_kw=1)",
+      "expect": "error",
+      "notes": "Keyword arguments reach a test as one trailing value, so this is an argument error for a one-argument test and a map argument for a zero-argument one."
+    },
+    {
+      "id": "contract/test-lower-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'a' is lower",
+      "expect": "boolean"
+    },
+    {
+      "id": "contract/test-lower-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'a' is lower('extra')",
+      "expect": "error",
+      "notes": "A test's arity is fixed by its Rust signature."
+    },
+    {
+      "id": "contract/test-lower-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'a' is lower(nope_kw=1)",
+      "notes": "Keyword arguments reach a test as one trailing value, so this is an argument error for a one-argument test and a map argument for a zero-argument one."
+    },
+    {
+      "id": "contract/test-upper-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'A' is upper",
+      "expect": "boolean"
+    },
+    {
+      "id": "contract/test-upper-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'A' is upper('extra')",
+      "expect": "error",
+      "notes": "A test's arity is fixed by its Rust signature."
+    },
+    {
+      "id": "contract/test-upper-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'A' is upper(nope_kw=1)",
+      "notes": "Keyword arguments reach a test as one trailing value, so this is an argument error for a one-argument test and a map argument for a zero-argument one."
+    },
+    {
+      "id": "contract/test-sameas-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "none is sameas(none)",
+      "expect": "boolean"
+    },
+    {
+      "id": "contract/test-sameas-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "none is sameas(none, 'extra')",
+      "expect": "error",
+      "notes": "A test's arity is fixed by its Rust signature."
+    },
+    {
+      "id": "contract/test-sameas-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "none is sameas(none, nope_kw=1)",
+      "expect": "error",
+      "notes": "Keyword arguments reach a test as one trailing value, so this is an argument error for a one-argument test and a map argument for a zero-argument one."
+    },
+    {
+      "id": "contract/test-eq-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "1 is eq(1)",
+      "expect": "boolean"
+    },
+    {
+      "id": "contract/test-eq-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "1 is eq(1, 'extra')",
+      "expect": "error",
+      "notes": "A test's arity is fixed by its Rust signature."
+    },
+    {
+      "id": "contract/test-eq-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "1 is eq(1, nope_kw=1)",
+      "expect": "error",
+      "notes": "Keyword arguments reach a test as one trailing value, so this is an argument error for a one-argument test and a map argument for a zero-argument one."
+    },
+    {
+      "id": "contract/test-equalto-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "1 is equalto(1)",
+      "expect": "boolean"
+    },
+    {
+      "id": "contract/test-equalto-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "1 is equalto(1, 'extra')",
+      "expect": "error",
+      "notes": "A test's arity is fixed by its Rust signature."
+    },
+    {
+      "id": "contract/test-equalto-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "1 is equalto(1, nope_kw=1)",
+      "expect": "error",
+      "notes": "Keyword arguments reach a test as one trailing value, so this is an argument error for a one-argument test and a map argument for a zero-argument one."
+    },
+    {
+      "id": "contract/test-ne-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "1 is ne(2)",
+      "expect": "boolean"
+    },
+    {
+      "id": "contract/test-ne-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "1 is ne(2, 'extra')",
+      "expect": "error",
+      "notes": "A test's arity is fixed by its Rust signature."
+    },
+    {
+      "id": "contract/test-ne-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "1 is ne(2, nope_kw=1)",
+      "expect": "error",
+      "notes": "Keyword arguments reach a test as one trailing value, so this is an argument error for a one-argument test and a map argument for a zero-argument one."
+    },
+    {
+      "id": "contract/test-lt-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "1 is lt(2)",
+      "expect": "boolean"
+    },
+    {
+      "id": "contract/test-lt-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "1 is lt(2, 'extra')",
+      "expect": "error",
+      "notes": "A test's arity is fixed by its Rust signature."
+    },
+    {
+      "id": "contract/test-lt-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "1 is lt(2, nope_kw=1)",
+      "expect": "error",
+      "notes": "Keyword arguments reach a test as one trailing value, so this is an argument error for a one-argument test and a map argument for a zero-argument one."
+    },
+    {
+      "id": "contract/test-lessthan-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "1 is lessthan(2)",
+      "expect": "boolean"
+    },
+    {
+      "id": "contract/test-lessthan-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "1 is lessthan(2, 'extra')",
+      "expect": "error",
+      "notes": "A test's arity is fixed by its Rust signature."
+    },
+    {
+      "id": "contract/test-lessthan-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "1 is lessthan(2, nope_kw=1)",
+      "expect": "error",
+      "notes": "Keyword arguments reach a test as one trailing value, so this is an argument error for a one-argument test and a map argument for a zero-argument one."
+    },
+    {
+      "id": "contract/test-le-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "1 is le(1)",
+      "expect": "boolean"
+    },
+    {
+      "id": "contract/test-le-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "1 is le(1, 'extra')",
+      "expect": "error",
+      "notes": "A test's arity is fixed by its Rust signature."
+    },
+    {
+      "id": "contract/test-le-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "1 is le(1, nope_kw=1)",
+      "expect": "error",
+      "notes": "Keyword arguments reach a test as one trailing value, so this is an argument error for a one-argument test and a map argument for a zero-argument one."
+    },
+    {
+      "id": "contract/test-gt-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "2 is gt(1)",
+      "expect": "boolean"
+    },
+    {
+      "id": "contract/test-gt-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "2 is gt(1, 'extra')",
+      "expect": "error",
+      "notes": "A test's arity is fixed by its Rust signature."
+    },
+    {
+      "id": "contract/test-gt-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "2 is gt(1, nope_kw=1)",
+      "expect": "error",
+      "notes": "Keyword arguments reach a test as one trailing value, so this is an argument error for a one-argument test and a map argument for a zero-argument one."
+    },
+    {
+      "id": "contract/test-greaterthan-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "2 is greaterthan(1)",
+      "expect": "boolean"
+    },
+    {
+      "id": "contract/test-greaterthan-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "2 is greaterthan(1, 'extra')",
+      "expect": "error",
+      "notes": "A test's arity is fixed by its Rust signature."
+    },
+    {
+      "id": "contract/test-greaterthan-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "2 is greaterthan(1, nope_kw=1)",
+      "expect": "error",
+      "notes": "Keyword arguments reach a test as one trailing value, so this is an argument error for a one-argument test and a map argument for a zero-argument one."
+    },
+    {
+      "id": "contract/test-ge-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "2 is ge(2)",
+      "expect": "boolean"
+    },
+    {
+      "id": "contract/test-ge-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "2 is ge(2, 'extra')",
+      "expect": "error",
+      "notes": "A test's arity is fixed by its Rust signature."
+    },
+    {
+      "id": "contract/test-ge-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "2 is ge(2, nope_kw=1)",
+      "expect": "error",
+      "notes": "Keyword arguments reach a test as one trailing value, so this is an argument error for a one-argument test and a map argument for a zero-argument one."
+    },
+    {
+      "id": "contract/test-in-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "1 is in([1])",
+      "expect": "boolean"
+    },
+    {
+      "id": "contract/test-in-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "1 is in([1], 'extra')",
+      "expect": "error",
+      "notes": "A test's arity is fixed by its Rust signature."
+    },
+    {
+      "id": "contract/test-in-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "1 is in([1], nope_kw=1)",
+      "expect": "error",
+      "notes": "Keyword arguments reach a test as one trailing value, so this is an argument error for a one-argument test and a map argument for a zero-argument one."
+    },
+    {
+      "id": "contract/test-true-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "true is true",
+      "expect": "boolean"
+    },
+    {
+      "id": "contract/test-true-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "true is true('extra')",
+      "expect": "error",
+      "notes": "A test's arity is fixed by its Rust signature."
+    },
+    {
+      "id": "contract/test-true-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "true is true(nope_kw=1)",
+      "notes": "Keyword arguments reach a test as one trailing value, so this is an argument error for a one-argument test and a map argument for a zero-argument one."
+    },
+    {
+      "id": "contract/test-false-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "false is false",
+      "expect": "boolean"
+    },
+    {
+      "id": "contract/test-false-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "false is false('extra')",
+      "expect": "error",
+      "notes": "A test's arity is fixed by its Rust signature."
+    },
+    {
+      "id": "contract/test-false-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "false is false(nope_kw=1)",
+      "notes": "Keyword arguments reach a test as one trailing value, so this is an argument error for a one-argument test and a map argument for a zero-argument one."
+    },
+    {
+      "id": "contract/test-filter-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'upper' is filter",
+      "expect": "boolean"
+    },
+    {
+      "id": "contract/test-filter-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'upper' is filter('extra')",
+      "expect": "error",
+      "notes": "A test's arity is fixed by its Rust signature."
+    },
+    {
+      "id": "contract/test-filter-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'upper' is filter(nope_kw=1)",
+      "notes": "Keyword arguments reach a test as one trailing value, so this is an argument error for a one-argument test and a map argument for a zero-argument one."
+    },
+    {
+      "id": "contract/test-test-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'odd' is test",
+      "expect": "boolean"
+    },
+    {
+      "id": "contract/test-test-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'odd' is test('extra')",
+      "expect": "error",
+      "notes": "A test's arity is fixed by its Rust signature."
+    },
+    {
+      "id": "contract/test-test-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'odd' is test(nope_kw=1)",
+      "notes": "Keyword arguments reach a test as one trailing value, so this is an argument error for a one-argument test and a map argument for a zero-argument one."
+    },
+    {
+      "id": "contract/fn-range-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "range(3)|list"
+    },
+    {
+      "id": "contract/fn-range-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "range(1, 2, 3, 4)|list",
+      "expect": "error"
+    },
+    {
+      "id": "contract/fn-range-wrongtype",
+      "surface": "environment",
+      "form": "expression",
+      "source": "range('x')|list",
+      "expect": "error"
+    },
+    {
+      "id": "contract/fn-dict-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "dict()"
+    },
+    {
+      "id": "contract/fn-dict-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "dict(dict(), 1)",
+      "expect": "error"
+    },
+    {
+      "id": "contract/fn-dict-wrongtype",
+      "surface": "environment",
+      "form": "expression",
+      "source": "dict(1)",
+      "expect": "error"
+    },
+    {
+      "id": "contract/fn-namespace-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "namespace()"
+    },
+    {
+      "id": "contract/fn-namespace-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "namespace(dict(), 1)",
+      "expect": "error"
+    },
+    {
+      "id": "contract/fn-namespace-wrongtype",
+      "surface": "environment",
+      "form": "expression",
+      "source": "namespace(1)",
+      "expect": "error"
+    },
+    {
+      "id": "contract/fn-debug-valid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "debug(1)"
+    },
+    {
+      "id": "contract/fn-range-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "range(1, nope_kw=1)|list",
+      "expect": "error",
+      "notes": "range has no Kwargs parameter, so the keyword argument lands in the next integer slot, where a map is not an integer."
+    },
+    {
+      "id": "contract/fn-dict-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "dict(nope_kw=1)",
+      "notes": "dict DOES take keyword arguments; this is the valid form, not an error."
+    },
+    {
+      "id": "contract/fn-namespace-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "namespace(nope_kw=1)",
+      "notes": "namespace has no Kwargs parameter either, but its parameter is a Value, so the keyword map lands in it and becomes the namespace."
+    },
+    {
+      "id": "contract/pycompat-join-noniterable",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'-'.join(42)",
+      "profile": "pycompat",
+      "expect": "error",
+      "notes": "str.join iterates its argument, so a number is an invalid operation. The port used to range over a nil slice and return an empty string."
+    },
+    {
+      "id": "contract/pycompat-join-none",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'-'.join(none)",
+      "profile": "pycompat",
+      "notes": "none iterates as empty, so this joins to nothing rather than failing."
+    },
+    {
+      "id": "contract/pycompat-join-string",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'-'.join('ab')",
+      "profile": "pycompat"
+    },
+    {
+      "id": "contract/pycompat-join-map",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'-'.join(dict(a=1))",
+      "profile": "pycompat"
+    },
+    {
+      "id": "contract/pycompat-join-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'-'.join([1], 2)",
+      "profile": "pycompat",
+      "expect": "error"
+    },
+    {
+      "id": "contract/pycompat-count-missing",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'x'.count()",
+      "profile": "pycompat",
+      "expect": "error"
+    },
+    {
+      "id": "contract/pycompat-count-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'x'.count('a', 'b')",
+      "profile": "pycompat",
+      "expect": "error"
+    },
+    {
+      "id": "contract/pycompat-startswith-missing",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'x'.startswith()",
+      "profile": "pycompat",
+      "expect": "error"
+    },
+    {
+      "id": "contract/pycompat-strip-wrongtype",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'x'.strip(1)",
+      "profile": "pycompat",
+      "expect": "error"
+    },
+    {
+      "id": "contract/pycompat-strip-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'x'.strip('a', 'b')",
+      "profile": "pycompat",
+      "expect": "error"
+    },
+    {
+      "id": "contract/pycompat-split-wrongtype",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'x'.split(1)",
+      "profile": "pycompat",
+      "expect": "error"
+    },
+    {
+      "id": "contract/pycompat-split-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'a b'.split(' ', 1, 2)",
+      "profile": "pycompat",
+      "expect": "error"
+    },
+    {
+      "id": "contract/pycompat-splitlines-wrongtype",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'x'.splitlines(1)",
+      "profile": "pycompat",
+      "expect": "error"
+    },
+    {
+      "id": "contract/pycompat-replace-wrongtype",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'x'.replace(1, 'b')",
+      "profile": "pycompat",
+      "expect": "error"
+    },
+    {
+      "id": "contract/pycompat-replace-count-wrongtype",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'x'.replace('a', 'b', 'c')",
+      "profile": "pycompat",
+      "expect": "error"
+    },
+    {
+      "id": "contract/pycompat-replace-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'x'.replace('a', 'b', 1, 2)",
+      "profile": "pycompat",
+      "expect": "error"
+    },
+    {
+      "id": "contract/pycompat-title-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'x'.title(1)",
+      "profile": "pycompat",
+      "expect": "error"
+    },
+    {
+      "id": "contract/pycompat-keys-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "dict(a=1).keys(1)",
+      "profile": "pycompat",
+      "expect": "error"
+    },
+    {
+      "id": "contract/pycompat-items-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "dict(a=1).items(1)",
+      "profile": "pycompat",
+      "expect": "error"
+    },
+    {
+      "id": "contract/pycompat-get-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "dict(a=1).get('a', 1, 2)",
+      "profile": "pycompat",
+      "expect": "error"
+    },
+    {
+      "id": "contract/pycompat-seqcount-excess",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[1].count(1, 2)",
+      "profile": "pycompat",
+      "expect": "error"
+    },
+    {
+      "id": "contract/pycompat-seqcount-missing",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[1].count()",
+      "profile": "pycompat",
+      "expect": "error"
+    },
+    {
+      "id": "contract/pycompat-format-missing-field",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'{}'.format()",
+      "profile": "pycompat",
+      "expect": "error"
+    },
+    {
+      "id": "contract/pycompat-keys-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "dict(a=1).keys(nope_kw=1)",
+      "profile": "pycompat",
+      "expect": "error"
+    },
+    {
+      "id": "contract/pycompat-find-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'x'.find(nope_kw=1)",
+      "profile": "pycompat",
+      "expect": "error",
+      "notes": "A keyword argument reaches a method as one trailing value, so this is a non-string argument rather than an ignored keyword."
+    },
+    {
+      "id": "contract/filter-replace-keyword-only",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'ab'|replace(nope_kw=1)",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              },
+              {
+                "key": "b",
+                "value": {
+                  "kind": "int",
+                  "value": 2
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "error",
+      "notes": "The keyword map lands in the required `from` parameter: an invalid operation, not too many arguments."
+    },
+    {
+      "id": "contract/filter-replace-partial-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'ab'|replace('a', nope_kw=1)",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              },
+              {
+                "key": "b",
+                "value": {
+                  "kind": "int",
+                  "value": 2
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "error",
+      "notes": "Same, one slot later."
+    },
+    {
+      "id": "contract/filter-replace-missing",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'ab'|replace('a')",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              },
+              {
+                "key": "b",
+                "value": {
+                  "kind": "int",
+                  "value": 2
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "error"
+    },
+    {
+      "id": "contract/filter-replace-coerced-args",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'ab'|replace(1, 2)",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              },
+              {
+                "key": "b",
+                "value": {
+                  "kind": "int",
+                  "value": 2
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "notes": "`Cow<str>` stringifies a non-string argument, so this is not an error."
+    },
+    {
+      "id": "contract/filter-last-map",
+      "surface": "environment",
+      "form": "expression",
+      "source": "m|last",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              },
+              {
+                "key": "b",
+                "value": {
+                  "kind": "int",
+                  "value": 2
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "error",
+      "notes": "`last` reaches for a sequence; a mapping is an invalid operation there, while `first` reaches for the object and accepts one."
+    },
+    {
+      "id": "contract/filter-first-map",
+      "surface": "environment",
+      "form": "expression",
+      "source": "m|first",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              },
+              {
+                "key": "b",
+                "value": {
+                  "kind": "int",
+                  "value": 2
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "notes": "The counterpart: `first` DOES accept a mapping and yields its first key."
+    },
+    {
+      "id": "contract/filter-last-none",
+      "surface": "environment",
+      "form": "expression",
+      "source": "none|last",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              },
+              {
+                "key": "b",
+                "value": {
+                  "kind": "int",
+                  "value": 2
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "error"
+    },
+    {
+      "id": "contract/filter-reverse-map",
+      "surface": "environment",
+      "form": "expression",
+      "source": "m|reverse|list",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              },
+              {
+                "key": "b",
+                "value": {
+                  "kind": "int",
+                  "value": 2
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "notes": "Measured: reversing a mapping yields its keys in iteration order, unreversed, while `|items|reverse` does reverse."
+    },
+    {
+      "id": "contract/filter-reverse-map-items",
+      "surface": "environment",
+      "form": "expression",
+      "source": "m|items|reverse|list",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              },
+              {
+                "key": "b",
+                "value": {
+                  "kind": "int",
+                  "value": 2
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "contract/filter-reverse-string",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'abc'|reverse",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              },
+              {
+                "key": "b",
+                "value": {
+                  "kind": "int",
+                  "value": 2
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "contract/filter-chain-invalid-first",
+      "surface": "environment",
+      "form": "expression",
+      "source": "42|chain([1])|list",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              },
+              {
+                "key": "b",
+                "value": {
+                  "kind": "int",
+                  "value": 2
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "notes": "The operand that cannot be iterated is yielded as an invalid value, in place. Dropping it would silently change the data."
+    },
+    {
+      "id": "contract/filter-chain-invalid-second",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[1]|chain(42)|list",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              },
+              {
+                "key": "b",
+                "value": {
+                  "kind": "int",
+                  "value": 2
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "contract/filter-chain-invalid-both",
+      "surface": "environment",
+      "form": "expression",
+      "source": "42|chain(42)|list",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              },
+              {
+                "key": "b",
+                "value": {
+                  "kind": "int",
+                  "value": 2
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "contract/filter-chain-invalid-render",
+      "surface": "environment",
+      "form": "expression",
+      "source": "42|chain([1])",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              },
+              {
+                "key": "b",
+                "value": {
+                  "kind": "int",
+                  "value": 2
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "notes": "Unconsumed, the chain is an iterator."
+    },
+    {
+      "id": "contract/filter-chain-invalid-length",
+      "surface": "environment",
+      "form": "expression",
+      "source": "42|chain([1])|length",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              },
+              {
+                "key": "b",
+                "value": {
+                  "kind": "int",
+                  "value": 2
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "error",
+      "notes": "A lazy chain is an iterable, so it has no length."
+    },
+    {
+      "id": "contract/filter-chain-invalid-index",
+      "surface": "environment",
+      "form": "expression",
+      "source": "(42|chain([1])|list)[0]",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              },
+              {
+                "key": "b",
+                "value": {
+                  "kind": "int",
+                  "value": 2
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "error",
+      "notes": "Taking the invalid value out of the list is where the deferred error surfaces — at the lookup, not at the rendering. contract/invalid-item-lookup-compared is what distinguishes the two."
+    },
+    {
+      "id": "contract/filter-chain-invalid-tojson",
+      "surface": "environment",
+      "form": "expression",
+      "source": "42|chain([1])|list|tojson",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              },
+              {
+                "key": "b",
+                "value": {
+                  "kind": "int",
+                  "value": 2
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "notes": "Through serde an invalid value is null."
+    },
+    {
+      "id": "contract/filter-chain-none",
+      "surface": "environment",
+      "form": "expression",
+      "source": "none|chain([1])|list",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              },
+              {
+                "key": "b",
+                "value": {
+                  "kind": "int",
+                  "value": 2
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "notes": "none iterates as empty, so it contributes nothing rather than an invalid value."
+    },
+    {
+      "id": "contract/filter-chain-string",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'x'|chain([1])|list",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              },
+              {
+                "key": "b",
+                "value": {
+                  "kind": "int",
+                  "value": 2
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "contract/filter-chain-maps",
+      "surface": "environment",
+      "form": "expression",
+      "source": "m|chain(m)",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              },
+              {
+                "key": "b",
+                "value": {
+                  "kind": "int",
+                  "value": 2
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "contract/filter-chain-seqs-length",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[1]|chain([2])|length",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              },
+              {
+                "key": "b",
+                "value": {
+                  "kind": "int",
+                  "value": 2
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "notes": "All-sequence chaining produces a sequence, which does have a length."
+    },
+    {
+      "id": "contract/fn-debug-keyword",
+      "surface": "environment",
+      "form": "expression",
+      "source": "debug(nope_kw=1) == debug()",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              },
+              {
+                "key": "b",
+                "value": {
+                  "kind": "int",
+                  "value": 2
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "boolean",
+      "notes": "False in the engine: the keyword map is one of the debugged values."
+    },
+    {
+      "id": "contract/fn-debug-keyword-map",
+      "surface": "environment",
+      "form": "expression",
+      "source": "debug(nope_kw=1) == debug(dict(nope_kw=1))",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              },
+              {
+                "key": "b",
+                "value": {
+                  "kind": "int",
+                  "value": 2
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "boolean",
+      "notes": "True: it is debugged as exactly that map."
+    },
+    {
+      "id": "contract/fn-debug-same",
+      "surface": "environment",
+      "form": "expression",
+      "source": "debug(1) == debug(1)",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              },
+              {
+                "key": "b",
+                "value": {
+                  "kind": "int",
+                  "value": 2
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "boolean"
+    },
+    {
+      "id": "contract/invalid-first-renders-marker",
+      "surface": "environment",
+      "form": "expression",
+      "source": "42|chain([1])|first",
+      "notes": "A filter result is not a validation point, so the marker is what renders. Rejecting it here would be a divergence in the other direction."
+    },
+    {
+      "id": "contract/invalid-list-first-renders-marker",
+      "surface": "environment",
+      "form": "expression",
+      "source": "42|chain([1])|list|first"
+    },
+    {
+      "id": "contract/invalid-default-passes-through",
+      "surface": "environment",
+      "form": "expression",
+      "source": "42|chain([1])|first|default('x')",
+      "notes": "An invalid value is not undefined, so `default` returns it unchanged."
+    },
+    {
+      "id": "contract/invalid-string-passes-through",
+      "surface": "environment",
+      "form": "expression",
+      "source": "42|chain([1])|first|string"
+    },
+    {
+      "id": "contract/invalid-join-includes-marker",
+      "surface": "environment",
+      "form": "expression",
+      "source": "42|chain([1])|list|join('-')"
+    },
+    {
+      "id": "contract/invalid-concat-includes-marker",
+      "surface": "environment",
+      "form": "expression",
+      "source": "(42|chain([1])|first) ~ 'x'"
+    },
+    {
+      "id": "contract/invalid-is-defined",
+      "surface": "environment",
+      "form": "expression",
+      "source": "42|chain([1])|first is defined",
+      "expect": "boolean"
+    },
+    {
+      "id": "contract/invalid-is-none",
+      "surface": "environment",
+      "form": "expression",
+      "source": "42|chain([1])|first is none",
+      "expect": "boolean"
+    },
+    {
+      "id": "contract/invalid-is-string",
+      "surface": "environment",
+      "form": "expression",
+      "source": "42|chain([1])|first is string",
+      "expect": "boolean"
+    },
+    {
+      "id": "contract/invalid-is-iterable",
+      "surface": "environment",
+      "form": "expression",
+      "source": "42|chain([1])|first is iterable",
+      "expect": "boolean"
+    },
+    {
+      "id": "contract/invalid-is-eq",
+      "surface": "environment",
+      "form": "expression",
+      "source": "42|chain([1])|first is eq(1)",
+      "expect": "boolean"
+    },
+    {
+      "id": "contract/invalid-truthiness",
+      "surface": "environment",
+      "form": "template",
+      "source": "{% if 42|chain([1])|first %}T{% else %}F{% endif %}",
+      "notes": "An invalid value is falsy rather than an error in a condition."
+    },
+    {
+      "id": "contract/invalid-attr-of-invalid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "(42|chain([1])|first).foo|default('x')",
+      "notes": "Reading an attribute OFF an invalid value yields undefined: the engine validates the RESULT of a lookup, not its subject."
+    },
+    {
+      "id": "contract/invalid-item-of-invalid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "(42|chain([1])|first)[0]|default('x')"
+    },
+    {
+      "id": "contract/invalid-list-length",
+      "surface": "environment",
+      "form": "expression",
+      "source": "42|chain([1])|list|length"
+    },
+    {
+      "id": "contract/invalid-list-last",
+      "surface": "environment",
+      "form": "expression",
+      "source": "42|chain([1])|list|last",
+      "notes": "`last` reaches past the invalid element, so it never sees it."
+    },
+    {
+      "id": "contract/invalid-item-lookup",
+      "surface": "environment",
+      "form": "expression",
+      "source": "(42|chain([1])|list)[0]",
+      "expect": "error",
+      "notes": "The item lookup's RESULT is validated (vm/mod.rs:350-357)."
+    },
+    {
+      "id": "contract/invalid-item-lookup-compared",
+      "surface": "environment",
+      "form": "expression",
+      "source": "(42|chain([1])|list)[0] == 1",
+      "expect": "error",
+      "notes": "Same point, one operation earlier than the render — which is what distinguishes validating at the boundary from validating at output."
+    },
+    {
+      "id": "contract/invalid-item-lookup-attr",
+      "surface": "environment",
+      "form": "expression",
+      "source": "(42|chain([1])|list)[0].foo|default('x')",
+      "expect": "error"
+    },
+    {
+      "id": "contract/invalid-item-lookup-subscript",
+      "surface": "environment",
+      "form": "expression",
+      "source": "(42|chain([1])|list)[0]['foo']|default('x')",
+      "expect": "error"
+    },
+    {
+      "id": "contract/invalid-loop-item",
+      "surface": "environment",
+      "form": "template",
+      "source": "{% for x in 42|chain([1]) %}{% if x is defined %}D{% endif %}{% endfor %}",
+      "expect": "error",
+      "notes": "Every item an iteration yields is validated (vm/mod.rs:479-484), so the loop fails before its body runs."
+    },
+    {
+      "id": "contract/invalid-loop-item-render",
+      "surface": "environment",
+      "form": "template",
+      "source": "{% for x in 42|chain([1]) %}{{ x }}{% endfor %}",
+      "expect": "error"
+    },
+    {
+      "id": "contract/invalid-loop-over-list",
+      "surface": "environment",
+      "form": "template",
+      "source": "{% for x in 42|chain([1])|list %}I{% endfor %}",
+      "expect": "error",
+      "notes": "Materialising the chain first does not help: iterating the list validates its items too."
+    },
+    {
+      "id": "contract/invalid-variable-lookup",
+      "surface": "environment",
+      "form": "template",
+      "source": "{% set v = 42|chain([1])|first %}{{ v }}",
+      "expect": "error",
+      "notes": "A variable lookup is a validation point (vm/mod.rs:322-326), so storing an invalid value and reading it back fails."
+    },
+    {
+      "id": "contract/invalid-variable-lookup-attr",
+      "surface": "environment",
+      "form": "template",
+      "source": "{% set v = 42|chain([1])|first %}{{ v.foo|default('x') }}",
+      "expect": "error"
+    },
+    {
+      "id": "contract/invalid-int-filter",
+      "surface": "environment",
+      "form": "expression",
+      "source": "42|chain([1])|first|int",
+      "expect": "error",
+      "notes": "`int` and `float` are the two filters that reveal the error themselves (filters.rs:580, 600)."
+    },
+    {
+      "id": "contract/invalid-float-filter",
+      "surface": "environment",
+      "form": "expression",
+      "source": "42|chain([1])|first|float",
+      "expect": "error"
+    },
+    {
+      "id": "contract/invalid-abs-filter",
+      "surface": "environment",
+      "form": "expression",
+      "source": "42|chain([1])|first|abs",
+      "expect": "error",
+      "notes": "Not validation: an ordinary type error, since an invalid value is not a number."
+    },
+    {
+      "id": "contract/invalid-length-filter",
+      "surface": "environment",
+      "form": "expression",
+      "source": "42|chain([1])|first|length",
+      "expect": "error"
+    },
+    {
+      "id": "contract/call-number",
+      "surface": "environment",
+      "form": "expression",
+      "source": "42()",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              }
+            ]
+          }
+        },
+        {
+          "name": "num",
+          "value": {
+            "kind": "int",
+            "value": 42
+          }
+        },
+        {
+          "name": "seq",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              }
+            ]
+          }
+        },
+        {
+          "name": "obj",
+          "value": {
+            "kind": "cmp_object",
+            "canonical": "RED",
+            "display": "Red"
+          }
+        }
+      ],
+      "expect": "error",
+      "notes": "An evaluated noncallable value is an invalid operation, not an unknown function: nothing about it is a name lookup."
+    },
+    {
+      "id": "contract/call-float",
+      "surface": "environment",
+      "form": "expression",
+      "source": "1.5()",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              }
+            ]
+          }
+        },
+        {
+          "name": "num",
+          "value": {
+            "kind": "int",
+            "value": 42
+          }
+        },
+        {
+          "name": "seq",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              }
+            ]
+          }
+        },
+        {
+          "name": "obj",
+          "value": {
+            "kind": "cmp_object",
+            "canonical": "RED",
+            "display": "Red"
+          }
+        }
+      ],
+      "expect": "error"
+    },
+    {
+      "id": "contract/call-string",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'x'()",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              }
+            ]
+          }
+        },
+        {
+          "name": "num",
+          "value": {
+            "kind": "int",
+            "value": 42
+          }
+        },
+        {
+          "name": "seq",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              }
+            ]
+          }
+        },
+        {
+          "name": "obj",
+          "value": {
+            "kind": "cmp_object",
+            "canonical": "RED",
+            "display": "Red"
+          }
+        }
+      ],
+      "expect": "error"
+    },
+    {
+      "id": "contract/call-bool",
+      "surface": "environment",
+      "form": "expression",
+      "source": "true()",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              }
+            ]
+          }
+        },
+        {
+          "name": "num",
+          "value": {
+            "kind": "int",
+            "value": 42
+          }
+        },
+        {
+          "name": "seq",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              }
+            ]
+          }
+        },
+        {
+          "name": "obj",
+          "value": {
+            "kind": "cmp_object",
+            "canonical": "RED",
+            "display": "Red"
+          }
+        }
+      ],
+      "expect": "error"
+    },
+    {
+      "id": "contract/call-none",
+      "surface": "environment",
+      "form": "expression",
+      "source": "none()",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              }
+            ]
+          }
+        },
+        {
+          "name": "num",
+          "value": {
+            "kind": "int",
+            "value": 42
+          }
+        },
+        {
+          "name": "seq",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              }
+            ]
+          }
+        },
+        {
+          "name": "obj",
+          "value": {
+            "kind": "cmp_object",
+            "canonical": "RED",
+            "display": "Red"
+          }
+        }
+      ],
+      "expect": "error"
+    },
+    {
+      "id": "contract/call-sequence",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[1]()",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              }
+            ]
+          }
+        },
+        {
+          "name": "num",
+          "value": {
+            "kind": "int",
+            "value": 42
+          }
+        },
+        {
+          "name": "seq",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              }
+            ]
+          }
+        },
+        {
+          "name": "obj",
+          "value": {
+            "kind": "cmp_object",
+            "canonical": "RED",
+            "display": "Red"
+          }
+        }
+      ],
+      "expect": "error"
+    },
+    {
+      "id": "contract/call-map",
+      "surface": "environment",
+      "form": "expression",
+      "source": "m()",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              }
+            ]
+          }
+        },
+        {
+          "name": "num",
+          "value": {
+            "kind": "int",
+            "value": 42
+          }
+        },
+        {
+          "name": "seq",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              }
+            ]
+          }
+        },
+        {
+          "name": "obj",
+          "value": {
+            "kind": "cmp_object",
+            "canonical": "RED",
+            "display": "Red"
+          }
+        }
+      ],
+      "expect": "error"
+    },
+    {
+      "id": "contract/call-host-object",
+      "surface": "environment",
+      "form": "expression",
+      "source": "obj()",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              }
+            ]
+          }
+        },
+        {
+          "name": "num",
+          "value": {
+            "kind": "int",
+            "value": 42
+          }
+        },
+        {
+          "name": "seq",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              }
+            ]
+          }
+        },
+        {
+          "name": "obj",
+          "value": {
+            "kind": "cmp_object",
+            "canonical": "RED",
+            "display": "Red"
+          }
+        }
+      ],
+      "expect": "error",
+      "notes": "A generic host object that does not implement calling."
+    },
+    {
+      "id": "contract/call-invalid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "(42|chain([1])|first)()",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              }
+            ]
+          }
+        },
+        {
+          "name": "num",
+          "value": {
+            "kind": "int",
+            "value": 42
+          }
+        },
+        {
+          "name": "seq",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              }
+            ]
+          }
+        },
+        {
+          "name": "obj",
+          "value": {
+            "kind": "cmp_object",
+            "canonical": "RED",
+            "display": "Red"
+          }
+        }
+      ],
+      "expect": "error",
+      "notes": "An invalid value is not callable either, and reports its own kind."
+    },
+    {
+      "id": "contract/call-expression-result",
+      "surface": "environment",
+      "form": "expression",
+      "source": "(1 + 1)()",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              }
+            ]
+          }
+        },
+        {
+          "name": "num",
+          "value": {
+            "kind": "int",
+            "value": 42
+          }
+        },
+        {
+          "name": "seq",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              }
+            ]
+          }
+        },
+        {
+          "name": "obj",
+          "value": {
+            "kind": "cmp_object",
+            "canonical": "RED",
+            "display": "Red"
+          }
+        }
+      ],
+      "expect": "error"
+    },
+    {
+      "id": "contract/call-filter-result",
+      "surface": "environment",
+      "form": "expression",
+      "source": "([1]|first)()",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              }
+            ]
+          }
+        },
+        {
+          "name": "num",
+          "value": {
+            "kind": "int",
+            "value": 42
+          }
+        },
+        {
+          "name": "seq",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              }
+            ]
+          }
+        },
+        {
+          "name": "obj",
+          "value": {
+            "kind": "cmp_object",
+            "canonical": "RED",
+            "display": "Red"
+          }
+        }
+      ],
+      "expect": "error"
+    },
+    {
+      "id": "contract/call-map-attribute",
+      "surface": "environment",
+      "form": "expression",
+      "source": "m.a()",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              }
+            ]
+          }
+        },
+        {
+          "name": "num",
+          "value": {
+            "kind": "int",
+            "value": 42
+          }
+        },
+        {
+          "name": "seq",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              }
+            ]
+          }
+        },
+        {
+          "name": "obj",
+          "value": {
+            "kind": "cmp_object",
+            "canonical": "RED",
+            "display": "Red"
+          }
+        }
+      ],
+      "expect": "error",
+      "notes": "An attribute that exists but is not callable — the method path's own spelling of the same rule."
+    },
+    {
+      "id": "contract/call-bare-noncallable",
+      "surface": "environment",
+      "form": "expression",
+      "source": "num()",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              }
+            ]
+          }
+        },
+        {
+          "name": "num",
+          "value": {
+            "kind": "int",
+            "value": 42
+          }
+        },
+        {
+          "name": "seq",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              }
+            ]
+          }
+        },
+        {
+          "name": "obj",
+          "value": {
+            "kind": "cmp_object",
+            "canonical": "RED",
+            "display": "Red"
+          }
+        }
+      ],
+      "expect": "error",
+      "notes": "A bare NAME that resolves to a number: resolved, so invalid operation."
+    },
+    {
+      "id": "contract/call-bare-noncallable-seq",
+      "surface": "environment",
+      "form": "expression",
+      "source": "seq()",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              }
+            ]
+          }
+        },
+        {
+          "name": "num",
+          "value": {
+            "kind": "int",
+            "value": 42
+          }
+        },
+        {
+          "name": "seq",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              }
+            ]
+          }
+        },
+        {
+          "name": "obj",
+          "value": {
+            "kind": "cmp_object",
+            "canonical": "RED",
+            "display": "Red"
+          }
+        }
+      ],
+      "expect": "error"
+    },
+    {
+      "id": "contract/call-set-noncallable",
+      "surface": "environment",
+      "form": "template",
+      "source": "{% set x = 42 %}{{ x() }}",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              }
+            ]
+          }
+        },
+        {
+          "name": "num",
+          "value": {
+            "kind": "int",
+            "value": 42
+          }
+        },
+        {
+          "name": "seq",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              }
+            ]
+          }
+        },
+        {
+          "name": "obj",
+          "value": {
+            "kind": "cmp_object",
+            "canonical": "RED",
+            "display": "Red"
+          }
+        }
+      ],
+      "expect": "error"
+    },
+    {
+      "id": "contract/call-set-undefined",
+      "surface": "environment",
+      "form": "template",
+      "source": "{% set x = nothing %}{{ x() }}",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              }
+            ]
+          }
+        },
+        {
+          "name": "num",
+          "value": {
+            "kind": "int",
+            "value": 42
+          }
+        },
+        {
+          "name": "seq",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              }
+            ]
+          }
+        },
+        {
+          "name": "obj",
+          "value": {
+            "kind": "cmp_object",
+            "canonical": "RED",
+            "display": "Red"
+          }
+        }
+      ],
+      "expect": "error",
+      "notes": "A defined variable holding undefined is still RESOLVED, so this is an invalid operation while an unresolved name is an unknown function."
+    },
+    {
+      "id": "contract/call-set-invalid",
+      "surface": "environment",
+      "form": "template",
+      "source": "{% set x = 42|chain([1])|first %}{{ x() }}",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              }
+            ]
+          }
+        },
+        {
+          "name": "num",
+          "value": {
+            "kind": "int",
+            "value": 42
+          }
+        },
+        {
+          "name": "seq",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              }
+            ]
+          }
+        },
+        {
+          "name": "obj",
+          "value": {
+            "kind": "cmp_object",
+            "canonical": "RED",
+            "display": "Red"
+          }
+        }
+      ],
+      "expect": "error"
+    },
+    {
+      "id": "contract/call-unresolved-name",
+      "surface": "environment",
+      "form": "expression",
+      "source": "nosuchfn()",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              }
+            ]
+          }
+        },
+        {
+          "name": "num",
+          "value": {
+            "kind": "int",
+            "value": 42
+          }
+        },
+        {
+          "name": "seq",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              }
+            ]
+          }
+        },
+        {
+          "name": "obj",
+          "value": {
+            "kind": "cmp_object",
+            "canonical": "RED",
+            "display": "Red"
+          }
+        }
+      ],
+      "expect": "error",
+      "notes": "The one case that stays an unknown function."
+    },
+    {
+      "id": "contract/call-unresolved-name-args",
+      "surface": "environment",
+      "form": "expression",
+      "source": "nosuchfn(1, 2)",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              }
+            ]
+          }
+        },
+        {
+          "name": "num",
+          "value": {
+            "kind": "int",
+            "value": 42
+          }
+        },
+        {
+          "name": "seq",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              }
+            ]
+          }
+        },
+        {
+          "name": "obj",
+          "value": {
+            "kind": "cmp_object",
+            "canonical": "RED",
+            "display": "Red"
+          }
+        }
+      ],
+      "expect": "error"
+    },
+    {
+      "id": "contract/call-function-still-works",
+      "surface": "environment",
+      "form": "expression",
+      "source": "range(2)|list",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              }
+            ]
+          }
+        },
+        {
+          "name": "num",
+          "value": {
+            "kind": "int",
+            "value": 42
+          }
+        },
+        {
+          "name": "seq",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              }
+            ]
+          }
+        },
+        {
+          "name": "obj",
+          "value": {
+            "kind": "cmp_object",
+            "canonical": "RED",
+            "display": "Red"
+          }
+        }
+      ]
+    },
+    {
+      "id": "contract/call-function-kwargs-still-work",
+      "surface": "environment",
+      "form": "expression",
+      "source": "dict(a=1)",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              }
+            ]
+          }
+        },
+        {
+          "name": "num",
+          "value": {
+            "kind": "int",
+            "value": 42
+          }
+        },
+        {
+          "name": "seq",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              }
+            ]
+          }
+        },
+        {
+          "name": "obj",
+          "value": {
+            "kind": "cmp_object",
+            "canonical": "RED",
+            "display": "Red"
+          }
+        }
+      ]
+    },
+    {
+      "id": "contract/call-method-still-unknown-method",
+      "surface": "environment",
+      "form": "expression",
+      "source": "m.nope()",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              }
+            ]
+          }
+        },
+        {
+          "name": "num",
+          "value": {
+            "kind": "int",
+            "value": 42
+          }
+        },
+        {
+          "name": "seq",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              }
+            ]
+          }
+        },
+        {
+          "name": "obj",
+          "value": {
+            "kind": "cmp_object",
+            "canonical": "RED",
+            "display": "Red"
+          }
+        }
+      ],
+      "expect": "error",
+      "notes": "The method path is separate and keeps its own class."
+    },
+    {
+      "id": "contract/call-method-on-invalid",
+      "surface": "environment",
+      "form": "expression",
+      "source": "(42|chain([1])|first).nope()",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              }
+            ]
+          }
+        },
+        {
+          "name": "num",
+          "value": {
+            "kind": "int",
+            "value": 42
+          }
+        },
+        {
+          "name": "seq",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              }
+            ]
+          }
+        },
+        {
+          "name": "obj",
+          "value": {
+            "kind": "cmp_object",
+            "canonical": "RED",
+            "display": "Red"
+          }
+        }
+      ],
+      "expect": "error"
+    },
+    {
+      "id": "contract/bare-argerr-unresolved",
+      "surface": "environment",
+      "form": "template",
+      "source": "{{ nosuchfn(42|sort) }}",
+      "inputs": [
+        {
+          "name": "num",
+          "value": {
+            "kind": "int",
+            "value": 42
+          }
+        }
+      ],
+      "expect": "error",
+      "notes": "The argument's invalid operation, NOT `nosuchfn is unknown`: the engine has already evaluated the arguments when it resolves the name."
+    },
+    {
+      "id": "contract/bare-argerr-resolved-noncallable",
+      "surface": "environment",
+      "form": "template",
+      "source": "{{ num(42|sort) }}",
+      "inputs": [
+        {
+          "name": "num",
+          "value": {
+            "kind": "int",
+            "value": 42
+          }
+        }
+      ],
+      "expect": "error"
+    },
+    {
+      "id": "contract/bare-argerr-real-function",
+      "surface": "environment",
+      "form": "template",
+      "source": "{{ range(42|sort) }}",
+      "inputs": [
+        {
+          "name": "num",
+          "value": {
+            "kind": "int",
+            "value": 42
+          }
+        }
+      ],
+      "expect": "error"
+    },
+    {
+      "id": "contract/bare-argerr-kwarg",
+      "surface": "environment",
+      "form": "template",
+      "source": "{{ nosuchfn(a=42|sort) }}",
+      "inputs": [
+        {
+          "name": "num",
+          "value": {
+            "kind": "int",
+            "value": 42
+          }
+        }
+      ],
+      "expect": "error",
+      "notes": "A keyword argument is evaluated at the same point as a positional one."
+    },
+    {
+      "id": "contract/bare-argerr-super",
+      "surface": "environment",
+      "form": "template",
+      "source": "{{ super(42|sort) }}",
+      "inputs": [
+        {
+          "name": "num",
+          "value": {
+            "kind": "int",
+            "value": 42
+          }
+        }
+      ],
+      "expect": "error",
+      "notes": "`super` is the one name handled before the lookup, and its arguments are still evaluated first."
+    },
+    {
+      "id": "contract/bare-shadow-set-default-function",
+      "surface": "environment",
+      "form": "template",
+      "source": "{% set range = 42 %}{{ range() }}",
+      "inputs": [
+        {
+          "name": "num",
+          "value": {
+            "kind": "int",
+            "value": 42
+          }
+        }
+      ],
+      "expect": "error",
+      "notes": "A local shadows a DEFAULT FUNCTION, so this is a noncallable number rather than a `range` call."
+    },
+    {
+      "id": "contract/bare-shadow-set-default-function-args",
+      "surface": "environment",
+      "form": "template",
+      "source": "{% set range = 42 %}{{ range(2) }}",
+      "inputs": [
+        {
+          "name": "num",
+          "value": {
+            "kind": "int",
+            "value": 42
+          }
+        }
+      ],
+      "expect": "error"
+    },
+    {
+      "id": "contract/bare-shadow-ctx-default-function",
+      "surface": "environment",
+      "form": "template",
+      "source": "{{ range(2) }}",
+      "inputs": [
+        {
+          "name": "num",
+          "value": {
+            "kind": "int",
+            "value": 42
+          }
+        },
+        {
+          "name": "range",
+          "value": {
+            "kind": "int",
+            "value": 7
+          }
+        }
+      ],
+      "expect": "error",
+      "notes": "A context value shadows it too."
+    },
+    {
+      "id": "contract/bare-shadow-macro-by-local",
+      "surface": "environment",
+      "form": "template",
+      "source": "{% macro range() %}M{% endmacro %}{% set range = 42 %}{{ range() }}",
+      "inputs": [
+        {
+          "name": "num",
+          "value": {
+            "kind": "int",
+            "value": 42
+          }
+        }
+      ],
+      "expect": "error",
+      "notes": "A local assigned after a macro definition shadows the macro."
+    },
+    {
+      "id": "contract/bare-shadow-local-by-macro",
+      "surface": "environment",
+      "form": "template",
+      "source": "{% set dict = 42 %}{% macro dict() %}M{% endmacro %}{{ dict() }}",
+      "inputs": [
+        {
+          "name": "num",
+          "value": {
+            "kind": "int",
+            "value": 42
+          }
+        }
+      ],
+      "notes": "And the other order: a macro definition IS a local assignment, so the one defined last wins."
+    },
+    {
+      "id": "contract/bare-macro-still-works",
+      "surface": "environment",
+      "form": "template",
+      "source": "{% macro greet() %}M{% endmacro %}{{ greet() }}",
+      "inputs": [
+        {
+          "name": "num",
+          "value": {
+            "kind": "int",
+            "value": 42
+          }
+        }
+      ]
+    },
+    {
+      "id": "contract/bare-loop-recursive-argerr",
+      "surface": "environment",
+      "form": "template",
+      "source": "{% for x in [1] recursive %}{{ loop(1, 42|sort) }}{% endfor %}",
+      "inputs": [
+        {
+          "name": "num",
+          "value": {
+            "kind": "int",
+            "value": 42
+          }
+        }
+      ],
+      "expect": "error",
+      "notes": "The argument error wins over the arity check, because the arguments are evaluated first here too."
+    },
+    {
+      "id": "contract/bare-loop-recursive-arity",
+      "surface": "environment",
+      "form": "template",
+      "source": "{% for x in [1] recursive %}{{ loop(1, 2) }}{% endfor %}",
+      "inputs": [
+        {
+          "name": "num",
+          "value": {
+            "kind": "int",
+            "value": 42
+          }
+        }
+      ],
+      "expect": "error"
+    },
+    {
+      "id": "contract/bare-loop-nonrecursive",
+      "surface": "environment",
+      "form": "template",
+      "source": "{% for x in [1] %}{{ loop(1) }}{% endfor %}",
+      "inputs": [
+        {
+          "name": "num",
+          "value": {
+            "kind": "int",
+            "value": 42
+          }
+        }
+      ],
+      "expect": "error",
+      "notes": "`loop` resolves to a loop object that was not set up for recursion."
+    },
+    {
+      "id": "contract/bare-loop-outside",
+      "surface": "environment",
+      "form": "template",
+      "source": "{{ loop(1) }}",
+      "inputs": [
+        {
+          "name": "num",
+          "value": {
+            "kind": "int",
+            "value": 42
+          }
+        }
+      ],
+      "expect": "error",
+      "notes": "Outside a loop the name does not resolve at all, so it is an unknown function."
+    },
+    {
+      "id": "contract/bare-loop-recursion-works",
+      "surface": "environment",
+      "form": "template",
+      "source": "{% for x in [[1, [2]]] recursive %}{{ x[0] }}{{ loop(x[1]) }}{% endfor %}",
+      "inputs": [
+        {
+          "name": "num",
+          "value": {
+            "kind": "int",
+            "value": 42
+          }
+        }
+      ],
+      "notes": "Recursion still recurses."
+    },
+    {
+      "id": "contract/bare-loop-recursion-limit",
+      "surface": "environment",
+      "form": "template",
+      "source": "{% for x in [1] recursive %}{{ loop([2]) }}{% endfor %}",
+      "inputs": [
+        {
+          "name": "num",
+          "value": {
+            "kind": "int",
+            "value": 42
+          }
+        }
+      ],
+      "expect": "error",
+      "notes": "Unbounded recursion is an invalid operation on both sides."
+    },
+    {
+      "id": "contract/bare-unresolved-plain",
+      "surface": "environment",
+      "form": "template",
+      "source": "{{ nosuchfn() }}",
+      "inputs": [
+        {
+          "name": "num",
+          "value": {
+            "kind": "int",
+            "value": 42
+          }
+        }
+      ],
+      "expect": "error"
+    },
+    {
+      "id": "contract/bare-unresolved-good-args",
+      "surface": "environment",
+      "form": "template",
+      "source": "{{ nosuchfn(1, 2) }}",
+      "inputs": [
+        {
+          "name": "num",
+          "value": {
+            "kind": "int",
+            "value": 42
+          }
+        }
+      ],
+      "expect": "error"
+    },
+    {
+      "id": "contract/bare-super-outside",
+      "surface": "environment",
+      "form": "template",
+      "source": "{{ super() }}",
+      "inputs": [
+        {
+          "name": "num",
+          "value": {
+            "kind": "int",
+            "value": 42
+          }
+        }
+      ],
+      "expect": "error",
+      "notes": "Resolvable name, unusable context: an invalid operation, not an unknown function."
+    },
+    {
+      "id": "contract/macro-dies-with-loop",
+      "surface": "environment",
+      "form": "template",
+      "source": "{% for i in [1] %}{% macro x() %}M{% endmacro %}{% endfor %}{{ x() }}",
+      "expect": "error",
+      "notes": "A macro defined inside a loop body is gone when the frame pops. It used to stay callable through the template-level registry, which is a false success rather than an error-text difference."
+    },
+    {
+      "id": "contract/macro-live-inside-loop",
+      "surface": "environment",
+      "form": "template",
+      "source": "{% for i in [1] %}{% macro x() %}M{% endmacro %}{{ x() }}{% endfor %}"
+    },
+    {
+      "id": "contract/macro-dies-with-with",
+      "surface": "environment",
+      "form": "template",
+      "source": "{% with %}{% macro x() %}M{% endmacro %}{% endwith %}{{ x() }}",
+      "expect": "error"
+    },
+    {
+      "id": "contract/macro-live-inside-with",
+      "surface": "environment",
+      "form": "template",
+      "source": "{% with %}{% macro x() %}M{% endmacro %}{{ x() }}{% endwith %}"
+    },
+    {
+      "id": "contract/macro-nested-dies",
+      "surface": "environment",
+      "form": "template",
+      "source": "{% macro outer() %}{% macro inner() %}I{% endmacro %}{{ inner() }}{% endmacro %}{{ outer() }}|{{ inner() }}",
+      "expect": "error",
+      "notes": "A macro defined inside another macro dies with that macro's frame."
+    },
+    {
+      "id": "contract/macro-nested-live-inside",
+      "surface": "environment",
+      "form": "template",
+      "source": "{% macro outer() %}{% macro inner() %}I{% endmacro %}{{ inner() }}{% endmacro %}{{ outer() }}"
+    },
+    {
+      "id": "contract/macro-survives-if",
+      "surface": "environment",
+      "form": "template",
+      "source": "{% if true %}{% macro x() %}M{% endmacro %}{% endif %}{{ x() }}",
+      "notes": "An `if` body is not a frame, so a macro defined there is a top-level one."
+    },
+    {
+      "id": "contract/macro-survives-nested-if",
+      "surface": "environment",
+      "form": "template",
+      "source": "{% if true %}{% if true %}{% macro x() %}M{% endmacro %}{% endif %}{% endif %}{{ x() }}"
+    },
+    {
+      "id": "contract/macro-not-taken-if",
+      "surface": "environment",
+      "form": "template",
+      "source": "{% if false %}{% macro x() %}M{% endmacro %}{% endif %}{{ x() }}",
+      "expect": "error"
+    },
+    {
+      "id": "contract/macro-defined-before-use",
+      "surface": "environment",
+      "form": "template",
+      "source": "{% macro x() %}M{% endmacro %}{{ x() }}"
+    },
+    {
+      "id": "contract/macro-used-before-defined",
+      "surface": "environment",
+      "form": "template",
+      "source": "{{ x() }}{% macro x() %}M{% endmacro %}",
+      "expect": "error",
+      "notes": "Definition is execution, not hoisting."
+    },
+    {
+      "id": "contract/macro-redefined-per-iteration",
+      "surface": "environment",
+      "form": "template",
+      "source": "{% for i in [1, 2] %}{% macro x() %}M{{ i }}{% endmacro %}{{ x() }}{% endfor %}"
+    },
+    {
+      "id": "contract/macro-is-defined-after-loop",
+      "surface": "environment",
+      "form": "template",
+      "source": "{% for i in [1] %}{% macro x() %}M{% endmacro %}{% endfor %}{{ x is defined }}",
+      "expect": "boolean"
+    },
+    {
+      "id": "contract/macro-loop-local-does-not-clobber",
+      "surface": "environment",
+      "form": "template",
+      "source": "{% macro x() %}T{% endmacro %}{% for i in [1] %}{% macro x() %}L{% endmacro %}{% endfor %}{{ x() }}",
+      "notes": "A loop-local definition must not overwrite the top-level one for good."
+    },
+    {
+      "id": "contract/macro-call-basic",
+      "surface": "environment",
+      "form": "template",
+      "source": "{% macro f(caller) %}F{{ caller() }}{% endmacro %}{% call f() %}C{% endcall %}"
+    },
+    {
+      "id": "contract/macro-call-shadowed",
+      "surface": "environment",
+      "form": "template",
+      "source": "{% macro f(caller) %}F{{ caller() }}{% endmacro %}{% set f = 42 %}{% call f() %}C{% endcall %}",
+      "expect": "error",
+      "notes": "A local shadows the macro for a call block exactly as it does for a call."
+    },
+    {
+      "id": "contract/macro-call-unknown",
+      "surface": "environment",
+      "form": "template",
+      "source": "{% call nosuch() %}C{% endcall %}",
+      "expect": "error",
+      "notes": "An unresolved callee is an unknown function, not `call block requires a macro`."
+    },
+    {
+      "id": "contract/macro-call-unknown-argerr",
+      "surface": "environment",
+      "form": "template",
+      "source": "{% call nosuch(42|sort) %}C{% endcall %}",
+      "expect": "error",
+      "notes": "And the argument is evaluated first, so its error wins."
+    },
+    {
+      "id": "contract/macro-call-argerr",
+      "surface": "environment",
+      "form": "template",
+      "source": "{% macro f(a, caller) %}F{% endmacro %}{% call f(42|sort) %}C{% endcall %}",
+      "expect": "error"
+    },
+    {
+      "id": "contract/macro-call-args",
+      "surface": "environment",
+      "form": "template",
+      "source": "{% macro f(a, caller) %}{{ a }}{{ caller() }}{% endmacro %}{% call f(7) %}C{% endcall %}"
+    },
+    {
+      "id": "contract/macro-call-caller-args",
+      "surface": "environment",
+      "form": "template",
+      "source": "{% macro f(caller) %}{{ caller(1) }}{% endmacro %}{% call(x) f() %}C{{ x }}{% endcall %}"
+    },
+    {
+      "id": "contract/macro-call-scoped-macro",
+      "surface": "environment",
+      "form": "template",
+      "source": "{% for i in [1] %}{% macro f(caller) %}F{{ caller() }}{% endmacro %}{% endfor %}{% call f() %}C{% endcall %}",
+      "expect": "error",
+      "notes": "A call block sees the same lifetime as a call."
+    },
+    {
+      "id": "contract/macro-call-scoped-macro-inside",
+      "surface": "environment",
+      "form": "template",
+      "source": "{% for i in [1] %}{% macro f(caller) %}F{{ caller() }}{% endmacro %}{% call f() %}C{% endcall %}{% endfor %}"
+    },
+    {
+      "id": "contract/macro-call-noncallable",
+      "surface": "environment",
+      "form": "template",
+      "source": "{% set f = 42 %}{% call f() %}C{% endcall %}",
+      "expect": "error"
+    },
+    {
+      "id": "contract/macro-call-default-function",
+      "surface": "environment",
+      "form": "template",
+      "source": "{% call range(2) %}C{% endcall %}",
+      "expect": "error",
+      "notes": "`range` has no Kwargs parameter, so the caller lands in an integer slot."
+    },
+    {
+      "id": "contract/macro-call-method",
+      "surface": "environment",
+      "form": "template",
+      "source": "{% call m2.keys() %}C{% endcall %}",
+      "expect": "error",
+      "notes": "A call block on a method goes through method dispatch.",
+      "inputs": [
+        {
+          "name": "m2",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "contract/macro-call-caller-visible",
+      "surface": "environment",
+      "form": "template",
+      "source": "{% macro f() %}{{ caller is defined }}{% endmacro %}{% call f() %}C{% endcall %}",
+      "expect": "boolean",
+      "notes": "`caller` is bound when the macro's BODY uses it, declared or not."
+    },
+    {
+      "id": "contract/macro-call-caller-unused",
+      "surface": "environment",
+      "form": "template",
+      "source": "{% macro f() %}F{% endmacro %}{% call f() %}C{% endcall %}",
+      "expect": "error",
+      "notes": "A macro that never mentions `caller` reports it as an unknown keyword argument."
+    },
+    {
+      "id": "contract/macro-call-caller-body-only",
+      "surface": "environment",
+      "form": "template",
+      "source": "{% macro f() %}{{ caller() }}{% endmacro %}{% call f() %}C{% endcall %}"
+    },
+    {
+      "id": "contract/macro-caller-as-plain-kwarg",
+      "surface": "environment",
+      "form": "template",
+      "source": "{% macro f(caller) %}{{ caller }}{% endmacro %}{{ f(caller=1) }}",
+      "notes": "A declared parameter named caller is an ordinary parameter."
+    }
+  ]
+}

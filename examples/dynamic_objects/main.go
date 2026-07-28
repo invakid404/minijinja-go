@@ -29,7 +29,7 @@ func (c *Cycler) GetAttr(name string) value.Value {
 }
 
 // ObjectCall makes Cycler callable - cycler() returns the next value
-func (c *Cycler) ObjectCall(state value.State, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
+func (c *Cycler) ObjectCall(state value.State, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
 	if len(args) > 0 {
 		return value.Undefined(), fmt.Errorf("cycler takes no arguments")
 	}
@@ -38,7 +38,7 @@ func (c *Cycler) ObjectCall(state value.State, args []value.Value, kwargs map[st
 }
 
 // makeCycler is a function that creates a new Cycler from arguments
-func makeCycler(state *minijinja.State, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
+func makeCycler(state *minijinja.State, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
 	// If a single array is passed, use its contents
 	values := args
 	if len(args) == 1 {
@@ -63,7 +63,7 @@ func (m *Magic) GetAttr(name string) value.Value {
 }
 
 // CallMethod handles method calls on the Magic object
-func (m *Magic) CallMethod(state value.State, name string, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
+func (m *Magic) CallMethod(state value.State, name string, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
 	if name == "make_class" {
 		if len(args) != 1 {
 			return value.Undefined(), fmt.Errorf("make_class takes 1 argument")

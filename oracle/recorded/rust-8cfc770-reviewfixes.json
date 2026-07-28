@@ -1,0 +1,793 @@
+{
+  "schema_version": 1,
+  "provenance": {
+    "engine_repo": "https://github.com/boundaryml/minijinja",
+    "engine_branch": "value-cmp",
+    "engine_rev": "8cfc770a5dffeda2de5b910d2b9f870d7edeff7c",
+    "engine_features": [
+      "macros",
+      "builtins",
+      "debug",
+      "preserve_order",
+      "adjacent_loop_items",
+      "unicode",
+      "json",
+      "unstable_machinery",
+      "custom_syntax",
+      "deserialization",
+      "serde"
+    ],
+    "harness_version": "1",
+    "os": "macos",
+    "arch": "aarch64",
+    "corpus_sha256": "465fd4d4a14af193ff78f66b55ab40df1a9295cd068f779d9b4bb7e3cc024e9a"
+  },
+  "results": [
+    {
+      "id": "review/range-overflow-upper",
+      "outcome": {
+        "status": "ok",
+        "render": "[9223372036854775806]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/range-overflow-lower",
+      "outcome": {
+        "status": "ok",
+        "render": "[-9223372036854775808]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/range-overflow-span",
+      "outcome": {
+        "status": "ok",
+        "render": "[-9223372036854775808, -1, 9223372036854775806]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/range-overflow-negative-step",
+      "outcome": {
+        "status": "ok",
+        "render": "[9223372036854775807]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/range-boundary-empty",
+      "outcome": {
+        "status": "ok",
+        "render": "[]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/range-too-many",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: range has too many elements (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "review/caller-declared-positional",
+      "outcome": {
+        "status": "ok",
+        "render": "1",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/caller-declared-default",
+      "outcome": {
+        "status": "ok",
+        "render": "5",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/caller-declared-keyword",
+      "outcome": {
+        "status": "ok",
+        "render": "7",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/caller-declared-call-block",
+      "outcome": {
+        "status": "ok",
+        "render": "FC",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/caller-undeclared-body",
+      "outcome": {
+        "status": "ok",
+        "render": "C",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/caller-undeclared-plain-call",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "review/kwargs-order-dict",
+      "outcome": {
+        "status": "ok",
+        "render": "{\"b\": 1, \"a\": 2}",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/kwargs-order-dict-three",
+      "outcome": {
+        "status": "ok",
+        "render": "{\"z\": 1, \"y\": 2, \"x\": 3}",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/kwargs-order-dict-merge",
+      "outcome": {
+        "status": "ok",
+        "render": "{\"m\": 0, \"b\": 1, \"a\": 2}",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/kwargs-order-tojson",
+      "outcome": {
+        "status": "ok",
+        "render": "{\"b\":1,\"a\":2}",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/kwargs-order-items",
+      "outcome": {
+        "status": "ok",
+        "render": "[[\"b\", 1], [\"a\", 2]]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/kwargs-order-loop",
+      "outcome": {
+        "status": "ok",
+        "render": "ba",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/kwargs-order-splat",
+      "outcome": {
+        "status": "ok",
+        "render": "{\"b\": 1, \"a\": 2}",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/kwargs-unknown-first",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments: unknown keyword argument 'zz' (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "review/kwargs-unknown-first-reversed",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments: unknown keyword argument 'aa' (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "review/kwargs-unknown-macro",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments: unknown keyword argument `zz` (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "review/argwidth-round-i32-overflow",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot convert number to i32 (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "review/argwidth-round-i32-max",
+      "outcome": {
+        "status": "ok",
+        "render": "NaN",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/argwidth-round-i32-min",
+      "outcome": {
+        "status": "ok",
+        "render": "NaN",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/argwidth-round-i32-underflow",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot convert number to i32 (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "review/argwidth-round-bool",
+      "outcome": {
+        "status": "ok",
+        "render": "1.5",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/argwidth-round-integral-float",
+      "outcome": {
+        "status": "ok",
+        "render": "1.5",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/argwidth-round-fractional-float",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot convert number to i32 (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "review/argwidth-batch-bool",
+      "outcome": {
+        "status": "ok",
+        "render": "[[1], [2]]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/argwidth-batch-integral-float",
+      "outcome": {
+        "status": "ok",
+        "render": "[[1, 2]]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/argwidth-range-float",
+      "outcome": {
+        "status": "ok",
+        "render": "[0, 1, 2]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/argwidth-range-bool",
+      "outcome": {
+        "status": "ok",
+        "render": "[0]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/argwidth-split-max-integral-float",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"a\", \"b c\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/argwidth-indent-negative",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot convert number to usize (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "review/argwidth-indent-past-int64",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot convert number to usize (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "review/pyarg-replace-bool",
+      "outcome": {
+        "status": "ok",
+        "render": "ba",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/pyarg-replace-i32-overflow",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot convert number to i32 (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "review/pyarg-replace-integral-float",
+      "outcome": {
+        "status": "ok",
+        "render": "ba",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/pyarg-replace-negative",
+      "outcome": {
+        "status": "ok",
+        "render": "bb",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/pyarg-split-max-bool",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"a\", \"b\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/pyarg-splitlines-int",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot convert number to bool (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "review/bigint-divisibleby-false",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "review/bigint-divisibleby-true",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "review/bigint-divisibleby-huge-divisor",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "review/bigint-format-decimal",
+      "outcome": {
+        "status": "ok",
+        "render": "18446744073709551616",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/bigint-format-string",
+      "outcome": {
+        "status": "ok",
+        "render": "18446744073709551616",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/bigint-format-hex",
+      "outcome": {
+        "status": "ok",
+        "render": "10000000000000000",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/bigint-format-negative",
+      "outcome": {
+        "status": "ok",
+        "render": "-18446744073709551616",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/bigint-format-strfmt",
+      "outcome": {
+        "status": "ok",
+        "render": "18446744073709551616",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/bigint-format-strfmt-decimal",
+      "outcome": {
+        "status": "ok",
+        "render": "18446744073709551616",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/bigint-format-strfmt-grouped",
+      "outcome": {
+        "status": "ok",
+        "render": "18,446,744,073,709,551,616",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/strtest-lower-mixed",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "review/strtest-lower-letters",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "review/strtest-lower-punct",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "review/strtest-lower-empty",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "review/strtest-lower-nonstring",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: value is not a string (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "review/strtest-upper-mixed",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "review/strtest-upper-nonstring",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: value is not a string (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "review/strtest-filter-nonstring",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: value is not a string (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "review/strtest-test-nonstring",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: value is not a string (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "review/strtest-startingwith-numbers",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "review/strtest-startingwith-mixed",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "review/strtest-endingwith-numbers",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "review/strtest-endingwith-false",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "review/filter-sort-composite",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"c\", \"a\", \"b\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/filter-sort-composite-spaces",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"c\", \"a\", \"b\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/filter-sort-single-path",
+      "outcome": {
+        "status": "ok",
+        "render": "2",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/filter-selectattr-path",
+      "outcome": {
+        "status": "ok",
+        "render": "1",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/filter-rejectattr-path",
+      "outcome": {
+        "status": "ok",
+        "render": "1",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/filter-dictsort-case-tie",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"a\", \"A\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/filter-sort-case-tie",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"a\", \"A\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/filter-unique-full-lowercase",
+      "outcome": {
+        "status": "ok",
+        "render": "1",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/filter-unique-case",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"a\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/filter-unique-attribute-path",
+      "outcome": {
+        "status": "ok",
+        "render": "2",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/pykind-keys-sequence",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "review/pykind-keys-iterable",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "review/pykind-values-sequence",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "review/pykind-items-sequence",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "review/pykind-keys-render",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"b\", \"a\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/pykind-keys-length",
+      "outcome": {
+        "status": "ok",
+        "render": "1",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/pykind-items-loop",
+      "outcome": {
+        "status": "ok",
+        "render": "b1a2",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/pyget-present-undefined",
+      "outcome": {
+        "status": "ok",
+        "render": "",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/pyget-missing",
+      "outcome": {
+        "status": "ok",
+        "render": "42",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/pyget-missing-no-default",
+      "outcome": {
+        "status": "ok",
+        "render": "none",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/pyget-present",
+      "outcome": {
+        "status": "ok",
+        "render": "1",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/debug-two-args",
+      "outcome": {
+        "status": "ok",
+        "render": "[\n    1,\n    2,\n]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/debug-one-arg",
+      "outcome": {
+        "status": "ok",
+        "render": "42",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/debug-strings",
+      "outcome": {
+        "status": "ok",
+        "render": "[\n    \"a\",\n    \"b\",\n]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/debug-nested",
+      "outcome": {
+        "status": "ok",
+        "render": "[\n    [\n        1,\n        2,\n    ],\n    {\n        \"b\": 1,\n        \"a\": 2,\n    },\n]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/debug-none-arg",
+      "outcome": {
+        "status": "ok",
+        "render": "none",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/debug-empty-containers",
+      "outcome": {
+        "status": "ok",
+        "render": "[\n    [],\n    {},\n]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/debug-keyword",
+      "outcome": {
+        "status": "ok",
+        "render": "{\n    \"nope_kw\": 1,\n}",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/pycompat-count-empty-needle",
+      "outcome": {
+        "status": "timeout",
+        "seconds": 5
+      }
+    }
+  ]
+}

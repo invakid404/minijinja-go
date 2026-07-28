@@ -111,7 +111,7 @@ type IterableObject interface {
 type CallableObject interface {
 	Object
 	// ObjectCall invokes the object itself with the given arguments.
-	ObjectCall(state State, args []Value, kwargs map[string]Value) (Value, error)
+	ObjectCall(state State, args []Value, kwargs *OrderedMap) (Value, error)
 }
 
 // MethodCallable is an object that supports method calls.
@@ -122,7 +122,7 @@ type MethodCallable interface {
 	Object
 	// CallMethod invokes a method on the object.
 	// Return ErrUnknownMethod to fall back to GetAttr(name) + call.
-	CallMethod(state State, name string, args []Value, kwargs map[string]Value) (Value, error)
+	CallMethod(state State, name string, args []Value, kwargs *OrderedMap) (Value, error)
 }
 
 // ObjectWithLen provides explicit length for an object.
@@ -377,6 +377,42 @@ func (i *iterableObject) String() string {
 //	})
 func MakeIterable(maker func() iter.Seq[Value]) Value {
 	return FromObject(&iterableObject{maker: maker})
+}
+
+// sizedIterableObject is an iterable whose length is known.
+type sizedIterableObject struct {
+	items []Value
+}
+
+func (i *sizedIterableObject) GetAttr(string) Value { return Undefined() }
+
+func (i *sizedIterableObject) ObjectRepr() ObjectRepr { return ObjectReprIterable }
+
+func (i *sizedIterableObject) Iterate() iter.Seq[Value] {
+	return func(yield func(Value) bool) {
+		for _, item := range i.items {
+			if !yield(item) {
+				return
+			}
+		}
+	}
+}
+
+func (i *sizedIterableObject) Len() (int, bool) { return len(i.items), true }
+
+// String renders the elements, which is what the engine does for an iterable
+// whose length it knows: it only falls back to `<iterator>` when printing
+// would mean risking an iteration of unknown size (value/object.rs:338-352).
+func (i *sizedIterableObject) String() string { return FromSlice(i.items).String() }
+
+// MakeSizedIterable creates a lazy iterable whose length is known.
+//
+// The distinction from [MakeIterable] is observable in two places: such a value
+// RENDERS as a list rather than as `<iterator>`, and `|length` answers instead
+// of failing. It is still an iterable and not a sequence, so `is sequence` is
+// false — which is what `dict(a=1).keys()` is in the engine.
+func MakeSizedIterable(items []Value) Value {
+	return FromObject(&sizedIterableObject{items: items})
 }
 
 // -----------------------------------------------------------------------------

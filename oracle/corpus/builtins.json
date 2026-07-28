@@ -1418,12 +1418,11 @@
       "notes": "debug() with an argument renders the value's repr, which is comparable. The no-argument form dumps the whole environment in Rust's Debug format, type paths and all, and is deliberately not pinned byte for byte."
     },
     {
-      "id": "fn/debug-state-nonempty",
+      "id": "fn/debug-state-dump",
       "surface": "environment",
       "form": "expression",
-      "source": "debug()|length > 0",
-      "expect": "boolean",
-      "notes": "The state dump is not byte-comparable, but its presence is."
+      "source": "debug()",
+      "notes": "The no-argument form dumps the whole environment in the host language's own debug format — Rust type paths and all. It is compared byte for byte like every other row and declared in divergences.json rather than masked behind a shape check."
     },
     {
       "id": "fn/unknown-function",

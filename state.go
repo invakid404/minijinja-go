@@ -63,7 +63,7 @@ func (w ioStringWriter) WriteString(s string) (int, error) {
 //
 // Example usage in a custom filter:
 //
-//	env.AddFilter("fetch_data", func(state FilterState, val value.Value, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
+//	env.AddFilter("fetch_data", func(state FilterState, val value.Value, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
 //	    ctx := state.Context()
 //	    // Use ctx for database queries, HTTP requests, etc.
 //	    select {
@@ -222,7 +222,7 @@ func (s *State) CallMacro(name string, args ...value.Value) (value.Value, error)
 //	    []value.Value{value.FromString("username")},
 //	    map[string]value.Value{"type": value.FromString("email")},
 //	)
-func (s *State) CallMacroKw(name string, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
+func (s *State) CallMacroKw(name string, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
 	macro, ok := s.macros[name]
 	if !ok {
 		return value.Undefined(), NewError(ErrInvalidOperation, "macro not found: "+name)
@@ -358,10 +358,10 @@ func (s *State) RenderBlockToWrite(name string, w io.Writer) error {
 //
 //	result, err := state.ApplyFilter("upper", value.FromString("hello"), nil, nil)
 //	// result is "HELLO"
-func (s *State) ApplyFilter(name string, val value.Value, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
+func (s *State) ApplyFilter(name string, val value.Value, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
 	filterFn, ok := s.env.getFilter(name)
 	if !ok {
-		return value.Undefined(), NewError(ErrUnknownFilter, name)
+		return value.Undefined(), unknownFilter(name)
 	}
 	return filterFn(s, val, args, kwargs)
 }
@@ -375,7 +375,7 @@ func (s *State) ApplyFilter(name string, val value.Value, args []value.Value, kw
 func (s *State) PerformTest(name string, val value.Value, args []value.Value) (bool, error) {
 	testFn, ok := s.env.getTest(name)
 	if !ok {
-		return false, NewError(ErrUnknownTest, name)
+		return false, unknownTest(name)
 	}
 	return testFn(s, val, args)
 }
@@ -474,7 +474,7 @@ func newMacroCallableFromDefinition(def *macroDefinition, caller value.Value) *m
 	}
 }
 
-func (m *macroCallable) Call(state value.State, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
+func (m *macroCallable) Call(state value.State, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
 	_ = state // macro uses its captured state
 	oldScopes := m.state.scopes
 	m.state.scopes = cloneScopes(m.scopes)
@@ -514,7 +514,7 @@ type functionCallable struct {
 	name  string
 }
 
-func (f *functionCallable) Call(state value.State, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
+func (f *functionCallable) Call(state value.State, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
 	_ = state // function uses its captured state
 	return f.fn(f.state, args, kwargs)
 }
@@ -527,6 +527,16 @@ func (f *functionCallable) String() string {
 }
 
 func macroUsesCaller(macro *parser.Macro) bool {
+	// A macro that DECLARES a parameter named `caller` has an ordinary
+	// parameter, not the call-block binding: the engine decides this when it
+	// compiles the macro, and a declared name wins. Without this, `{% macro
+	// f(caller) %}{{ caller }}{% endmacro %}{{ f(1) }}` bound the argument and
+	// then overwrote it with the (undefined) special caller.
+	for _, arg := range macro.Args {
+		if v, ok := arg.(*parser.Var); ok && v.ID == "caller" {
+			return false
+		}
+	}
 	for _, stmt := range macro.Body {
 		if stmtUsesCaller(stmt) {
 			return true
@@ -714,7 +724,7 @@ func exprUsesCaller(expr parser.Expr) bool {
 	return false
 }
 
-func (s *State) callMacroWithValues(macro *parser.Macro, args []value.Value, kwargs map[string]value.Value, caller value.Value) (value.Value, error) {
+func (s *State) callMacroWithValues(macro *parser.Macro, args []value.Value, kwargs *value.OrderedMap, caller value.Value) (value.Value, error) {
 	s.depth++
 	if s.depth > s.recursionLimit() {
 		return value.Undefined(), NewError(ErrInvalidOperation, "recursion limit exceeded")
@@ -735,21 +745,22 @@ func (s *State) callMacroWithValues(macro *parser.Macro, args []value.Value, kwa
 		return value.Undefined(), NewError(ErrTooManyArguments, "too many arguments")
 	}
 
-	remainingKwargs := make(map[string]value.Value, len(kwargs))
-	for k, v := range kwargs {
-		remainingKwargs[k] = v
+	remainingKwargs := value.NewOrderedMap(kwargs.Len())
+	for _, k := range kwargs.Keys() {
+		v, _ := kwargs.Get(k)
+		remainingKwargs.Set(k, v)
 	}
 
 	// Bind arguments
 	for i, arg := range macro.Args {
 		if varArg, ok := arg.(*parser.Var); ok {
 			// Check if provided as kwarg
-			if val, ok := remainingKwargs[varArg.ID]; ok {
+			if val, ok := remainingKwargs.Get(varArg.ID); ok {
 				if i < len(args) {
 					return value.Undefined(), NewError(ErrTooManyArguments, fmt.Sprintf("duplicate argument `%s`", varArg.ID))
 				}
 				s.Set(varArg.ID, val)
-				delete(remainingKwargs, varArg.ID)
+				remainingKwargs.Delete(varArg.ID)
 				continue
 			}
 			// Check if provided as positional arg
@@ -776,30 +787,35 @@ func (s *State) callMacroWithValues(macro *parser.Macro, args []value.Value, kwa
 	// A macro that references caller() accepts `caller` as a keyword argument:
 	// that is how Rust passes a call block's body in the first place
 	// (vm/macro_object.rs marks it used), so an explicit one is an argument
-	// rather than an unknown keyword. See PATCHES.md #7.
+	// rather than an unknown keyword. See PATCHES.md #7 and #68.
+	//
+	// It reads `kwargs`, not `remainingKwargs`, on purpose: a macro that
+	// DECLARES a parameter named `caller` had it consumed by the binding loop
+	// above, and the engine still binds `caller` from the keyword map
+	// afterwards. Reading the remainder would lose it for exactly that macro,
+	// which is what `contract/macro-call-basic` and `-args` pin.
 	if macroUsesCaller(macro) {
-		if explicit, ok := remainingKwargs["caller"]; ok {
+		if explicit, ok := kwargs.Get("caller"); ok {
 			caller = explicit
-			delete(remainingKwargs, "caller")
+			remainingKwargs.Delete("caller")
 		}
 	}
 
-	if len(remainingKwargs) > 0 {
-		names := make([]string, 0, len(remainingKwargs))
-		for name := range remainingKwargs {
-			names = append(names, name)
-		}
-		sort.Strings(names)
+	if remainingKwargs.Len() > 0 {
+		// The FIRST unused keyword in the order they were written, which is
+		// what the engine reports (value/argtypes.rs assert_all_used walks an
+		// insertion-ordered map).
 		return value.Undefined(), NewError(ErrTooManyArguments,
-			fmt.Sprintf("unknown keyword argument `%s`", names[0]))
+			fmt.Sprintf("unknown keyword argument `%s`", remainingKwargs.Keys()[0]))
 	}
 
 	// Bind caller whenever the macro references it, even when no call block
 	// supplied one. Rust binds it as undefined in that case (vm/macro_object.rs
 	// fills Value::UNDEFINED, vm/mod.rs stores it), so `{{ caller() }}` in a
 	// macro invoked normally is "value of type undefined is not callable" --
-	// not the unknown-function error a missing binding would give.
-	// See PATCHES.md #7.
+	// not the unknown-function error a missing binding would give. The engine
+	// pushes this binding AFTER the declared parameters, so it also wins over
+	// a parameter literally named `caller`. See PATCHES.md #7.
 	if macroUsesCaller(macro) {
 		s.Set("caller", caller)
 	}
@@ -927,7 +943,7 @@ func (l *loopObject) String() string {
 	return fmt.Sprintf("<loop %d/%d>", l.index, l.length)
 }
 
-func (l *loopObject) Call(state value.State, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
+func (l *loopObject) Call(state value.State, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
 	_ = state
 	if l.recurseFn == nil {
 		return value.Undefined(), NewError(ErrInvalidOperation, "cannot recurse outside of recursive loop")
@@ -977,7 +993,7 @@ type loopCycleCallable struct {
 // engine panics on template input. Callers rendering untrusted templates should
 // recover, exactly as they would around any Rust engine that can abort.
 // See PATCHES.md #9 and the corpus row tmpl/loop-cycle-no-args.
-func (c *loopCycleCallable) Call(state value.State, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
+func (c *loopCycleCallable) Call(state value.State, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
 	_ = state
 	idx := c.loop.index % len(args)
 	// Mirrors args.get(idx): unreachable after a successful remainder, and kept
@@ -993,7 +1009,7 @@ type loopChangedCallable struct {
 	loop *loopObject
 }
 
-func (c *loopChangedCallable) Call(state value.State, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
+func (c *loopChangedCallable) Call(state value.State, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
 	_ = state
 	// Rust compares the whole argument tuple against the previous one and
 	// remembers it (vm/loop_object.rs call_method). Comparing the tuples as
@@ -1087,6 +1103,17 @@ func (s *State) decorateError(err error) error {
 
 // Lookup looks up a variable in the current scope chain.
 func (s *State) Lookup(name string) value.Value {
+	val, _ := s.lookupOK(name)
+	return val
+}
+
+// lookupOK is Lookup, and also reports whether the name resolved at all.
+//
+// The distinction is the engine's `state.lookup(name)` returning `Option`
+// (vm/mod.rs:577-597), and it decides an error class: calling a name that does
+// not resolve is an unknown function, while calling one that resolves to a
+// value that happens to be undefined is an invalid operation.
+func (s *State) lookupOK(name string) (value.Value, bool) {
 	// `self` is not bound here. It exists only to reach blocks
 	// (`{{ self.body() }}`), which multi_template carries and BAML does not
 	// enable, so in that build `self` is an ordinary undefined name -- and a
@@ -1096,66 +1123,37 @@ func (s *State) Lookup(name string) value.Value {
 	// Search scopes from inner to outer
 	for i := len(s.scopes) - 1; i >= 0; i-- {
 		if v, ok := s.scopes[i][name]; ok {
-			return v
+			return v, true
 		}
 	}
 
 	if !s.rootContext.IsUndefined() {
 		if v := s.rootContext.GetAttr(name); !v.IsUndefined() {
-			return v
+			return v, true
 		}
 	}
 
 	// Check macros
 	if macro, ok := s.macros[name]; ok {
-		return value.FromCallable(newMacroCallableFromDefinition(macro, value.Undefined()))
+		return value.FromCallable(newMacroCallableFromDefinition(macro, value.Undefined())), true
 	}
 
 	// Check globals
 	if v, ok := s.env.getGlobal(name); ok {
-		return v
+		return v, true
 	}
 
 	// Check functions as callables
 	if fn, ok := s.env.getFunction(name); ok {
-		return value.FromCallable(&functionCallable{state: s, fn: fn, name: name})
-	}
-
-	return value.Undefined()
-}
-
-// lookupBinding resolves a name and reports whether it was bound at all.
-//
-// The distinction matters for calls: Rust reports an unbound name as
-// "<name> is unknown" (UnknownFunction) and a bound-but-not-callable value as
-// "value of type <kind> is not callable" (InvalidOperation), and the two are
-// different outcomes (vm/mod.rs Instruction::CallFunction).
-func (s *State) lookupBinding(name string) (value.Value, bool) {
-	for i := len(s.scopes) - 1; i >= 0; i-- {
-		if v, ok := s.scopes[i][name]; ok {
-			return v, true
-		}
-	}
-	if !s.rootContext.IsUndefined() {
-		if v := s.rootContext.GetAttr(name); !v.IsUndefined() {
-			return v, true
-		}
-	}
-	if macro, ok := s.macros[name]; ok {
-		return value.FromCallable(newMacroCallableFromDefinition(macro, value.Undefined())), true
-	}
-	if v, ok := s.env.getGlobal(name); ok {
-		return v, true
-	}
-	if fn, ok := s.env.getFunction(name); ok {
 		return value.FromCallable(&functionCallable{state: s, fn: fn, name: name}), true
 	}
+
 	return value.Undefined(), false
 }
 
 // notCallable is the error a bound value that cannot be called produces.
 func notCallable(v value.Value) *Error {
-	return NewError(ErrInvalidOperation, fmt.Sprintf("value of type %s is not callable", v.Kind()))
+	return NewError(ErrInvalidOperation, notCallableMessage(v))
 }
 
 // unknownMethod is the error a receiver without such a method produces.
@@ -1166,6 +1164,17 @@ func unknownMethod(receiver value.Value, name string) *Error {
 // unknownFunction is the error an unbound name produces when it is called.
 func unknownFunction(name string) *Error {
 	return NewError(ErrUnknownFunction, fmt.Sprintf("%s is unknown", name))
+}
+
+// unknownFilter and unknownTest are the errors an unregistered name produces.
+// The engine names the kind and the name (`environment.rs get_filter/get_test`
+// callers in vm/mod.rs), which a host surfaces verbatim when a prompt fails.
+func unknownFilter(name string) *Error {
+	return NewError(ErrUnknownFilter, fmt.Sprintf("filter %s is unknown", name))
+}
+
+func unknownTest(name string) *Error {
+	return NewError(ErrUnknownTest, fmt.Sprintf("test %s is unknown", name))
 }
 
 // Set sets a variable in the current scope.
@@ -1309,7 +1318,19 @@ func (s *State) evalStmt(stmt parser.Stmt) (err error) {
 		return s.evalInclude(st)
 
 	case *parser.Macro:
-		s.macros[st.Name] = newMacroDefinition(s, st)
+		definition := newMacroDefinition(s, st)
+		// A macro is a local binding in the engine, not a separate namespace:
+		// it comes into existence when the statement executes, it shadows and
+		// is shadowed by `{% set %}` in definition order, and it DIES WITH ITS
+		// FRAME. A macro defined inside a `for`, a `with` or another macro is
+		// gone once that frame pops.
+		s.Set(st.Name, value.FromCallable(newMacroCallableFromDefinition(definition, value.Undefined())))
+		if len(s.scopes) == 1 {
+			// The template-level registry, which inheritance, `{% import %}`,
+			// Exports and CallMacro read. Only a root-frame definition belongs
+			// in it; a scoped one would outlive its frame through this map.
+			s.macros[st.Name] = definition
+		}
 		return nil
 
 	case *parser.FilterBlock:
@@ -1695,6 +1716,12 @@ func (s *State) unpackTarget(target parser.Expr, val value.Value) error {
 }
 
 func (s *State) unpackLoopTarget(target parser.Expr, val value.Value) error {
+	// Every item an iteration yields is a validation point
+	// (vm/mod.rs:479-484), which is what makes iterating a chain over a
+	// non-iterable operand fail rather than binding the marker.
+	if _, err := validate(val); err != nil {
+		return err
+	}
 	return s.unpackTarget(target, val)
 }
 
@@ -2275,81 +2302,33 @@ func (s *State) evalAutoEscape(ae *parser.AutoEscape) error {
 	return nil
 }
 
+// evalCallBlock evaluates `{% call(args) expr(...) %}body{% endcall %}`.
+//
+// The engine compiles a call block through the SAME path as an ordinary call,
+// with the block's body added as a synthetic `caller` keyword argument
+// (compiler/codegen.rs:472-474, 729-769). Everything an ordinary call decides
+// applies here too: the arguments are evaluated first, the callee is resolved
+// by ordinary lookup so a local shadows a macro, an unresolved name is an
+// unknown function rather than "this is not a macro", and a resolved
+// non-callable is an invalid operation.
 func (s *State) evalCallBlock(cb *parser.CallBlock) error {
-	// Evaluate the call expression to get the macro
-	callExpr := cb.Call
-
-	// Get the macro being called
-	var macroDef *macroDefinition
-	var macroName string
-
-	if v, ok := callExpr.Expr.(*parser.Var); ok {
-		macroName = v.ID
-		if m, ok := s.macros[macroName]; ok {
-			macroDef = m
-		}
-	}
-
-	if macroDef == nil {
-		// Not a macro declared in this template. Rust compiles a call block into
-		// an ordinary call that passes `caller` as a keyword argument, so the
-		// callee is resolved by the same rules and produces the same errors: an
-		// unbound name is unknown, a bound non-callable is not callable.
-		// See PATCHES.md #7.
-		if v, ok := callExpr.Expr.(*parser.Var); ok {
-			bound, ok := s.lookupBinding(v.ID)
-			if !ok {
-				return unknownFunction(v.ID).WithSpan(callExpr.Span())
-			}
-			if macroC, isMacro := callableMacro(bound); isMacro {
-				macroDef = macroC
-			} else {
-				return notCallable(bound).WithSpan(callExpr.Span())
-			}
-		} else {
-			expr, err := s.evalExpr(callExpr.Expr)
-			if err != nil {
-				return err
-			}
-			macroC, isMacro := callableMacro(expr)
-			if !isMacro {
-				return notCallable(expr).WithSpan(callExpr.Span())
-			}
-			macroDef = macroC
-		}
-	}
-
-	if !macroUsesCaller(macroDef.macro) {
-		// A macro that never mentions caller() does not accept one. Rust reaches
-		// the same conclusion through the keyword-argument check in
-		// vm/macro_object.rs, which reports an unknown keyword argument.
-		return NewError(ErrTooManyArguments, "unknown keyword argument `caller`")
-	}
-
-	// Create a caller callable that renders the call block body
-	// MacroDecl holds the caller's body and arguments
-	callerCallable := &callerCallable{
+	// A call block IS the ordinary call, with the block body added as a
+	// synthetic `caller` keyword argument (compiler/codegen.rs:472-474,
+	// 729-769). Everything else — argument order, one lexical lookup, the
+	// error class for an unbound name versus a bound non-callable, and method
+	// or object dispatch — is therefore inherited rather than re-implemented.
+	// See PATCHES.md #68.
+	caller := value.FromCallable(&callerCallable{
 		state: s,
 		body:  cb.MacroDecl.Body,
 		args:  cb.MacroDecl.Args,
-	}
+	})
 
-	// Evaluate call arguments
-	args, kwargs, err := s.evalCallArgs(callExpr.Args)
+	result, err := s.evalCallWithCaller(cb.Call, caller)
 	if err != nil {
 		return err
 	}
-
-	// Call the macro with the caller
-	result, err := newMacroCallableFromDefinition(macroDef, value.FromCallable(callerCallable)).Call(s, args, kwargs)
-	if err != nil {
-		return err
-	}
-
-	if err := s.writeValue(result); err != nil {
-		return err
-	}
-	return nil
+	return s.writeValue(result)
 }
 
 // callableMacro unwraps a value that is a macro into its definition.
@@ -2398,7 +2377,7 @@ func (c *callerCallable) String() string {
 	return "<macro caller>"
 }
 
-func (c *callerCallable) Call(state value.State, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
+func (c *callerCallable) Call(state value.State, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
 	_ = state
 	c.state.pushScope()
 	defer c.state.popScope()
@@ -2508,7 +2487,10 @@ func (s *State) evalExpr(expr parser.Expr) (rv value.Value, err error) {
 		return s.evalConst(e), nil
 
 	case *parser.Var:
-		return s.Lookup(e.ID), nil
+		// A variable lookup is one of the engine's validation points
+		// (vm/mod.rs:322-326): an invalid value stored in a local reveals its
+		// error when it is read back.
+		return validate(s.Lookup(e.ID))
 
 	case *parser.UnaryOp:
 		return s.evalUnaryOp(e)
@@ -2849,20 +2831,21 @@ func (s *State) evalTest(test *parser.Test) (value.Value, error) {
 		return value.Undefined(), err
 	}
 
-	var args []value.Value
-	for _, arg := range test.Args {
-		if arg.Kind == parser.CallArgPos {
-			v, err := s.evalExpr(arg.Value)
-			if err != nil {
-				return value.Undefined(), err
-			}
-			args = append(args, v)
-		}
+	args, kwargs, err := s.evalCallArgs(test.Args)
+	if err != nil {
+		return value.Undefined(), err
+	}
+	if kwargs.Len() > 0 {
+		// A test receives keyword arguments the way every other callable
+		// does: as one trailing Kwargs value in the argument slice
+		// (value/argtypes.rs:190-240). Dropping them here would make
+		// `x is eq(a=1)` a different call than the engine sees.
+		args = append(args, value.FromOrderedMap(kwargs))
 	}
 
 	testFn, ok := s.env.getTest(test.Name)
 	if !ok {
-		return value.Undefined(), NewError(ErrUnknownTest, test.Name).WithSpan(test.Span())
+		return value.Undefined(), unknownTest(test.Name).WithSpan(test.Span())
 	}
 
 	result, err := testFn(s, val, args)
@@ -2871,6 +2854,21 @@ func (s *State) evalTest(test *parser.Test) (value.Value, error) {
 	}
 
 	return value.FromBool(result), nil
+}
+
+// validate reveals the error an invalid value carries.
+//
+// The engine calls `Value::validate()` at four points — a variable lookup, the
+// result of an attribute lookup, the result of an item lookup, and each item
+// an iteration yields (vm/mod.rs:287-295, 322-357, 479-484) — and NOWHERE
+// else. That asymmetry is observable: `{{ 42|chain([1])|first }}` prints the
+// invalid value's marker because a filter result is not a validation point,
+// while `{% for x in 42|chain([1]) %}` fails because each loop item is.
+func validate(val value.Value) (value.Value, error) {
+	if err, ok := value.InvalidError(val); ok {
+		return value.Undefined(), err
+	}
+	return val, nil
 }
 
 func (s *State) evalGetAttr(ga *parser.GetAttr) (value.Value, error) {
@@ -2885,7 +2883,10 @@ func (s *State) evalGetAttr(ga *parser.GetAttr) (value.Value, error) {
 		}
 		return val, nil
 	}
-	return val.GetAttr(ga.Name), nil
+	// The RESULT of the lookup is validated, not the subject
+	// (vm/mod.rs:327-338): reading an attribute off an invalid value yields
+	// undefined, while reading an invalid value out of a container fails.
+	return validate(val.GetAttr(ga.Name))
 }
 
 func (s *State) evalGetItem(gi *parser.GetItem) (value.Value, error) {
@@ -2904,76 +2905,91 @@ func (s *State) evalGetItem(gi *parser.GetItem) (value.Value, error) {
 	if err != nil {
 		return value.Undefined(), err
 	}
-	return val.GetItem(key), nil
+	// As with GetAttr, the result is what is validated (vm/mod.rs:350-357).
+	return validate(val.GetItem(key))
 }
 
 func (s *State) evalCall(call *parser.Call) (value.Value, error) {
-	// Check if it's a function call
+	return s.evalCallWithCaller(call, value.Undefined())
+}
+
+// withCaller adds a call block's synthetic `caller` keyword argument to a
+// call's own keyword arguments. It is how the engine passes the block body
+// (compiler/codegen.rs:760-769), which is why a call block goes through
+// exactly the dispatch an ordinary call does.
+func withCaller(kwargs *value.OrderedMap, caller value.Value) *value.OrderedMap {
+	if caller.IsUndefined() {
+		return kwargs
+	}
+	rv := value.NewOrderedMap(kwargs.Len() + 1)
+	for _, k := range kwargs.Keys() {
+		v, _ := kwargs.Get(k)
+		rv.Set(k, v)
+	}
+	rv.Set("caller", caller)
+	return rv
+}
+
+// evalCallWithCaller is every call the engine makes. `caller` is defined only
+// for a call block.
+func (s *State) evalCallWithCaller(call *parser.Call, caller value.Value) (value.Value, error) {
+	// A bare name is the engine's CallFunction instruction
+	// (compiler/codegen.rs:736-738, vm/mod.rs:566-600), and its ORDER is
+	// observable:
+	//
+	//  1. every argument is evaluated first, because they are already on the
+	//     stack by the time the instruction runs. An error raised while
+	//     evaluating an argument therefore wins over anything the callee would
+	//     have reported — including `nosuchfn(42|sort)`, which is the
+	//     argument's invalid operation and not an unknown function;
+	//  2. `super` is the one name handled before the lookup;
+	//  3. the name is resolved ONCE, through the ordinary lookup, so a local
+	//     or a context value shadows a macro, a global and a default function
+	//     alike;
+	//  4. a resolved loop object recurses, and anything else is called.
+	//
+	// Only a name that is absent after that lookup is an unknown function.
 	if v, ok := call.Expr.(*parser.Var); ok {
-		// Check for super() call
+		args, kwargs, err := s.evalCallArgs(call.Args)
+		if err != nil {
+			return value.Undefined(), err
+		}
+		kwargs = withCaller(kwargs, caller)
+
 		if v.ID == "super" {
+			if len(args) > 0 || kwargs.Len() > 0 {
+				return value.Undefined(), NewError(ErrInvalidOperation,
+					"super() takes no arguments").WithSpan(call.Span())
+			}
 			return s.evalSuper(call.Span())
 		}
 
-		// Check for loop() recursive call
-		if v.ID == "loop" && s.loopRecurse != nil {
-			if len(call.Args) != 1 {
-				return value.Undefined(), NewError(ErrInvalidOperation, "loop() takes exactly 1 argument")
-			}
-			arg, err := s.evalExpr(call.Args[0].Value)
-			if err != nil {
-				return value.Undefined(), err
-			}
-			result, err := s.loopRecurse(arg)
-			if err != nil {
-				return value.Undefined(), err
-			}
-			return value.FromSafeString(result), nil
+		val, found := s.lookupOK(v.ID)
+		if !found {
+			return value.Undefined(), unknownFunction(v.ID).WithSpan(call.Span())
 		}
 
-		// Check for macro
-		if macro, ok := s.macros[v.ID]; ok {
-			args, kwargs, err := s.evalCallArgs(call.Args)
-			if err != nil {
-				return value.Undefined(), err
-			}
-			return newMacroCallableFromDefinition(macro, value.Undefined()).Call(s, args, kwargs)
-		}
-
-		// Check for function
-		if fn, ok := s.env.getFunction(v.ID); ok {
-			args, kwargs, err := s.evalCallArgs(call.Args)
-			if err != nil {
-				return value.Undefined(), err
-			}
-			return fn(s, args, kwargs)
-		}
-
-		// Check if variable is callable. A name that is bound but not callable
-		// is a different error from a name that is not bound at all, and the
-		// two are distinguished exactly as Rust distinguishes them.
-		// See PATCHES.md #7.
-		val, bound := s.lookupBinding(v.ID)
-		if bound {
-			if callable, ok := val.AsCallable(); ok {
-				args, kwargs, err := s.evalCallArgs(call.Args)
+		// The engine downcasts the resolved value to its Loop object rather
+		// than matching on the name, so a shadowed `loop` is just a value.
+		if obj, ok := val.AsObject(); ok {
+			if loopObj, ok := obj.(*loopObject); ok {
+				if len(args) != 1 || kwargs.Len() > 0 {
+					return value.Undefined(), NewError(ErrInvalidOperation,
+						"loop() takes one argument").WithSpan(call.Span())
+				}
+				if loopObj.recurseFn == nil {
+					return value.Undefined(), NewError(ErrInvalidOperation,
+						"cannot recurse outside of recursive loop").WithSpan(call.Span())
+				}
+				result, err := loopObj.recurseFn(args[0])
 				if err != nil {
 					return value.Undefined(), err
 				}
-				return callable.Call(s, args, kwargs)
+				return value.FromSafeString(result), nil
 			}
-			if obj, ok := val.AsObject(); ok {
-				if co, ok := obj.(value.CallableObject); ok {
-					args, kwargs, err := s.evalCallArgs(call.Args)
-					if err != nil {
-						return value.Undefined(), err
-					}
-					return co.ObjectCall(s, args, kwargs)
-				}
-			}
-			return value.Undefined(), notCallable(val).WithSpan(call.Span())
 		}
-		return value.Undefined(), unknownFunction(v.ID).WithSpan(call.Span())
+
+		return s.callValue(val, args, kwargs, call.Span())
 	}
 
 	// `a.b(...)` is a method call, and the engine compiles it to its own
@@ -2983,36 +2999,50 @@ func (s *State) evalCall(call *parser.Call) (value.Value, error) {
 	// what makes a failure an unknown *method* rather than an unknown
 	// callable.
 	if getAttr, ok := call.Expr.(*parser.GetAttr); ok {
-		return s.evalMethodCall(call, getAttr)
+		return s.evalMethodCall(call, getAttr, caller)
 	}
 
-	// Evaluate the expression to get a callable
+	// Anything else is the engine's CallObject instruction (vm/mod.rs:609-615),
+	// which calls the value it was given. The expression has already been
+	// resolved by the time we get here, so a failure is a statement about the
+	// VALUE, never about a name.
 	expr, err := s.evalExpr(call.Expr)
 	if err != nil {
 		return value.Undefined(), err
 	}
+	args, kwargs, err := s.evalCallArgs(call.Args)
+	if err != nil {
+		return value.Undefined(), err
+	}
+	return s.callValue(expr, args, withCaller(kwargs, caller), call.Span())
+}
 
-	// Check if it's a callable value
-	if callable, ok := expr.AsCallable(); ok {
-		args, kwargs, err := s.evalCallArgs(call.Args)
-		if err != nil {
-			return value.Undefined(), err
-		}
+// callValue is the engine's Value::call (value/mod.rs:1601-1609): an object
+// gets to answer, and anything else — a number, a string, none, undefined, an
+// invalid value — is an invalid operation rather than an unknown function.
+// "Unknown function" is reserved for a NAME that does not resolve.
+func (s *State) callValue(val value.Value, args []value.Value, kwargs *value.OrderedMap, span parser.Span) (value.Value, error) {
+	if callable, ok := val.AsCallable(); ok {
 		return callable.Call(s, args, kwargs)
 	}
-
-	// Check if it's a CallableObject (object that can be called directly)
-	if obj, ok := expr.AsObject(); ok {
+	if obj, ok := val.AsObject(); ok {
 		if co, ok := obj.(value.CallableObject); ok {
-			args, kwargs, err := s.evalCallArgs(call.Args)
-			if err != nil {
-				return value.Undefined(), err
-			}
 			return co.ObjectCall(s, args, kwargs)
 		}
 	}
+	return value.Undefined(), NewError(ErrInvalidOperation, notCallableMessage(val)).WithSpan(span)
+}
 
-	return value.Undefined(), notCallable(expr).WithSpan(call.Span())
+// notCallableMessage mirrors the engine's two spellings: an object reports
+// that it is not callable, everything else reports its type
+// (value/object.rs:226-232, value/mod.rs:1604-1608).
+func notCallableMessage(val value.Value) string {
+	switch val.Kind() {
+	case value.KindSeq, value.KindMap, value.KindIterable, value.KindPlain:
+		return "object is not callable"
+	default:
+		return fmt.Sprintf("value of type %s is not callable", val.Kind())
+	}
 }
 
 // evalMethodCall evaluates `obj.name(args)`.
@@ -3027,22 +3057,17 @@ func (s *State) evalCall(call *parser.Call) (value.Value, error) {
 //     unknown-method callback is consulted;
 //  4. if there is no callback, or it declines with ErrUnknownMethod, the
 //     engine's own unknown-method error is reported.
-func (s *State) evalMethodCall(call *parser.Call, getAttr *parser.GetAttr) (value.Value, error) {
+func (s *State) evalMethodCall(call *parser.Call, getAttr *parser.GetAttr, caller value.Value) (value.Value, error) {
 	obj, err := s.evalExpr(getAttr.Expr)
 	if err != nil {
 		return value.Undefined(), err
-	}
-	if obj.IsUndefined() {
-		obj, err = s.handleUndefined(true)
-		if err != nil {
-			return value.Undefined(), wrapEvalError(err, getAttr.Span())
-		}
 	}
 
 	args, kwargs, err := s.evalCallArgs(call.Args)
 	if err != nil {
 		return value.Undefined(), err
 	}
+	kwargs = withCaller(kwargs, caller)
 
 	if objVal, ok := obj.AsObject(); ok {
 		if mc, ok := objVal.(value.MethodCallable); ok {
@@ -3117,9 +3142,15 @@ func (s *State) evalSuper(span parser.Span) (value.Value, error) {
 	return value.FromSafeString(result), nil
 }
 
-func (s *State) evalCallArgs(callArgs []parser.CallArg) ([]value.Value, map[string]value.Value, error) {
+// evalCallArgs evaluates a call's arguments in source order.
+//
+// Keyword arguments keep the order they were written in, because the engine's
+// do: they arrive at a callable as one insertion-ordered map, so
+// `dict(b=1, a=2)` is `{"b": 1, "a": 2}` and an argument error names the first
+// unused keyword rather than an arbitrary one.
+func (s *State) evalCallArgs(callArgs []parser.CallArg) ([]value.Value, *value.OrderedMap, error) {
 	var args []value.Value
-	kwargs := make(map[string]value.Value)
+	kwargs := value.NewOrderedMap(0)
 	for _, arg := range callArgs {
 		val, err := s.evalExpr(arg.Value)
 		if err != nil {
@@ -3129,7 +3160,7 @@ func (s *State) evalCallArgs(callArgs []parser.CallArg) ([]value.Value, map[stri
 		case parser.CallArgPos:
 			args = append(args, val)
 		case parser.CallArgKwarg:
-			kwargs[arg.Name] = val
+			kwargs.Set(arg.Name, val)
 		case parser.CallArgPosSplat:
 			items := val.Iter()
 			if items == nil {
@@ -3137,12 +3168,20 @@ func (s *State) evalCallArgs(callArgs []parser.CallArg) ([]value.Value, map[stri
 			}
 			args = append(args, items...)
 		case parser.CallArgKwargSplat:
-			m, ok := val.AsMap()
+			// A splatted mapping contributes its keys in its own order, and
+			// keeps how each key was spelled: `**{8: 8}` renders `8`, not "8".
+			if src, ok := val.AsOrderedMap(); ok {
+				for _, k := range src.Keys() {
+					kwargs.CopyEntryFrom(src, k)
+				}
+				break
+			}
+			keys, ok := val.MapKeys()
 			if !ok {
 				return nil, nil, NewError(ErrInvalidOperation, "cannot unpack non-map")
 			}
-			for k, v := range m {
-				kwargs[k] = v
+			for _, k := range keys {
+				kwargs.Set(k, val.GetItem(value.FromString(k)))
 			}
 		}
 	}
@@ -3409,7 +3448,7 @@ func (s *State) applyFilter(filterExpr parser.Expr, val value.Value) (value.Valu
 func (s *State) applyFilterCallArgs(name string, val value.Value, callArgs []parser.CallArg) (value.Value, error) {
 	filterFn, ok := s.env.getFilter(name)
 	if !ok {
-		return value.Undefined(), NewError(ErrUnknownFilter, name)
+		return value.Undefined(), unknownFilter(name)
 	}
 
 	args, kwargs, err := s.evalCallArgs(callArgs)

@@ -19,7 +19,7 @@ type Foo struct {
 }
 
 // noneDefault is a filter similar to default() but also handles None values
-func noneDefault(state minijinja.FilterState, val value.Value, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
+func noneDefault(state minijinja.FilterState, val value.Value, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
 	if val.IsUndefined() || val.IsNone() {
 		if len(args) > 0 {
 			return args[0], nil

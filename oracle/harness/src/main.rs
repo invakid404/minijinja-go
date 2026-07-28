@@ -20,7 +20,10 @@
 use std::cmp::Ordering;
 use std::fmt;
 use std::panic::{self, AssertUnwindSafe};
+use std::sync::mpsc;
 use std::sync::Arc;
+use std::thread;
+use std::time::Duration;
 
 use minijinja::value::{DynObject, Object, ObjectRepr, Value};
 use minijinja::{Environment, ErrorKind};
@@ -56,7 +59,11 @@ struct Corpus {
     rows: Vec<Row>,
 }
 
-#[derive(Deserialize)]
+/// How long one row may take before it is recorded as a timeout rather than
+/// hanging the whole run. Only a row that does not terminate waits this long.
+const ROW_TIMEOUT: Duration = Duration::from_secs(5);
+
+#[derive(Deserialize, Clone)]
 struct Row {
     id: String,
     #[serde(default)]
@@ -75,7 +82,7 @@ struct Row {
     notes: String,
 }
 
-#[derive(Deserialize, PartialEq)]
+#[derive(Deserialize, Clone, Copy, PartialEq)]
 #[serde(rename_all = "snake_case")]
 enum Form {
     /// A bare expression. Wrapped as `{{ expr }}`, the same shape BAML uses to
@@ -137,7 +144,7 @@ impl Profile {
     }
 }
 
-#[derive(Deserialize, Default, PartialEq)]
+#[derive(Deserialize, Clone, Copy, Default, PartialEq)]
 #[serde(rename_all = "snake_case")]
 enum Expect {
     /// Compare exact rendered bytes.
@@ -149,13 +156,13 @@ enum Expect {
     Error,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone)]
 struct Binding {
     name: String,
     value: TypedValue,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone)]
 struct MapEntry {
     key: String,
     value: TypedValue,
@@ -164,7 +171,7 @@ struct MapEntry {
 /// Explicitly typed corpus inputs. Types are tagged rather than inferred from
 /// JSON so that int/float and map ordering survive the trip through both
 /// runtimes unambiguously.
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 enum TypedValue {
     Int { value: i64 },
@@ -261,6 +268,15 @@ enum Outcome {
     },
     Panic {
         message: String,
+    },
+    /// The row did not terminate within the harness's bound. Like a panic
+    /// this is an OUTCOME, not a crashed run: the reference implementation
+    /// really does loop forever on some inputs (`"abc".count("")` walks the
+    /// string with `find` and never advances), and a differential that could
+    /// not record that would have to leave the case out of the corpus
+    /// entirely.
+    Timeout {
+        seconds: u64,
     },
     /// The harness could not model the row at all. Never a silent pass: the Go
     /// runner labels any mismatch involving this as `harness-incomplete`.
@@ -420,6 +436,38 @@ fn read_corpus_bytes(path: &str) -> Result<(Vec<u8>, Vec<(String, Vec<u8>)>), st
     Ok((all, files))
 }
 
+/// Evaluates one row with a time bound, on a worker thread.
+///
+/// A panic is caught and reported; a row that does not terminate is reported
+/// as a timeout and its thread is left behind, which is harmless because the
+/// process exits when the run is done. Without this, one non-terminating input
+/// would hang the whole differential and the case could not be in the corpus
+/// at all.
+fn evaluate_bounded(row: &Row) -> Outcome {
+    let row = row.clone();
+    let (tx, rx) = mpsc::channel();
+    thread::spawn(move || {
+        let outcome = match panic::catch_unwind(AssertUnwindSafe(|| evaluate(&row))) {
+            Ok(o) => o,
+            Err(payload) => {
+                let message = payload
+                    .downcast_ref::<&str>()
+                    .map(|s| (*s).to_string())
+                    .or_else(|| payload.downcast_ref::<String>().cloned())
+                    .unwrap_or_else(|| "panic".into());
+                Outcome::Panic { message }
+            }
+        };
+        let _ = tx.send(outcome);
+    });
+    match rx.recv_timeout(ROW_TIMEOUT) {
+        Ok(outcome) => outcome,
+        Err(_) => Outcome::Timeout {
+            seconds: ROW_TIMEOUT.as_secs(),
+        },
+    }
+}
+
 fn main() {
     let path = match std::env::args().nth(1) {
         Some(p) => p,
@@ -470,22 +518,9 @@ fn main() {
     let results = corpus
         .rows
         .iter()
-        .map(|row| {
-            let outcome = match panic::catch_unwind(AssertUnwindSafe(|| evaluate(row))) {
-                Ok(o) => o,
-                Err(payload) => {
-                    let message = payload
-                        .downcast_ref::<&str>()
-                        .map(|s| (*s).to_string())
-                        .or_else(|| payload.downcast_ref::<String>().cloned())
-                        .unwrap_or_else(|| "panic".into());
-                    Outcome::Panic { message }
-                }
-            };
-            ResultRow {
-                id: row.id.clone(),
-                outcome,
-            }
+        .map(|row| ResultRow {
+            id: row.id.clone(),
+            outcome: evaluate_bounded(row),
         })
         .collect();
     let _ = panic::take_hook();

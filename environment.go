@@ -142,7 +142,7 @@ type TestState = filters.State
 //
 // Example filter that converts to uppercase:
 //
-//	env.AddFilter("upper", func(state FilterState, val value.Value, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
+//	env.AddFilter("upper", func(state FilterState, val value.Value, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
 //	    s, err := val.AsString()
 //	    if err != nil {
 //	        return value.Undefined(), err
@@ -176,7 +176,7 @@ type TestFunc = filters.TestFunc
 //
 // Example function that returns a range:
 //
-//	env.AddFunction("range", func(state *State, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
+//	env.AddFunction("range", func(state *State, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
 //	    if len(args) != 1 {
 //	        return value.Undefined(), errors.New("range expects 1 argument")
 //	    }
@@ -190,7 +190,7 @@ type TestFunc = filters.TestFunc
 //	    }
 //	    return value.FromSlice(result), nil
 //	})
-type FunctionFunc func(state *State, args []value.Value, kwargs map[string]value.Value) (value.Value, error)
+type FunctionFunc func(state *State, args []value.Value, kwargs *value.OrderedMap) (value.Value, error)
 
 // LoaderFunc is a function that loads template source by name.
 //
@@ -272,7 +272,7 @@ type AutoEscapeFunc func(name string) AutoEscape
 // and the call's arguments. Returning an error of kind ErrUnknownMethod means
 // "not implemented here" and lets the engine report its own unknown-method
 // error; any other error is reported to the caller as-is.
-type UnknownMethodFunc func(state *State, val value.Value, method string, args []value.Value, kwargs map[string]value.Value) (value.Value, error)
+type UnknownMethodFunc func(state *State, val value.Value, method string, args []value.Value, kwargs *value.OrderedMap) (value.Value, error)
 
 // Environment holds the engine configuration.
 //
@@ -590,7 +590,7 @@ func (e *Environment) Templates() map[string]*Template {
 // Example:
 //
 //	env := NewEnvironment()
-//	env.AddFilter("shout", func(state FilterState, val value.Value, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
+//	env.AddFilter("shout", func(state FilterState, val value.Value, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
 //	    s, err := val.AsString()
 //	    if err != nil {
 //	        return value.Undefined(), err
@@ -633,7 +633,7 @@ func (e *Environment) AddTest(name string, f TestFunc) {
 // Example:
 //
 //	env := NewEnvironment()
-//	env.AddFunction("greet", func(state *State, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
+//	env.AddFunction("greet", func(state *State, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
 //	    if len(args) != 1 {
 //	        return value.Undefined(), errors.New("greet expects 1 argument")
 //	    }

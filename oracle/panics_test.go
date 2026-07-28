@@ -80,6 +80,23 @@ var panicRows = map[string]struct{ rust, fork string }{
 	},
 }
 
+// panicDeclines are the rows where the ENGINE faults and this fork
+// deliberately does not. Refusing is the safe direction — answering where the
+// reference aborts is the dangerous one — but it is still a divergence, so
+// every entry here must also be declared in `oracle/divergences.json`, which
+// is what the differential enforces. The engine's diagnostic is pinned all the
+// same, because a change to it can mean a different fault.
+var panicDeclines = map[string]struct{ rust, reason string }{
+	// `a % b` on integers with a zero divisor (tests.rs:153-159). The fork
+	// returns an invalid operation: reproducing a panic in a library is not
+	// acceptable, and answering `false` where the reference aborts is worse.
+	// PATCHES.md #56.
+	"test/divisibleby-zero": {
+		rust:   "attempt to calculate the remainder with a divisor of zero",
+		reason: "deliberate and permanent; see divergences.json",
+	},
+}
+
 func TestPanicRowsAgreeOnStatusAndPinTheirDiagnostics(t *testing.T) {
 	root, err := ModuleRoot()
 	if err != nil {
@@ -111,6 +128,35 @@ func TestPanicRowsAgreeOnStatusAndPinTheirDiagnostics(t *testing.T) {
 				continue
 			}
 			seen[row.ID] = true
+
+			// A row the fork deliberately declines to reproduce: the engine
+			// faults, the fork errors, and the ledger carries it.
+			if decline, isDecline := panicDeclines[row.ID]; isDecline {
+				if declared {
+					t.Errorf("%s: listed in both panicRows and panicDeclines", row.ID)
+					continue
+				}
+				if rust.Status != StatusPanic {
+					t.Errorf("%s: the engine no longer faults; remove it from panicDeclines\n  rust: %s",
+						row.ID, rust.Describe())
+					continue
+				}
+				if got.Status == StatusPanic {
+					t.Errorf("%s: the fork faults too, so it is not a decline; move it to panicRows\n  go: %s",
+						row.ID, got.Describe())
+					continue
+				}
+				if got.Status != StatusError {
+					t.Errorf("%s: a declined panic must be an ERROR, not %s (%s)\n  go: %s",
+						row.ID, got.Status, decline.reason, got.Describe())
+				}
+				if rust.Message != decline.rust {
+					t.Errorf("%s: the ENGINE's panic diagnostic changed\n  was:  %q\n  now:  %q\n"+
+						"  Re-examine the fault before repinning: a different diagnostic can mean a different fault.",
+						row.ID, decline.rust, rust.Message)
+				}
+				continue
+			}
 
 			if !declared {
 				t.Errorf("%s: a panic row that is not pinned\n  rust: %s\n  go:   %s\n"+
@@ -145,6 +191,11 @@ func TestPanicRowsAgreeOnStatusAndPinTheirDiagnostics(t *testing.T) {
 	for id := range panicRows {
 		if !seen[id] {
 			t.Errorf("panicRows pins %q, but no corpus row produced a panic for it", id)
+		}
+	}
+	for id := range panicDeclines {
+		if !seen[id] {
+			t.Errorf("panicDeclines pins %q, but no corpus row produced a panic for it", id)
 		}
 	}
 	if len(seen) == 0 {

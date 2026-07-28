@@ -176,9 +176,11 @@ func TestCallMacroKw(t *testing.T) {
 	}
 
 	// Call with kwargs
+	kwargs := value.NewOrderedMap(1)
+	kwargs.Set("type", value.FromString("email"))
 	result, err := state.CallMacroKw("input",
 		[]value.Value{value.FromString("email")},
-		map[string]value.Value{"type": value.FromString("email")},
+		kwargs,
 	)
 	if err != nil {
 		t.Fatal(err)

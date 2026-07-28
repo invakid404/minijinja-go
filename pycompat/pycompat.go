@@ -42,7 +42,7 @@ import (
 // Install it with minijinja.Environment.SetUnknownMethodCallback. It is
 // pycompat.rs:49-61: string, map and sequence values are routed to their
 // method tables and everything else declines.
-func UnknownMethodCallback(state *minijinja.State, val value.Value, method string, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
+func UnknownMethodCallback(state *minijinja.State, val value.Value, method string, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
 	// The engine hands keyword arguments to a method as one trailing Kwargs
 	// value in the argument slice, and every method below consumes its
 	// arguments with `from_args` (argtypes.rs:190-240). Modelling them the
@@ -50,8 +50,8 @@ func UnknownMethodCallback(state *minijinja.State, val value.Value, method strin
 	// `"x".find(a=1)` is a non-string argument — two different errors, as in
 	// the reference implementation. `str.format` is the one method that reads
 	// them, so it receives them separately.
-	if len(kwargs) > 0 && method != "format" {
-		args = append(append([]value.Value(nil), args...), value.FromMap(kwargs))
+	if kwargs.Len() > 0 && method != "format" {
+		args = append(append([]value.Value(nil), args...), value.FromOrderedMap(kwargs))
 	}
 
 	switch val.Kind() {
@@ -71,7 +71,7 @@ func unknownMethod() error {
 }
 
 func tooManyArguments() error {
-	return minijinja.NewError(minijinja.ErrTooManyArguments, "received too many arguments")
+	return minijinja.NewError(minijinja.ErrTooManyArguments, "too many arguments")
 }
 
 func missingArgument() error {
@@ -120,18 +120,22 @@ func optString(args []value.Value, i int) (string, bool, error) {
 	return s, true, nil
 }
 
-// optInt is `Option<i32>`/`Option<i64>`.
-func optInt(args []value.Value, i int) (int64, bool, error) {
+// optInt is `Option<i32>`/`Option<i64>`. rustType is the parameter's Rust type,
+// which the engine names in the conversion error.
+func optInt(args []value.Value, i int, rustType string) (int64, bool, error) {
 	if i >= len(args) {
 		return 0, false, nil
 	}
 	if args[i].IsNone() || args[i].IsUndefined() {
 		return 0, false, nil
 	}
-	n, ok := args[i].AsInt()
-	if !ok || !args[i].IsActualInt() {
-		return 0, false, minijinja.NewError(minijinja.ErrInvalidOperation,
-			fmt.Sprintf("cannot convert %s to i64", args[i].Kind()))
+	// The engine's own ArgType conversion, checked against the declared width:
+	// `'aa'.replace('a','b',true)` is `ba` because a bool converts to 1, and
+	// `'aa'.replace('a','b',2147483648)` is an error because the count is an
+	// i32 (filters.ConvertInt).
+	n, err := filters.ConvertInt(args[i], rustType)
+	if err != nil {
+		return 0, false, err
 	}
 	return n, true, nil
 }
@@ -152,6 +156,24 @@ func optBool(args []value.Value, i int) (bool, error) {
 	return b, nil
 }
 
+// iterable is the `values.try_iter()?` in `str.join` (pycompat.rs:260-271):
+// none and undefined iterate as empty, and anything that is not iterable at
+// all is an invalid operation rather than an empty join.
+func iterable(val value.Value) ([]value.Value, error) {
+	switch val.Kind() {
+	case value.KindSeq, value.KindMap, value.KindIterable, value.KindString:
+		return val.Iter(), nil
+	case value.KindNone, value.KindUndefined:
+		return nil, nil
+	default:
+		if items := val.Iter(); items != nil {
+			return items, nil
+		}
+		return nil, minijinja.NewError(minijinja.ErrInvalidOperation,
+			fmt.Sprintf("%s is not iterable", val.Kind()))
+	}
+}
+
 func allRunes(s string, pred func(rune) bool) value.Value {
 	for _, r := range s {
 		if !pred(r) {
@@ -161,7 +183,7 @@ func allRunes(s string, pred func(rune) bool) value.Value {
 	return value.FromBool(true)
 }
 
-func stringMethods(val value.Value, method string, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
+func stringMethods(val value.Value, method string, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
 	s, ok := val.AsString()
 	if !ok {
 		return value.Undefined(), unknownMethod()
@@ -259,7 +281,7 @@ func stringMethods(val value.Value, method string, args []value.Value, kwargs ma
 		if err != nil {
 			return value.Undefined(), err
 		}
-		count, given, err := optInt(args, 2)
+		count, given, err := optInt(args, 2, "i32")
 		if err != nil {
 			return value.Undefined(), err
 		}
@@ -291,7 +313,7 @@ func stringMethods(val value.Value, method string, args []value.Value, kwargs ma
 		if err != nil {
 			return value.Undefined(), err
 		}
-		maxSplits, hasMax, err := optInt(args, 1)
+		maxSplits, hasMax, err := optInt(args, 1, "i64")
 		if err != nil {
 			return value.Undefined(), err
 		}
@@ -388,8 +410,12 @@ func stringMethods(val value.Value, method string, args []value.Value, kwargs ma
 		if err := noArgs(args[1:]); err != nil {
 			return value.Undefined(), err
 		}
+		items, err := iterable(args[0])
+		if err != nil {
+			return value.Undefined(), err
+		}
 		var b strings.Builder
-		for idx, item := range args[0].Iter() {
+		for idx, item := range items {
 			if idx > 0 {
 				b.WriteString(s)
 			}
@@ -490,20 +516,26 @@ func mapMethods(val value.Value, method string, args []value.Value) (value.Value
 		// Iteration order is the fork's map iteration order, the same one
 		// `|items` and `{% for %}` use, so a mapping renders consistently
 		// however it is walked.
-		keys := val.Iter()
-		out := make([]value.Value, 0, len(keys))
-		for _, k := range keys {
-			name, _ := k.AsString()
+		//
+		// The result is an ITERABLE, not a sequence: the reference module
+		// returns `Value::make_object_iterable` (pycompat.rs:282-308), so
+		// `dict(a=1).keys() is sequence` is FALSE while `is iterable` is true.
+		// Its length is known, which is why it still RENDERS as a list rather
+		// than as `<iterator>` (value/object.rs:338-352).
+		names, _ := val.MapKeys()
+		out := make([]value.Value, 0, len(names))
+		for _, name := range names {
+			key := value.FromString(name)
 			switch method {
 			case "keys":
-				out = append(out, k)
+				out = append(out, key)
 			case "values":
 				out = append(out, m[name])
 			default:
-				out = append(out, value.FromSlice([]value.Value{k, m[name]}))
+				out = append(out, value.FromSlice([]value.Value{key, m[name]}))
 			}
 		}
-		return value.FromSlice(out), nil
+		return value.MakeSizedIterable(out), nil
 
 	case "get":
 		if len(args) == 0 {
@@ -512,7 +544,16 @@ func mapMethods(val value.Value, method string, args []value.Value) (value.Value
 		if err := noArgs(args[min(2, len(args)):]); err != nil {
 			return value.Undefined(), err
 		}
-		if got := val.GetItem(args[0]); !got.IsUndefined() {
+		// PRESENCE decides, not truthiness or definedness: the engine asks the
+		// object for the key (`obj.get_value(key)` → Option) and only falls
+		// back when there is no entry. A key that is present with an undefined
+		// value is a hit, so `dict(a=nothing).get('a', 42)` is that undefined
+		// value and not 42.
+		name, isString := args[0].AsString()
+		if !isString {
+			name = args[0].String()
+		}
+		if got, present := m[name]; present {
 			return got, nil
 		}
 		if len(args) > 1 {

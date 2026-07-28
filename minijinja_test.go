@@ -927,7 +927,7 @@ func (c *testCycler) GetAttr(name string) value.Value {
 
 type callableFunc func() value.Value
 
-func (f callableFunc) Call(value.State, []value.Value, map[string]value.Value) (value.Value, error) {
+func (f callableFunc) Call(value.State, []value.Value, *value.OrderedMap) (value.Value, error) {
 	return f(), nil
 }
 
@@ -954,7 +954,7 @@ func TestCallableObject(t *testing.T) {
 func TestCallableValue(t *testing.T) {
 	env := NewEnvironment()
 	first := true
-	env.AddFunction("joiner", func(*State, []value.Value, map[string]value.Value) (value.Value, error) {
+	env.AddFunction("joiner", func(*State, []value.Value, *value.OrderedMap) (value.Value, error) {
 		if first {
 			first = false
 			return value.FromString(""), nil
@@ -1006,7 +1006,7 @@ func TestRenderCtx(t *testing.T) {
 
 	// Add a function that accesses the context
 	type ctxKey string
-	env.AddFunction("get_value", func(state *State, args []Value, kwargs map[string]Value) (Value, error) {
+	env.AddFunction("get_value", func(state *State, args []Value, kwargs *value.OrderedMap) (Value, error) {
 		ctx := state.Context()
 		if v, ok := ctx.Value(ctxKey("test")).(string); ok {
 			return value.FromString(v), nil
@@ -1045,7 +1045,7 @@ func TestStateAccessors(t *testing.T) {
 	env := NewEnvironment()
 
 	var capturedState *State
-	env.AddFunction("capture_state", func(state *State, args []Value, kwargs map[string]Value) (Value, error) {
+	env.AddFunction("capture_state", func(state *State, args []Value, kwargs *value.OrderedMap) (Value, error) {
 		capturedState = state
 		return value.FromString("ok"), nil
 	})

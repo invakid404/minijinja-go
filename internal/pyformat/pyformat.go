@@ -22,6 +22,7 @@ package pyformat
 import (
 	"fmt"
 	"math"
+	"math/big"
 	"strconv"
 	"strings"
 
@@ -45,7 +46,7 @@ func invalidOp(format string, args ...any) error {
 
 // Format applies args to a format string. kwargs is only consulted by
 // StyleStrFormat, where a replacement field may name one.
-func Format(style Style, formatStr string, args []value.Value, kwargs map[string]value.Value) (string, error) {
+func Format(style Style, formatStr string, args []value.Value, kwargs *value.OrderedMap) (string, error) {
 	p := &parser{src: formatStr, style: style}
 	var out strings.Builder
 	argIndex := 0
@@ -82,7 +83,7 @@ func Format(style Style, formatStr string, args []value.Value, kwargs map[string
 			arg = got
 
 		case tok.field.kwarg != nil:
-			val, ok := kwargs[*tok.field.kwarg]
+			val, ok := kwargs.Get(*tok.field.kwarg)
 			if !ok {
 				return "", invalidOp("argument not found for format field at offset %d", tok.location)
 			}
@@ -253,12 +254,18 @@ func (s *formatSpec) format(val value.Value) (string, error) {
 		return s.formatBool(b)
 	}
 	if val.Kind() == value.KindNumber && val.IsActualInt() {
-		n, _ := val.AsInt()
-		magnitude := uint64(n)
-		if n < 0 {
-			magnitude = uint64(-(n + 1)) + 1
+		// Losslessly, through the engine's i128 conversion: an integer past
+		// int64 used to have its AsInt failure ignored and formatted as 0.
+		if n, ok := val.AsBigInt(); ok {
+			return s.formatInteger(new(big.Int).Abs(n), n.Sign() < 0)
 		}
-		return s.formatInteger(magnitude, n < 0)
+		if u, ok := val.AsString(); ok {
+			// A u128 past i128::MAX has no signed form; its decimal spelling
+			// is what the value itself renders as.
+			if n, ok := new(big.Int).SetString(u, 10); ok {
+				return s.formatInteger(new(big.Int).Abs(n), n.Sign() < 0)
+			}
+		}
 	}
 	if f, ok := val.AsFloat(); ok && val.Kind() == value.KindNumber {
 		return s.formatFloat(f)
@@ -280,9 +287,9 @@ func (s *formatSpec) formatBool(val bool) (string, error) {
 		}
 		return "", s.typeConversionErr("bool", typeString)
 	default:
-		n := uint64(0)
+		n := big.NewInt(0)
 		if val {
-			n = 1
+			n = big.NewInt(1)
 		}
 		return s.formatInteger(n, false)
 	}
@@ -303,6 +310,18 @@ func (s *formatSpec) formatString(text string) (string, error) {
 	default:
 		return "", s.typeConversionErr("string", s.ty)
 	}
+}
+
+// mantissaAndExpBig is mantissaAndExp for an integer too large for float64 to
+// carry exactly: big.Float keeps every digit the scientific form needs.
+func mantissaAndExpBig(val *big.Int, precision int) (string, int) {
+	formatted := new(big.Float).SetPrec(256).SetInt(val).Text('e', precision)
+	mantissa, expPart, ok := strings.Cut(formatted, "e")
+	if !ok {
+		return formatted, 0
+	}
+	exp, _ := strconv.Atoi(expPart)
+	return mantissa, exp
 }
 
 // mantissaAndExp is Rust's `format!("{val:.precision$e}")`, split into its
@@ -404,7 +423,7 @@ func (s *formatSpec) groupDecimalNum(number string) string {
 	return integer
 }
 
-func (s *formatSpec) formatInteger(val uint64, isNegative bool) (string, error) {
+func (s *formatSpec) formatInteger(val *big.Int, isNegative bool) (string, error) {
 	sign := ""
 	switch {
 	case isNegative:
@@ -418,31 +437,31 @@ func (s *formatSpec) formatInteger(val uint64, isNegative bool) (string, error) 
 	var number string
 	switch s.ty {
 	case typeBinary:
-		n, err := s.groupBinaryNum(strconv.FormatUint(val, 2))
+		n, err := s.groupBinaryNum(val.Text(2))
 		if err != nil {
 			return "", err
 		}
 		number = n
 	case typeOctal:
-		n, err := s.groupBinaryNum(strconv.FormatUint(val, 8))
+		n, err := s.groupBinaryNum(val.Text(8))
 		if err != nil {
 			return "", err
 		}
 		number = n
 	case typeLowerHex:
-		n, err := s.groupBinaryNum(strconv.FormatUint(val, 16))
+		n, err := s.groupBinaryNum(val.Text(16))
 		if err != nil {
 			return "", err
 		}
 		number = n
 	case typeUpperHex:
-		n, err := s.groupBinaryNum(strings.ToUpper(strconv.FormatUint(val, 16)))
+		n, err := s.groupBinaryNum(strings.ToUpper(val.Text(16)))
 		if err != nil {
 			return "", err
 		}
 		number = n
 	case typeDefault, typeDecimal:
-		number = s.groupDecimalNum(strconv.FormatUint(val, 10))
+		number = s.groupDecimalNum(val.Text(10))
 	case typeString:
 		if s.style != StylePrintf {
 			return "", s.typeConversionErr("integer", typeString)
@@ -452,13 +471,13 @@ func (s *formatSpec) formatInteger(val uint64, isNegative bool) (string, error) 
 		if isNegative {
 			sign = "-"
 		}
-		number = strconv.FormatUint(val, 10)
+		number = val.Text(10)
 	case typeLowerE, typeUpperE:
 		precision := 6
 		if s.hasPrecision {
 			precision = s.precision
 		}
-		mant, exp := mantissaAndExp(float64(val), precision)
+		mant, exp := mantissaAndExpBig(val, precision)
 		mant = s.groupDecimalNum(s.fixDecimalPoint(mant))
 		e := "e"
 		if s.ty == typeUpperE {
@@ -470,13 +489,14 @@ func (s *formatSpec) formatInteger(val uint64, isNegative bool) (string, error) 
 		if s.hasPrecision {
 			precision = s.precision
 		}
-		num := strconv.FormatUint(val, 10)
+		num := val.Text(10)
 		if precision != 0 {
 			num += "." + strings.Repeat("0", precision)
 		}
 		number = s.groupDecimalNum(s.fixDecimalPoint(num))
 	case typeLowerG, typeUpperG:
-		number = s.numberInGeneralFormat(float64(val), s.ty == typeUpperG)
+		f, _ := new(big.Float).SetInt(val).Float64()
+		number = s.numberInGeneralFormat(f, s.ty == typeUpperG)
 	}
 
 	return s.formatNumber(number, sign), nil

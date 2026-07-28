@@ -27,7 +27,7 @@ func main() {
 	}
 
 	env := minijinja.NewEnvironment()
-	env.AddFunction("load_data", func(state *minijinja.State, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
+	env.AddFunction("load_data", func(state *minijinja.State, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
 		if len(args) != 1 {
 			return value.Undefined(), minijinja.NewError(minijinja.ErrMissingArgument, "load_data expects a filename")
 		}

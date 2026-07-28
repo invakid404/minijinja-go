@@ -151,131 +151,220 @@ func registerDefaultFunctions(env *Environment) {
 
 // --- Functions ---
 
-func fnRange(_ *State, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
-	var start, stop, step int64 = 0, 0, 1
+// prettyRepr is Rust's alternate debug format, `{:#?}`: a container is printed
+// one element per line, indented four spaces per level, with a trailing comma
+// on every element. A scalar prints the same as its compact debug form.
+func prettyRepr(val value.Value, depth int) string {
+	pad := strings.Repeat("    ", depth)
+	inner := pad + "    "
 
-	// `range(lower: isize, upper: Option<isize>, step: Option<isize>)`
-	// (functions.rs:326-360): a non-integer argument is a conversion error,
-	// not a silently empty range.
-	rangeArg := func(v value.Value) (int64, error) {
-		n, ok := v.AsInt()
-		if !ok || !v.IsActualInt() {
-			return 0, NewError(ErrInvalidOperation, fmt.Sprintf("cannot convert %s to isize", v.Kind()))
+	switch val.Kind() {
+	case value.KindSeq, value.KindIterable:
+		items := val.Iter()
+		if len(items) == 0 {
+			return "[]"
 		}
-		return n, nil
-	}
-	var err error
-	switch len(args) {
-	case 0:
-		return value.Undefined(), NewError(ErrMissingArgument, "missing argument")
-	case 1:
-		if stop, err = rangeArg(args[0]); err != nil {
-			return value.Undefined(), err
+		var b strings.Builder
+		b.WriteString("[\n")
+		for _, item := range items {
+			b.WriteString(inner)
+			b.WriteString(prettyRepr(item, depth+1))
+			b.WriteString(",\n")
 		}
-	case 2:
-		if start, err = rangeArg(args[0]); err != nil {
-			return value.Undefined(), err
+		b.WriteString(pad)
+		b.WriteString("]")
+		return b.String()
+	case value.KindMap:
+		keys, _ := val.MapKeys()
+		if len(keys) == 0 {
+			return "{}"
 		}
-		if stop, err = rangeArg(args[1]); err != nil {
-			return value.Undefined(), err
+		ordered, hasOrder := val.AsOrderedMap()
+		var b strings.Builder
+		b.WriteString("{\n")
+		for _, key := range keys {
+			b.WriteString(inner)
+			if hasOrder {
+				b.WriteString(ordered.KeyRepr(key))
+			} else {
+				b.WriteString(value.FromString(key).Repr())
+			}
+			b.WriteString(": ")
+			b.WriteString(prettyRepr(val.GetItem(value.FromString(key)), depth+1))
+			b.WriteString(",\n")
 		}
-	case 3:
-		if start, err = rangeArg(args[0]); err != nil {
-			return value.Undefined(), err
-		}
-		if stop, err = rangeArg(args[1]); err != nil {
-			return value.Undefined(), err
-		}
-		if step, err = rangeArg(args[2]); err != nil {
-			return value.Undefined(), err
-		}
+		b.WriteString(pad)
+		b.WriteString("}")
+		return b.String()
 	default:
-		return value.Undefined(), NewError(ErrTooManyArguments, "received too many arguments")
+		return val.Repr()
+	}
+}
+
+// mappingEntries copies a value the engine would accept as a mapping. That is
+// wider than "a plain map": the loop object and an imported module are mappings
+// too (`ObjectRepr::Map`), which is what `dict(loop, extra=2)` relies on.
+// sortedNames is the deterministic order for a mapping with no order of its
+// own.
+func sortedNames(m map[string]value.Value) []string {
+	names := make([]string, 0, len(m))
+	for name := range m {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	return names
+}
+
+func mappingEntries(val value.Value, present bool) (*value.OrderedMap, error) {
+	rv := value.NewOrderedMap(0)
+	if !present {
+		return rv, nil
+	}
+	// Through MapKeys so the copy keeps the source's own order. It also
+	// accepts the mapping-shaped objects the engine does — the loop object and
+	// an imported module — which is what `dict(loop, extra=2)` relies on.
+	if keys, ok := val.MapKeys(); ok {
+		for _, name := range keys {
+			rv.Set(name, val.GetAttr(name))
+		}
+		return rv, nil
+	}
+	if m, ok := val.AsMap(); ok {
+		for _, name := range sortedNames(m) {
+			rv.Set(name, m[name])
+		}
+		return rv, nil
+	}
+	return nil, fmt.Errorf("not a mapping")
+}
+
+func fnRange(_ *State, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
+	// `range(lower: isize, upper: Option<isize>, step: Option<isize>)`
+	// (functions.rs:326-360). There is no Kwargs parameter, so a keyword
+	// argument arrives as a trailing value and lands in the next integer slot,
+	// where a map is not an integer.
+	a := filters.NewArgs(args, kwargs)
+	lower, err := a.Int("isize")
+	if err != nil {
+		return value.Undefined(), err
+	}
+	upper, hasUpper, err := a.OptInt("isize")
+	if err != nil {
+		return value.Undefined(), err
+	}
+	step, hasStep, err := a.OptInt("isize")
+	if err != nil {
+		return value.Undefined(), err
+	}
+	if err := a.Done(); err != nil {
+		return value.Undefined(), err
 	}
 
+	start, stop := int64(0), lower
+	if hasUpper {
+		start, stop = lower, upper
+	}
+	if !hasStep {
+		step = 1
+	}
 	if step == 0 {
 		return value.Undefined(), NewError(ErrInvalidOperation, "cannot create range with step of 0")
 	}
 
-	length := int64(0)
-	if step > 0 {
-		if stop > start {
-			length = (stop - start + step - 1) / step
-		}
-	} else {
-		if stop < start {
-			negStep := -step
-			length = (start - stop + negStep - 1) / negStep
-		}
-	}
-	if length > 100000 {
+	// The cardinality is computed in UNSIGNED arithmetic and the loop then runs
+	// a checked number of times. Computing `stop - start` in int64 overflows
+	// near the boundaries — `range(MaxInt64-1, MaxInt64, 2)` produced a length
+	// of one but a loop whose first increment wrapped to MinInt64 and never
+	// reached the odd stop again, so it allocated forever. Two's-complement
+	// subtraction gives the true distance whenever the endpoints are ordered,
+	// so the count is exact at both ends of the range.
+	count := rangeCount(start, stop, step)
+	if count > 100000 {
 		return value.Undefined(), NewError(ErrInvalidOperation, "range has too many elements")
 	}
 
-	var result []value.Value
-	if step > 0 {
-		for i := start; i < stop; i += step {
-			result = append(result, value.FromInt(i))
-		}
-	} else {
-		for i := start; i > stop; i += step {
-			result = append(result, value.FromInt(i))
+	result := make([]value.Value, 0, count)
+	i := start
+	for n := uint64(0); n < count; n++ {
+		result = append(result, value.FromInt(i))
+		if n+1 < count {
+			// Only advance while another element is coming: the step past the
+			// last one could overflow, and nothing would read it.
+			i += step
 		}
 	}
 	return value.FromIterator(value.NewIterator("range", result)), nil
 }
 
-func fnDict(_ *State, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
-	result := make(map[string]value.Value)
-
-	// First, copy from first positional argument if it's a map
-	if len(args) > 0 {
-		if m, ok := args[0].AsMap(); ok {
-			for k, v := range m {
-				result[k] = v
-			}
-		} else {
-			// Try to iterate as items
-			items := args[0].Iter()
-			if items != nil {
-				for _, item := range items {
-					if pair, ok := item.AsSlice(); ok && len(pair) == 2 {
-						if k, ok := pair[0].AsString(); ok {
-							result[k] = pair[1]
-						}
-					}
-				}
-			}
+// rangeCount is how many values `range(start, stop, step)` yields, computed
+// without signed overflow.
+func rangeCount(start, stop, step int64) uint64 {
+	var span, magnitude uint64
+	if step > 0 {
+		if stop <= start {
+			return 0
 		}
+		span = uint64(stop) - uint64(start)
+		magnitude = uint64(step)
+	} else {
+		if stop >= start {
+			return 0
+		}
+		span = uint64(start) - uint64(stop)
+		// -step overflows for MinInt64; the magnitude is exact in unsigned.
+		magnitude = -uint64(step)
 	}
-
-	// Then apply kwargs (overwriting)
-	for k, v := range kwargs {
-		result[k] = v
+	count := span / magnitude
+	if span%magnitude != 0 {
+		count++
 	}
-	return value.FromMap(result), nil
+	return count
 }
 
-func fnNamespace(_ *State, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
-	ns := &namespaceValue{
-		data: make(map[string]value.Value),
+func fnDict(_ *State, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
+	// `dict(value: Option<Value>, update_with: Kwargs)` (functions.rs:394-414):
+	// the keyword arguments are taken first, then the optional positional
+	// value, which must be a mapping if it is given at all.
+	a := filters.NewArgs(args, kwargs).KwargsAll()
+	base, hasBase, err := a.OptValue()
+	if err != nil {
+		return value.Undefined(), err
+	}
+	if err := a.Done(); err != nil {
+		return value.Undefined(), err
 	}
 
-	// If first argument is a map, copy from it
-	if len(args) > 0 {
-		if m, ok := args[0].AsMap(); ok {
-			for k, v := range m {
-				ns.data[k] = v
-			}
-		} else if !args[0].IsUndefined() && !args[0].IsNone() {
-			return value.Undefined(), NewError(ErrInvalidOperation, "namespace expects a mapping")
-		}
+	result, err := mappingEntries(base, hasBase)
+	if err != nil {
+		return value.Undefined(), NewError(ErrInvalidOperation, "invalid operation")
+	}
+	for _, k := range kwargs.Keys() {
+		v, _ := kwargs.Get(k)
+		result.Set(k, v)
+	}
+	return value.FromOrderedMap(result), nil
+}
+
+func fnNamespace(_ *State, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
+	// `namespace(defaults: Option<Value>)` (functions.rs:452-475). There is no
+	// Kwargs parameter: `namespace(count=0)` works because the keyword
+	// arguments arrive as a map and land in `defaults`. A second positional
+	// argument is therefore one too many.
+	a := filters.NewArgs(args, kwargs)
+	defaults, hasDefaults, err := a.OptValue()
+	if err != nil {
+		return value.Undefined(), err
+	}
+	if err := a.Done(); err != nil {
+		return value.Undefined(), err
 	}
 
-	// Apply kwargs
-	for k, v := range kwargs {
-		ns.data[k] = v
+	data, err := mappingEntries(defaults, hasDefaults)
+	if err != nil {
+		return value.Undefined(), NewError(ErrInvalidOperation,
+			fmt.Sprintf("expected object or keyword arguments, got %s", defaults.Kind()))
 	}
+	ns := &namespaceValue{data: data.Map()}
 	return value.FromObject(ns), nil
 }
 
@@ -313,14 +402,21 @@ func (n *namespaceValue) Map() map[string]value.Value {
 	return n.data
 }
 
-func fnDebug(state *State, args []value.Value, _ map[string]value.Value) (value.Value, error) {
-	// If arguments provided, debug those values
-	if len(args) > 0 {
-		var parts []string
-		for _, arg := range args {
-			parts = append(parts, arg.Repr())
-		}
-		return value.FromString(strings.Join(parts, ", ")), nil
+func fnDebug(state *State, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
+	// `debug(state, args: Rest<Value>)` (functions.rs:430-450): keyword
+	// arguments are part of the debugged list, as one trailing map, so
+	// `debug(foo=1)` is not the same call as `debug()`.
+	args = filters.NewArgs(args, kwargs).Rest()
+
+	// One argument is pretty-debugged on its own; several are pretty-debugged
+	// as the argument SLICE (functions.rs:431-439). The port joined the
+	// compact forms with ", ", so `debug(1, 2)` was `1, 2` where the engine
+	// prints a multi-line list.
+	if len(args) == 1 {
+		return value.FromString(prettyRepr(args[0], 0)), nil
+	}
+	if len(args) > 1 {
+		return value.FromString(prettyRepr(value.FromSlice(args), 0)), nil
 	}
 
 	// Otherwise debug the current state

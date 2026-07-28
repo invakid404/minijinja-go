@@ -103,6 +103,45 @@ func (m *OrderedMap) KeyRepr(key string) string {
 	return FromString(key).Repr()
 }
 
+// CopyEntryFrom copies one entry, keeping how its key was spelled.
+//
+// A key splatted out of `{8: 8}` renders as `8` and not as `"8"`, so a copy
+// that only carried the string form would change the bytes.
+func (m *OrderedMap) CopyEntryFrom(src *OrderedMap, key string) {
+	if src == nil {
+		return
+	}
+	val, ok := src.Get(key)
+	if !ok {
+		return
+	}
+	m.Set(key, val)
+	if repr, isSpelled := src.keyReprs[key]; isSpelled {
+		if m.keyReprs == nil {
+			m.keyReprs = make(map[string]string, 1)
+		}
+		m.keyReprs[key] = repr
+	}
+}
+
+// Delete removes a key, keeping the order of the rest.
+func (m *OrderedMap) Delete(key string) {
+	if m == nil {
+		return
+	}
+	if _, exists := m.vals[key]; !exists {
+		return
+	}
+	delete(m.vals, key)
+	delete(m.keyReprs, key)
+	for i, k := range m.keys {
+		if k == key {
+			m.keys = append(m.keys[:i], m.keys[i+1:]...)
+			return
+		}
+	}
+}
+
 // Get returns the value for a key.
 func (m *OrderedMap) Get(key string) (Value, bool) {
 	if m == nil {

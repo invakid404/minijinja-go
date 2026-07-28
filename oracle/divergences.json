@@ -2,18 +2,6 @@
   "schema_version": 1,
   "entries": [
     {
-      "id": "container/dict-function-kwargs-order",
-      "class": "engine",
-      "summary": "dict() builds a mapping from keyword arguments, and Rust keeps the order they were written in. This fork passes keyword arguments to functions and filters as a Go map (value.Callable, filters.Filter), so the order is lost at the call boundary, before the function can preserve it. Ordered map values fixed every other mapping surface; this one needs the callable signature to carry an ordered mapping.",
-      "rust_signatures": [
-        "ok|-|{\"b\": 1, \"a\": 2}"
-      ],
-      "go_signatures": [
-        "ok|-|{\"a\": 2, \"b\": 1}"
-      ],
-      "slice": "5 builtins and pycompat (keyword-argument plumbing)"
-    },
-    {
       "id": "test/divisibleby-zero",
       "class": "engine",
       "summary": "The engine computes `a % b` on integers and PANICS on a zero divisor (tests.rs:153-159). The fork refuses with an invalid operation instead: a panic is not a behaviour worth reproducing, and answering `false` where the reference implementation aborts is the dangerous direction. Deliberate and permanent; see PATCHES.md.",
@@ -48,6 +36,30 @@
         "error|syntax"
       ],
       "slice": "6 template and error surface"
+    },
+    {
+      "id": "review/pycompat-count-empty-needle",
+      "class": "engine",
+      "summary": "`\"abc\".count(\"\")` does not terminate in the reference module: it walks the string with `find` and advances by the needle's length, which never advances for an empty needle (pycompat.rs:177-186). Both sides bound every row, so the outcome is RECORDED — a timeout there, Python's answer (4) here — rather than the case being left out of the corpus. Reproducing a non-terminating loop in a library is not an option; this is a deliberate, permanent safety exception, like test/divisibleby-zero.",
+      "rust_signatures": [
+        "timeout"
+      ],
+      "go_signatures": [
+        "ok|-|4"
+      ],
+      "slice": "5 builtins and pycompat (deliberate, permanent)"
+    },
+    {
+      "id": "fn/debug-state-dump",
+      "class": "engine",
+      "summary": "`debug()` with no arguments prints the host language's debug rendering of the whole environment: the reference implementation emits Rust's `{:#?}` of its `State`, including Rust type paths such as `minijinja::functions::builtins::debug`. There is nothing to reproduce in Go — the bytes ARE the other language's type names — so the dump is declared rather than matched. Every other `debug` form (one argument, several arguments, nested containers, keyword arguments) is byte-exact and unconditionally compared.",
+      "rust_signatures": [
+        "ok|-|State {\n    name: \"corpus.txt\",\n    current_block: None,\n    auto_escape: None,\n    ctx: {},\n    env: Environment {\n        globals: {\n            \"debug\": minijinja::functions::builtins::debug,\n            \"dict\": minijinja::functions::builtins::dict,\n            \"namespace\": minijinja::functions::builtins::namespace,\n            \"range\": minijinja::functions::builtins::range,\n        },\n        tests: [\n            \"!=\",\n            \"<\",\n            \"<=\",\n            \"==\",\n            \">\",\n            \">=\",\n            \"boolean\",\n            \"defined\",\n            \"divisibleby\",\n            \"endingwith\",\n            \"eq\",\n            \"equalto\",\n            \"escaped\",\n            \"even\",\n            \"false\",\n            \"filter\",\n            \"float\",\n            \"ge\",\n            \"greaterthan\",\n            \"gt\",\n            \"in\",\n            \"int\",\n            \"integer\",\n            \"iterable\",\n            \"le\",\n            \"lessthan\",\n            \"lower\",\n            \"lt\",\n            \"mapping\",\n            \"ne\",\n            \"none\",\n            \"number\",\n            \"odd\",\n            \"safe\",\n            \"sameas\",\n            \"sequence\",\n            \"startingwith\",\n            \"string\",\n            \"test\",\n            \"true\",\n            \"undefined\",\n            \"upper\",\n        ],\n        filters: [\n            \"abs\",\n            \"attr\",\n            \"batch\",\n            \"bool\",\n            \"capitalize\",\n            \"chain\",\n            \"count\",\n            \"d\",\n            \"default\",\n            \"dictsort\",\n            \"e\",\n            \"escape\",\n            \"first\",\n            \"float\",\n            \"format\",\n            \"groupby\",\n            \"indent\",\n            \"int\",\n            \"items\",\n            \"join\",\n            \"last\",\n            \"length\",\n            \"lines\",\n            \"list\",\n            \"lower\",\n            \"map\",\n            \"max\",\n            \"min\",\n            \"pprint\",\n            \"reject\",\n            \"rejectattr\",\n            \"replace\",\n            \"reverse\",\n            \"round\",\n            \"safe\",\n            \"select\",\n            \"selectattr\",\n            \"slice\",\n            \"sort\",\n            \"split\",\n            \"string\",\n            \"sum\",\n            \"title\",\n            \"tojson\",\n            \"trim\",\n            \"unique\",\n            \"upper\",\n            \"zip\",\n        ],\n        templates: [\n            \"corpus.txt\",\n        ],\n    },\n}"
+      ],
+      "go_signatures": [
+        "ok|-|State {\n  name: \"corpus.txt\",\n  current variables: {\n  }\n}"
+      ],
+      "slice": "5 builtins and pycompat (deliberate, permanent)"
     }
   ]
 }

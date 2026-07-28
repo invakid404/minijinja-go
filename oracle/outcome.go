@@ -13,6 +13,12 @@ const (
 	StatusOK    Status = "ok"
 	StatusError Status = "error"
 	StatusPanic Status = "panic"
+	// StatusTimeout means evaluation did not terminate within the runner's
+	// bound. Like a panic it is an outcome rather than a crashed run: the
+	// reference implementation loops forever on some inputs, and a
+	// differential that could not record that would have to leave those cases
+	// out of the corpus.
+	StatusTimeout Status = "timeout"
 	// StatusUnsupported means the runtime could not model the row at all. It
 	// is never a silent pass: a mismatch involving it is classified
 	// harness-incomplete rather than as an engine divergence.
@@ -28,6 +34,8 @@ type Outcome struct {
 	Render string `json:"render,omitempty"`
 	// Boolean is the normalized boolean, set only for Expect == boolean.
 	Boolean *bool `json:"boolean,omitempty"`
+	// Seconds is the bound a timed-out row exceeded.
+	Seconds int `json:"seconds,omitempty"`
 
 	// Category is the canonical error category, shared vocabulary across both
 	// implementations. This is what error comparison uses.
@@ -52,6 +60,8 @@ func (o Outcome) Describe() string {
 		return fmt.Sprintf("error category=%s kind=%s", o.Category, o.Kind)
 	case StatusPanic:
 		return fmt.Sprintf("panic %q", o.Message)
+	case StatusTimeout:
+		return fmt.Sprintf("timeout after %ds", o.Seconds)
 	case StatusUnsupported:
 		return fmt.Sprintf("unsupported %q", o.Message)
 	default:

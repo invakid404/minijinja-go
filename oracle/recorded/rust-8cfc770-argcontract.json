@@ -1,0 +1,3833 @@
+{
+  "schema_version": 1,
+  "provenance": {
+    "engine_repo": "https://github.com/boundaryml/minijinja",
+    "engine_branch": "value-cmp",
+    "engine_rev": "8cfc770a5dffeda2de5b910d2b9f870d7edeff7c",
+    "engine_features": [
+      "macros",
+      "builtins",
+      "debug",
+      "preserve_order",
+      "adjacent_loop_items",
+      "unicode",
+      "json",
+      "unstable_machinery",
+      "custom_syntax",
+      "deserialization",
+      "serde"
+    ],
+    "harness_version": "1",
+    "os": "macos",
+    "arch": "aarch64",
+    "corpus_sha256": "1f3f3cd881b42b2e9ec3221324e9382297cdce1cf1c69356ccacabaf353b322e"
+  },
+  "results": [
+    {
+      "id": "contract/filter-safe-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "x",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/filter-safe-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-safe-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-escape-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "&lt;",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/filter-escape-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-escape-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-e-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "&lt;",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/filter-e-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-e-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-upper-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "X",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/filter-upper-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-upper-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-lower-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "x",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/filter-lower-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-lower-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-title-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "X Y",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/filter-title-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-title-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-capitalize-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "X",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/filter-capitalize-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-capitalize-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-replace-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "bb",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/filter-replace-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-replace-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-length-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "2",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/filter-length-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-length-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-count-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "2",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/filter-count-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-count-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-dictsort-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "[[\"a\", 1]]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/filter-dictsort-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-dictsort-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments: unknown keyword argument 'nope_kw' (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-dictsort-noniterable",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot convert value into pair list (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-items-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "[[\"a\", 1]]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/filter-items-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-items-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-items-noniterable",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot convert value into pairs (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-reverse-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "[2, 1]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/filter-reverse-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-reverse-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-reverse-noniterable",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot reverse values of type number (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-trim-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "x",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/filter-trim-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-trim-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot convert kwargs to string (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-join-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "1-2",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/filter-join-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-join-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-join-noniterable",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot join value of type number (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-split-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "<iterator>",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/filter-split-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-split-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot convert map to i64 (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-split-wrongtype",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: value is not a string (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-lines-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"a\", \"b\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/filter-lines-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-lines-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-default-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "1",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/filter-default-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-default-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot convert map to bool (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-d-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "1",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/filter-d-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-d-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot convert map to bool (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-round-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "1.5",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/filter-round-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-round-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-round-wrongtype",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot convert string to i32 (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-abs-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "1",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/filter-abs-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-abs-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-int-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "1",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/filter-int-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-int-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-float-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "1.5",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/filter-float-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-float-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-attr-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "1",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/filter-attr-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-attr-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-first-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "1",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/filter-first-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-first-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-first-noniterable",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot get first item from value (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-last-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "1",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/filter-last-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-last-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-last-noniterable",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot get last item from value (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-min-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "1",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/filter-min-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-min-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-min-noniterable",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot convert value to list (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-max-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "2",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/filter-max-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-max-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-max-noniterable",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot convert value to list (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-sort-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "[1, 2]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/filter-sort-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-sort-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments: unknown keyword argument 'nope_kw' (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-sort-noniterable",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot convert value to list (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-list-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "[1]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/filter-list-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-list-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-list-noniterable",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot convert value to list (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-string-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "1",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/filter-string-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-string-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-bool-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/filter-bool-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-bool-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-batch-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "[[1], [2]]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/filter-batch-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-batch-keyword",
+      "outcome": {
+        "status": "ok",
+        "render": "[[1], [2]]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/filter-batch-wrongtype",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot convert string to usize (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-batch-noniterable",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: number is not iterable (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-slice-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "[[1, 2]]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/filter-slice-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-slice-keyword",
+      "outcome": {
+        "status": "ok",
+        "render": "[[1, 2, {\"nope_kw\": 1}]]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/filter-slice-wrongtype",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot convert string to usize (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-slice-noniterable",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: number is not iterable (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-sum-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "3",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/filter-sum-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-sum-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-sum-noniterable",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: number is not iterable (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-indent-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "a\n  b",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/filter-indent-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-indent-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot convert map to bool (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-indent-wrongtype",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot convert string to usize (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-select-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "[1]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/filter-select-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-select-wrongtype",
+      "outcome": {
+        "status": "error",
+        "category": "unknown_test",
+        "kind": "UnknownTest",
+        "message": "unknown test (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-select-noniterable",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: number is not iterable (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-reject-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "[]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/filter-reject-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-reject-wrongtype",
+      "outcome": {
+        "status": "error",
+        "category": "unknown_test",
+        "kind": "UnknownTest",
+        "message": "unknown test (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-reject-noniterable",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: number is not iterable (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-selectattr-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "[{\"a\": 1}]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/filter-selectattr-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot convert kwargs to string (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-selectattr-noniterable",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: number is not iterable (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-rejectattr-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "[]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/filter-rejectattr-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot convert kwargs to string (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-rejectattr-noniterable",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: number is not iterable (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-map-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "[1]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/filter-map-keyword",
+      "outcome": {
+        "status": "ok",
+        "render": "[1]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/filter-map-wrongtype",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: filter name must be a string (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-map-noniterable",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: number is not iterable (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-groupby-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "[[1, [{\"a\": 1}]]]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/filter-groupby-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-groupby-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments: unknown keyword argument 'nope_kw' (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-groupby-wrongtype",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: value is not a string (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-groupby-noniterable",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: number is not iterable (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-unique-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "[1]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/filter-unique-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-unique-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments: unknown keyword argument 'nope_kw' (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-unique-noniterable",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: number is not iterable (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-chain-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "[1, 2]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/filter-chain-keyword",
+      "outcome": {
+        "status": "ok",
+        "render": "<iterator>",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/filter-zip-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "[[1, 2]]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/filter-zip-keyword",
+      "outcome": {
+        "status": "ok",
+        "render": "[[1, 2, \"nope_kw\"]]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/filter-zip-noniterable",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: zip filter argument must be iterable, got number (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-pprint-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "[\n    1,\n]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/filter-pprint-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-pprint-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-format-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "x",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/filter-format-keyword",
+      "outcome": {
+        "status": "ok",
+        "render": "x",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/filter-tojson-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "{\"a\":1}",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/filter-tojson-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-tojson-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments: unknown keyword argument 'nope_kw' (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-tojson-wrongtype",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot convert string to usize (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/test-defined-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "contract/test-defined-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/test-defined-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/test-undefined-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "contract/test-undefined-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/test-undefined-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/test-none-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "contract/test-none-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/test-none-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/test-safe-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "contract/test-safe-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/test-safe-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/test-escaped-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "contract/test-escaped-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/test-escaped-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/test-boolean-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "contract/test-boolean-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/test-boolean-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/test-odd-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "contract/test-odd-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/test-odd-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/test-even-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "contract/test-even-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/test-even-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/test-divisibleby-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "contract/test-divisibleby-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/test-divisibleby-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/test-divisibleby-wrongtype",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/test-number-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "contract/test-number-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/test-number-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/test-integer-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "contract/test-integer-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/test-integer-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/test-int-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "contract/test-int-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/test-int-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/test-float-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "contract/test-float-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/test-float-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/test-string-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "contract/test-string-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/test-string-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/test-sequence-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "contract/test-sequence-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/test-sequence-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/test-iterable-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "contract/test-iterable-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/test-iterable-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/test-mapping-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "contract/test-mapping-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/test-mapping-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/test-startingwith-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "contract/test-startingwith-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/test-startingwith-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/test-endingwith-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "contract/test-endingwith-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/test-endingwith-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/test-lower-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "contract/test-lower-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/test-lower-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/test-upper-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "contract/test-upper-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/test-upper-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/test-sameas-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "contract/test-sameas-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/test-sameas-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/test-eq-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "contract/test-eq-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/test-eq-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/test-equalto-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "contract/test-equalto-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/test-equalto-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/test-ne-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "contract/test-ne-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/test-ne-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/test-lt-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "contract/test-lt-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/test-lt-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/test-lessthan-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "contract/test-lessthan-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/test-lessthan-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/test-le-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "contract/test-le-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/test-le-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/test-gt-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "contract/test-gt-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/test-gt-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/test-greaterthan-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "contract/test-greaterthan-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/test-greaterthan-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/test-ge-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "contract/test-ge-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/test-ge-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/test-in-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "contract/test-in-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/test-in-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/test-true-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "contract/test-true-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/test-true-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/test-false-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "contract/test-false-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/test-false-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/test-filter-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "contract/test-filter-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/test-filter-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/test-test-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "contract/test-test-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/test-test-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/fn-range-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "[0, 1, 2]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/fn-range-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/fn-range-wrongtype",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot convert string to isize (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/fn-dict-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "{}",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/fn-dict-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/fn-dict-wrongtype",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/fn-namespace-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "{}",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/fn-namespace-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/fn-namespace-wrongtype",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: expected object or keyword arguments, got number (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/fn-debug-valid",
+      "outcome": {
+        "status": "ok",
+        "render": "1",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/fn-range-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot convert map to isize (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/fn-dict-keyword",
+      "outcome": {
+        "status": "ok",
+        "render": "{\"nope_kw\": 1}",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/fn-namespace-keyword",
+      "outcome": {
+        "status": "ok",
+        "render": "{\"nope_kw\": 1}",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/pycompat-join-noniterable",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: number is not iterable (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/pycompat-join-none",
+      "outcome": {
+        "status": "ok",
+        "render": "",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/pycompat-join-string",
+      "outcome": {
+        "status": "ok",
+        "render": "a-b",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/pycompat-join-map",
+      "outcome": {
+        "status": "ok",
+        "render": "a",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/pycompat-join-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/pycompat-count-missing",
+      "outcome": {
+        "status": "error",
+        "category": "missing_argument",
+        "kind": "MissingArgument",
+        "message": "missing argument (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/pycompat-count-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/pycompat-startswith-missing",
+      "outcome": {
+        "status": "error",
+        "category": "missing_argument",
+        "kind": "MissingArgument",
+        "message": "missing argument (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/pycompat-strip-wrongtype",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: value is not a string (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/pycompat-strip-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/pycompat-split-wrongtype",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: value is not a string (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/pycompat-split-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/pycompat-splitlines-wrongtype",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot convert number to bool (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/pycompat-replace-wrongtype",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: value is not a string (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/pycompat-replace-count-wrongtype",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot convert string to i32 (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/pycompat-replace-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/pycompat-title-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/pycompat-keys-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/pycompat-items-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/pycompat-get-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/pycompat-seqcount-excess",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/pycompat-seqcount-missing",
+      "outcome": {
+        "status": "error",
+        "category": "missing_argument",
+        "kind": "MissingArgument",
+        "message": "missing argument (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/pycompat-format-missing-field",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: argument not found for format field at offset 0 (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/pycompat-keys-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/pycompat-find-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: value is not a string (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-replace-keyword-only",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot convert kwargs to string (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-replace-partial-keyword",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot convert kwargs to string (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-replace-missing",
+      "outcome": {
+        "status": "error",
+        "category": "missing_argument",
+        "kind": "MissingArgument",
+        "message": "missing argument (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-replace-coerced-args",
+      "outcome": {
+        "status": "ok",
+        "render": "ab",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/filter-last-map",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot get last item from value (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-first-map",
+      "outcome": {
+        "status": "ok",
+        "render": "a",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/filter-last-none",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot get last item from value (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-reverse-map",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"a\", \"b\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/filter-reverse-map-items",
+      "outcome": {
+        "status": "ok",
+        "render": "[[\"b\", 2], [\"a\", 1]]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/filter-reverse-string",
+      "outcome": {
+        "status": "ok",
+        "render": "cba",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/filter-chain-invalid-first",
+      "outcome": {
+        "status": "ok",
+        "render": "[<invalid value: invalid operation: number is not iterable>, 1]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/filter-chain-invalid-second",
+      "outcome": {
+        "status": "ok",
+        "render": "[1, <invalid value: invalid operation: number is not iterable>]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/filter-chain-invalid-both",
+      "outcome": {
+        "status": "ok",
+        "render": "[<invalid value: invalid operation: number is not iterable>, <invalid value: invalid operation: number is not iterable>]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/filter-chain-invalid-render",
+      "outcome": {
+        "status": "ok",
+        "render": "<iterator>",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/filter-chain-invalid-length",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot calculate length of value of type iterator (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-chain-invalid-index",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: number is not iterable (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/filter-chain-invalid-tojson",
+      "outcome": {
+        "status": "ok",
+        "render": "[null,1]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/filter-chain-none",
+      "outcome": {
+        "status": "ok",
+        "render": "[1]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/filter-chain-string",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"x\", 1]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/filter-chain-maps",
+      "outcome": {
+        "status": "ok",
+        "render": "{\"a\": 1, \"b\": 2}",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/filter-chain-seqs-length",
+      "outcome": {
+        "status": "ok",
+        "render": "2",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/fn-debug-keyword",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "contract/fn-debug-keyword-map",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "contract/fn-debug-same",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "contract/invalid-first-renders-marker",
+      "outcome": {
+        "status": "ok",
+        "render": "<invalid value: invalid operation: number is not iterable>",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/invalid-list-first-renders-marker",
+      "outcome": {
+        "status": "ok",
+        "render": "<invalid value: invalid operation: number is not iterable>",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/invalid-default-passes-through",
+      "outcome": {
+        "status": "ok",
+        "render": "<invalid value: invalid operation: number is not iterable>",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/invalid-string-passes-through",
+      "outcome": {
+        "status": "ok",
+        "render": "<invalid value: invalid operation: number is not iterable>",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/invalid-join-includes-marker",
+      "outcome": {
+        "status": "ok",
+        "render": "<invalid value: invalid operation: number is not iterable>-1",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/invalid-concat-includes-marker",
+      "outcome": {
+        "status": "ok",
+        "render": "<invalid value: invalid operation: number is not iterable>x",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/invalid-is-defined",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "contract/invalid-is-none",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "contract/invalid-is-string",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "contract/invalid-is-iterable",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "contract/invalid-is-eq",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "contract/invalid-truthiness",
+      "outcome": {
+        "status": "ok",
+        "render": "F",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/invalid-attr-of-invalid",
+      "outcome": {
+        "status": "ok",
+        "render": "x",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/invalid-item-of-invalid",
+      "outcome": {
+        "status": "ok",
+        "render": "x",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/invalid-list-length",
+      "outcome": {
+        "status": "ok",
+        "render": "2",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/invalid-list-last",
+      "outcome": {
+        "status": "ok",
+        "render": "1",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/invalid-item-lookup",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: number is not iterable (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/invalid-item-lookup-compared",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: number is not iterable (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/invalid-item-lookup-attr",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: number is not iterable (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/invalid-item-lookup-subscript",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: number is not iterable (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/invalid-loop-item",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: number is not iterable (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/invalid-loop-item-render",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: number is not iterable (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/invalid-loop-over-list",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: number is not iterable (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/invalid-variable-lookup",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: number is not iterable (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/invalid-variable-lookup-attr",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: number is not iterable (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/invalid-int-filter",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: number is not iterable (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/invalid-float-filter",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: number is not iterable (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/invalid-abs-filter",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot get absolute value (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/invalid-length-filter",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot calculate length of value of type invalid value (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/call-number",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: value of type number is not callable (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/call-float",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: value of type number is not callable (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/call-string",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: value of type string is not callable (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/call-bool",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: value of type bool is not callable (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/call-none",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: value of type none is not callable (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/call-sequence",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: object is not callable (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/call-map",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: object is not callable (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/call-host-object",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: object is not callable (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/call-invalid",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: value of type invalid value is not callable (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/call-expression-result",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: value of type number is not callable (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/call-filter-result",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: value of type number is not callable (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/call-map-attribute",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: value of type number is not callable (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/call-bare-noncallable",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: value of type number is not callable (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/call-bare-noncallable-seq",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: object is not callable (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/call-set-noncallable",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: value of type number is not callable (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/call-set-undefined",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: value of type undefined is not callable (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/call-set-invalid",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: value of type invalid value is not callable (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/call-unresolved-name",
+      "outcome": {
+        "status": "error",
+        "category": "unknown_function",
+        "kind": "UnknownFunction",
+        "message": "unknown function: nosuchfn is unknown (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/call-unresolved-name-args",
+      "outcome": {
+        "status": "error",
+        "category": "unknown_function",
+        "kind": "UnknownFunction",
+        "message": "unknown function: nosuchfn is unknown (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/call-function-still-works",
+      "outcome": {
+        "status": "ok",
+        "render": "[0, 1]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/call-function-kwargs-still-work",
+      "outcome": {
+        "status": "ok",
+        "render": "{\"a\": 1}",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/call-method-still-unknown-method",
+      "outcome": {
+        "status": "error",
+        "category": "unknown_method",
+        "kind": "UnknownMethod",
+        "message": "unknown method: map has no method named nope (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/call-method-on-invalid",
+      "outcome": {
+        "status": "error",
+        "category": "unknown_method",
+        "kind": "UnknownMethod",
+        "message": "unknown method: invalid value has no method named nope (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/bare-argerr-unresolved",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot convert value to list (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/bare-argerr-resolved-noncallable",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot convert value to list (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/bare-argerr-real-function",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot convert value to list (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/bare-argerr-kwarg",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot convert value to list (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/bare-argerr-super",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot convert value to list (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/bare-shadow-set-default-function",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: value of type number is not callable (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/bare-shadow-set-default-function-args",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: value of type number is not callable (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/bare-shadow-ctx-default-function",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: value of type number is not callable (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/bare-shadow-macro-by-local",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: value of type number is not callable (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/bare-shadow-local-by-macro",
+      "outcome": {
+        "status": "ok",
+        "render": "M",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/bare-macro-still-works",
+      "outcome": {
+        "status": "ok",
+        "render": "M",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/bare-loop-recursive-argerr",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot convert value to list (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/bare-loop-recursive-arity",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: loop() takes one argument (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/bare-loop-nonrecursive",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot recurse outside of recursive loop (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/bare-loop-outside",
+      "outcome": {
+        "status": "error",
+        "category": "unknown_function",
+        "kind": "UnknownFunction",
+        "message": "unknown function: loop is unknown (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/bare-loop-recursion-works",
+      "outcome": {
+        "status": "ok",
+        "render": "1",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/bare-loop-recursion-limit",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: recursion limit exceeded (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/bare-unresolved-plain",
+      "outcome": {
+        "status": "error",
+        "category": "unknown_function",
+        "kind": "UnknownFunction",
+        "message": "unknown function: nosuchfn is unknown (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/bare-unresolved-good-args",
+      "outcome": {
+        "status": "error",
+        "category": "unknown_function",
+        "kind": "UnknownFunction",
+        "message": "unknown function: nosuchfn is unknown (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/bare-super-outside",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot super outside of block (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/macro-dies-with-loop",
+      "outcome": {
+        "status": "error",
+        "category": "unknown_function",
+        "kind": "UnknownFunction",
+        "message": "unknown function: x is unknown (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/macro-live-inside-loop",
+      "outcome": {
+        "status": "ok",
+        "render": "M",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/macro-dies-with-with",
+      "outcome": {
+        "status": "error",
+        "category": "unknown_function",
+        "kind": "UnknownFunction",
+        "message": "unknown function: x is unknown (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/macro-live-inside-with",
+      "outcome": {
+        "status": "ok",
+        "render": "M",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/macro-nested-dies",
+      "outcome": {
+        "status": "error",
+        "category": "unknown_function",
+        "kind": "UnknownFunction",
+        "message": "unknown function: inner is unknown (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/macro-nested-live-inside",
+      "outcome": {
+        "status": "ok",
+        "render": "I",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/macro-survives-if",
+      "outcome": {
+        "status": "ok",
+        "render": "M",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/macro-survives-nested-if",
+      "outcome": {
+        "status": "ok",
+        "render": "M",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/macro-not-taken-if",
+      "outcome": {
+        "status": "error",
+        "category": "unknown_function",
+        "kind": "UnknownFunction",
+        "message": "unknown function: x is unknown (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/macro-defined-before-use",
+      "outcome": {
+        "status": "ok",
+        "render": "M",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/macro-used-before-defined",
+      "outcome": {
+        "status": "error",
+        "category": "unknown_function",
+        "kind": "UnknownFunction",
+        "message": "unknown function: x is unknown (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/macro-redefined-per-iteration",
+      "outcome": {
+        "status": "ok",
+        "render": "M1M2",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/macro-is-defined-after-loop",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "contract/macro-loop-local-does-not-clobber",
+      "outcome": {
+        "status": "ok",
+        "render": "T",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/macro-call-basic",
+      "outcome": {
+        "status": "ok",
+        "render": "FC",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/macro-call-shadowed",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: value of type number is not callable (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/macro-call-unknown",
+      "outcome": {
+        "status": "error",
+        "category": "unknown_function",
+        "kind": "UnknownFunction",
+        "message": "unknown function: nosuch is unknown (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/macro-call-unknown-argerr",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot convert value to list (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/macro-call-argerr",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot convert value to list (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/macro-call-args",
+      "outcome": {
+        "status": "ok",
+        "render": "7C",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/macro-call-caller-args",
+      "outcome": {
+        "status": "ok",
+        "render": "C1",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/macro-call-scoped-macro",
+      "outcome": {
+        "status": "error",
+        "category": "unknown_function",
+        "kind": "UnknownFunction",
+        "message": "unknown function: f is unknown (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/macro-call-scoped-macro-inside",
+      "outcome": {
+        "status": "ok",
+        "render": "FC",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/macro-call-noncallable",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: value of type number is not callable (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/macro-call-default-function",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot convert map to isize (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/macro-call-method",
+      "outcome": {
+        "status": "error",
+        "category": "unknown_method",
+        "kind": "UnknownMethod",
+        "message": "unknown method: map has no method named keys (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/macro-call-caller-visible",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "contract/macro-call-caller-unused",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments: unknown keyword argument `caller` (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "contract/macro-call-caller-body-only",
+      "outcome": {
+        "status": "ok",
+        "render": "C",
+        "boolean": null
+      }
+    },
+    {
+      "id": "contract/macro-caller-as-plain-kwarg",
+      "outcome": {
+        "status": "ok",
+        "render": "1",
+        "boolean": null
+      }
+    }
+  ]
+}

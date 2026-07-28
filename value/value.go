@@ -72,7 +72,7 @@ import (
 //
 //	type myCallable struct{}
 //
-//	func (m *myCallable) Call(state State, args []Value, kwargs map[string]Value) (Value, error) {
+//	func (m *myCallable) Call(state State, args []Value, kwargs *OrderedMap) (Value, error) {
 //	    // Process positional arguments
 //	    if len(args) > 0 {
 //	        fmt.Println("First arg:", args[0].String())
@@ -88,10 +88,14 @@ type Callable interface {
 	//
 	// The state provides access to the template rendering context.
 	// The args slice contains positional arguments in order.
-	// The kwargs map contains keyword arguments by name.
+	// The kwargs mapping contains keyword arguments IN THE ORDER THEY WERE
+	// WRITTEN: the engine passes keyword arguments as one ordered map, and
+	// that order is observable — `dict(b=1, a=2)` renders `{"b": 1, "a": 2}`,
+	// and the first unused keyword is the one an argument error names. It may
+	// be nil, which is the same as empty.
 	//
 	// Returns the result value and any error that occurred.
-	Call(state State, args []Value, kwargs map[string]Value) (Value, error)
+	Call(state State, args []Value, kwargs *OrderedMap) (Value, error)
 }
 
 // Object is an interface for custom objects with attribute access.
@@ -617,7 +621,7 @@ func FromMap(v map[string]Value) Value {
 // Example usage:
 //
 //	type MyFunc struct{}
-//	func (f *MyFunc) Call(args []Value, kwargs map[string]Value) (Value, error) {
+//	func (f *MyFunc) Call(args []Value, kwargs *OrderedMap) (Value, error) {
 //	    return FromString("Hello!"), nil
 //	}
 //
@@ -824,6 +828,11 @@ func (v Value) Kind() ValueKind {
 	case Callable:
 		return KindCallable
 	case Object:
+		if _, ok := d.(*invalidObject); ok {
+			// An error travelling as a value has its own kind, which is what
+			// the engine reports for it (value/mod.rs:1110).
+			return KindInvalid
+		}
 		// Check ObjectRepr to determine the appropriate kind
 		switch GetObjectRepr(d) {
 		case ObjectReprSeq:
@@ -860,7 +869,7 @@ type callableObjectWrapper struct {
 	obj CallableObject
 }
 
-func (w *callableObjectWrapper) Call(state State, args []Value, kwargs map[string]Value) (Value, error) {
+func (w *callableObjectWrapper) Call(state State, args []Value, kwargs *OrderedMap) (Value, error) {
 	return w.obj.ObjectCall(state, args, kwargs)
 }
 

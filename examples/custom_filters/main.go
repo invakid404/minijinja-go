@@ -21,7 +21,7 @@ func main() {
 	// =========================================
 
 	// A simple filter that reverses a string
-	env.AddFilter("reverse_str", func(state minijinja.FilterState, val value.Value, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
+	env.AddFilter("reverse_str", func(state minijinja.FilterState, val value.Value, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
 		s, ok := val.AsString()
 		if !ok {
 			return value.Undefined(), fmt.Errorf("reverse_str expects a string")
@@ -34,7 +34,7 @@ func main() {
 	})
 
 	// A filter with arguments that wraps text in a tag
-	env.AddFilter("wrap", func(state minijinja.FilterState, val value.Value, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
+	env.AddFilter("wrap", func(state minijinja.FilterState, val value.Value, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
 		s, ok := val.AsString()
 		if !ok {
 			return value.Undefined(), fmt.Errorf("wrap expects a string")
@@ -49,7 +49,7 @@ func main() {
 
 		// Check for class kwarg
 		class := ""
-		if c, ok := kwargs["class"]; ok {
+		if c, ok := kwargs.Get("class"); ok {
 			if cs, ok := c.AsString(); ok {
 				class = fmt.Sprintf(` class="%s"`, cs)
 			}
@@ -99,7 +99,7 @@ func main() {
 	// =========================================
 
 	// A function that returns the current time
-	env.AddFunction("now", func(state *minijinja.State, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
+	env.AddFunction("now", func(state *minijinja.State, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
 		format := time.RFC3339
 		if len(args) > 0 {
 			if f, ok := args[0].AsString(); ok {
@@ -110,7 +110,7 @@ func main() {
 	})
 
 	// A function that creates a greeting
-	env.AddFunction("greet", func(state *minijinja.State, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
+	env.AddFunction("greet", func(state *minijinja.State, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
 		name := "World"
 		if len(args) > 0 {
 			if n, ok := args[0].AsString(); ok {
@@ -120,7 +120,7 @@ func main() {
 
 		// Check for style kwarg
 		style := "formal"
-		if s, ok := kwargs["style"]; ok {
+		if s, ok := kwargs.Get("style"); ok {
 			if sv, ok := s.AsString(); ok {
 				style = sv
 			}

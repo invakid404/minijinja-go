@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	minijinja "github.com/invakid404/minijinja-go/v2"
 	"github.com/invakid404/minijinja-go/v2/pycompat"
@@ -230,7 +231,26 @@ func environmentFor(profile Profile) (*minijinja.Environment, bool) {
 // A panic is an outcome, not a crashed test run: the parked evaluator work
 // recorded panics and hangs in this area, and losing them would understate the
 // divergence surface.
-func RunFork(row Row) (out Outcome) {
+// RowTimeout bounds one row's evaluation on the Go side, matching the Rust
+// harness's bound. A row that does not terminate is an outcome, not a hung
+// run.
+const RowTimeout = 5 * time.Second
+
+// RunFork evaluates a row against this fork, bounded in time.
+func RunFork(row Row) Outcome {
+	done := make(chan Outcome, 1)
+	go func() { done <- runForkRow(row) }()
+	select {
+	case out := <-done:
+		return out
+	case <-time.After(RowTimeout):
+		// The goroutine is left behind; the process exits when the run is
+		// done, and a row that hangs is exactly what this reports.
+		return Outcome{Status: StatusTimeout, Seconds: int(RowTimeout / time.Second)}
+	}
+}
+
+func runForkRow(row Row) (out Outcome) {
 	defer func() {
 		if r := recover(); r != nil {
 			out = Outcome{Status: StatusPanic, Message: fmt.Sprint(r)}

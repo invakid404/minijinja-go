@@ -134,9 +134,9 @@ func TestTemplates(t *testing.T) {
 			}
 
 			// Add get_args function (used by some tests)
-			env.AddFunction("get_args", func(state *State, args []Value, kwargs map[string]Value) (Value, error) {
-				if len(kwargs) > 0 {
-					args = append(args, FromMap(kwargs))
+			env.AddFunction("get_args", func(state *State, args []Value, kwargs *value.OrderedMap) (Value, error) {
+				if kwargs.Len() > 0 {
+					args = append(args, value.FromOrderedMap(kwargs))
 				}
 				return FromSlice(args), nil
 			})

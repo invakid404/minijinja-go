@@ -21,7 +21,7 @@ const templateSource = `{{ translate('GREETING') }}, {{ username }}!
 
 var exampleDir string
 
-func translate(state *minijinja.State, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
+func translate(state *minijinja.State, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
 	if len(args) != 1 {
 		return value.Undefined(), minijinja.NewError(minijinja.ErrMissingArgument, "translate expects a key")
 	}

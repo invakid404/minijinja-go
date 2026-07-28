@@ -24,7 +24,7 @@ func main() {
 	// Add a custom function that accesses the context.Context.
 	// This is useful for accessing request-scoped data like request IDs,
 	// user information, database connections, etc.
-	env.AddFunction("request_id", func(state *minijinja.State, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
+	env.AddFunction("request_id", func(state *minijinja.State, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
 		ctx := state.Context()
 		if id, ok := ctx.Value(requestIDKey{}).(string); ok {
 			return value.FromString(id), nil
@@ -34,7 +34,7 @@ func main() {
 
 	// Add a custom filter that respects context cancellation.
 	// This is important for long-running operations.
-	env.AddFilter("slow_process", func(state minijinja.FilterState, val value.Value, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
+	env.AddFilter("slow_process", func(state minijinja.FilterState, val value.Value, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
 		ctx := state.Context()
 
 		// Simulate a slow operation that checks for cancellation

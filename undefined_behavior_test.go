@@ -51,7 +51,7 @@ func filterUndefinedBehavior(state FilterState) UndefinedBehavior {
 
 func TestLenientUndefinedBehavior(t *testing.T) {
 	env := NewEnvironment()
-	env.AddFilter("test", func(state FilterState, val Value, _ []Value, _ map[string]Value) (Value, error) {
+	env.AddFilter("test", func(state FilterState, val Value, _ []Value, _ *value.OrderedMap) (Value, error) {
 		behavior := filterUndefinedBehavior(state)
 		if behavior != UndefinedLenient {
 			return value.Undefined(), fmt.Errorf("unexpected undefined behavior: %v", behavior)
@@ -116,7 +116,7 @@ func TestStrictUndefinedBehavior(t *testing.T) {
 func TestChainableUndefinedBehavior(t *testing.T) {
 	env := NewEnvironment()
 	env.SetUndefinedBehavior(UndefinedChainable)
-	env.AddFilter("test", func(state FilterState, val Value, _ []Value, _ map[string]Value) (Value, error) {
+	env.AddFilter("test", func(state FilterState, val Value, _ []Value, _ *value.OrderedMap) (Value, error) {
 		behavior := filterUndefinedBehavior(state)
 		if behavior != UndefinedChainable {
 			return value.Undefined(), fmt.Errorf("unexpected undefined behavior: %v", behavior)
