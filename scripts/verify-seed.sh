@@ -59,6 +59,15 @@ FORK_ADDED=(
   # the tests that pin it.  PATCHES.md #10-#30.
   "value/numeric.go"
   "value/numeric_test.go"
+  # Slice 4 (coercion, containers, VM): the comparison, mapping and kind-order
+  # rules ported from the target engine, and the tests that pin them.
+  # PATCHES.md #32-#44.
+  "value/coerce.go"
+  "value/valuecmp.go"
+  "value/orderedmap.go"
+  "value/coercion_fork_test.go"
+  "value/valuecmp_fork_test.go"
+  "value/orderedmap_fork_test.go"
 )
 
 # Derived files this fork intentionally modifies, each with the PATCHES.md entry
@@ -71,15 +80,15 @@ SEMANTIC_DELTA=(
   "internal/lexer/lexer.go"         # #3 Unicode whitespace trimming
   "internal/errors/error.go"        # #6 ErrCannotUnpack, #8 ErrUnknownMethod, #31 empty detail
   "internal_helpers.go"             # #6, #8 re-exports of the new kinds
-  "state.go"                        # #2, #4, #5, #6, #7, #8
+  "state.go"                        # #2, #4-#8; #13, #14, #17, #18, #22
   "minijinja_test.go"               # #2 tests of removed statements
   "template_test.go"                # #2 inherited corpus asserts the gate
   "template_state_test.go"          # #2 block-based state tests
   "environment_api_test.go"         # #2 include-based tests
-  "value/ops.go"                    # #10-#16, #18, #21 operators and comparison
-  "value/value.go"                  # #17, #19, #20 conversions, payloads, rendering
-  "defaults.go"                     # #24 range argument conversion
-  "filters/filters.go"              # #23 int/abs payload dispatch
+  "value/ops.go"                    # #10-#16, #18, #21 operators; #32-#35, #40, #44 comparison, containment, repetition
+  "value/value.go"                  # #17, #19, #20 conversions and payloads; #36-#38, #42, #44 mapping, truthiness, subscripts
+  "defaults.go"                     # #24 range argument conversion; #41 range error class
+  "filters/filters.go"              # #23 int/abs payload dispatch; #36, #43 ordered mappings, reverse
   "tests/tests.go"                  # #25 odd/even/integer at i128 width
 )
 

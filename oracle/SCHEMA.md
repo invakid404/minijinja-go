@@ -67,11 +67,15 @@ through `float64` on the way in.
 
 `cmp_object` is what exercises BoundaryML's sole engine delta. In Rust it
 implements `Object::value_cmp` (compare to a string by canonical value, delegate
-to `custom_cmp` for objects). In Go it implements the closest thing the fork
-offers, `value.ObjectWithCmp`, plus `fmt.Stringer` for display. Both sides
-implement the *same* canonical-value semantics, so any difference the
+to `custom_cmp` for objects). In Go it implements the fork's generic counterpart,
+`value.ObjectWithValueCmp`, plus `value.ObjectWithCmp` and `fmt.Stringer`. Both
+sides implement the *same* canonical-value semantics, so any difference the
 differential reports about them is a statement about comparison dispatch, not
 about the fixture.
+
+A `map` is built with the fork's order-preserving mapping
+(`value.FromOrderedMap`), the counterpart of `Value::from_iter` on the Rust side.
+Declared entry order is therefore part of the fixture on both sides.
 
 ## Harness output (`recorded/rust-<rev>-<lane>.json`)
 

@@ -1,6 +1,7 @@
 package value
 
 import (
+	"bytes"
 	"fmt"
 	"math"
 	"math/big"
@@ -73,13 +74,16 @@ func (v Value) Add(other Value) (Value, error) {
 		return FromFloat(c.af + c.bf), nil
 	}
 
-	// Sequence concatenation
-	if s1, ok := v.AsSlice(); ok {
-		if s2, ok := other.AsSlice(); ok {
+	// Sequence concatenation. An iterable counts as a sequence here — the Rust
+	// engine chains the two iterators and yields a lazy iterable — so adding a
+	// slice to a list works.
+	if isSeqLike(v.Kind()) && isSeqLike(other.Kind()) {
+		s1, s2 := v.Iter(), other.Iter()
+		if s1 != nil && s2 != nil {
 			result := make([]Value, 0, len(s1)+len(s2))
 			result = append(result, s1...)
 			result = append(result, s2...)
-			return FromSlice(result), nil
+			return FromIterator(NewIterator("chain", result)), nil
 		}
 	}
 
@@ -109,6 +113,12 @@ func (v Value) Sub(other Value) (Value, error) {
 }
 
 // Mul performs multiplication.
+//
+// The two repetition branches are container operations rather than arithmetic —
+// the Rust engine handles them before any numeric coercion — so their count is
+// converted with the engine's primitive integer conversion ([Value.AsInt]),
+// which accepts a bool as 0/1 and an integral float. A negative count does not
+// convert there (it is a usize), which the `n >= 0` guards mirror.
 func (v Value) Mul(other Value) (Value, error) {
 	// String repetition. `ops::mul` (ops.rs:304-315) commits to this arm as soon
 	// as EITHER operand is a string, and reports a count it cannot read as a
@@ -126,17 +136,15 @@ func (v Value) Mul(other Value) (Value, error) {
 		return FromString(strings.Repeat(str.mustString(), int(n))), nil
 	}
 
-	// Sequence/Iterator repetition (seq * n)
-	if n, ok := other.AsInt(); ok {
-		if v.Kind() == KindSeq || v.Kind() == KindIterable {
-			return repeatIterable(v, n)
-		}
+	// Sequence/Iterator repetition, the same way round: the engine commits to
+	// this arm on the operand KIND, so a count it cannot read is reported as a
+	// bad count rather than falling through to numeric multiplication and
+	// reporting the operand kinds as unsupported.
+	if v.Kind() == KindSeq || v.Kind() == KindIterable {
+		return repeatIterable(v, other)
 	}
-	// Sequence/Iterator repetition (n * seq)
-	if n, ok := v.AsInt(); ok {
-		if other.Kind() == KindSeq || other.Kind() == KindIterable {
-			return repeatIterable(other, n)
-		}
+	if other.Kind() == KindSeq || other.Kind() == KindIterable {
+		return repeatIterable(other, v)
 	}
 
 	// Numeric multiplication: `ops::mul` (ops.rs:304-333).
@@ -181,8 +189,9 @@ func (v Value) mustString() string {
 	return s
 }
 
-func repeatIterable(seq Value, n int64) (Value, error) {
-	if n < 0 {
+func repeatIterable(seq Value, count Value) (Value, error) {
+	n, ok := count.AsInt()
+	if !ok || n < 0 {
 		return Undefined(), fmt.Errorf("sequences and iterables can only be multiplied with integers")
 	}
 	if _, ok := seq.Len(); !ok {
@@ -198,7 +207,10 @@ func repeatIterable(seq Value, n int64) (Value, error) {
 	for i := int64(0); i < n; i++ {
 		result = append(result, items...)
 	}
-	return FromSlice(result), nil
+	// A repeated sequence is a lazy iterable, like a slice and like sequence
+	// concatenation. It renders as a list but is not a sequence, which
+	// `is sequence` observes.
+	return FromIterator(NewIterator("repeat", result)), nil
 }
 
 // Div performs division.
@@ -316,15 +328,31 @@ func (v Value) Pow(other Value) (Value, error) {
 }
 
 // Equal returns true if two values are equal.
+//
+// This follows the Rust engine's PartialEq for Value exactly
+// (boundaryml/minijinja@8cfc770 value/mod.rs): identical-repr fast paths, then
+// comparison coercion (which is non-lossy and has no number/string rule), then
+// the generic value_cmp hook from either operand, then container and object
+// comparison by kind.
 func (v Value) Equal(other Value) bool {
-	// Undefined is only equal to undefined
-	if v.IsUndefined() || other.IsUndefined() {
-		return v.IsUndefined() && other.IsUndefined()
+	// Fast paths for identical reprs, matching Rust's first match arms. A pair
+	// that is NOT both none or both undefined deliberately falls through rather
+	// than answering false, so it can still reach the value_cmp hook below.
+	// Bytes need their own arm because coercion has no rule for them.
+	switch {
+	case v.IsNone() || other.IsNone():
+		if v.IsNone() && other.IsNone() {
+			return true
+		}
+	case v.IsUndefined() || other.IsUndefined():
+		if v.IsUndefined() && other.IsUndefined() {
+			return true
+		}
 	}
-
-	// None is only equal to none
-	if v.IsNone() || other.IsNone() {
-		return v.IsNone() && other.IsNone()
+	if b1, ok := v.data.([]byte); ok {
+		if b2, ok := other.data.([]byte); ok {
+			return bytes.Equal(b1, b2)
+		}
 	}
 
 	// Numbers, bools and strings all reach the engine's PartialEq fallthrough,
@@ -349,39 +377,64 @@ func (v Value) Equal(other Value) bool {
 		return c.as == c.bs
 	}
 
-	// Sequence comparison
-	if seq1, ok := v.AsSlice(); ok {
-		if seq2, ok := other.AsSlice(); ok {
-			if len(seq1) != len(seq2) {
-				return false
-			}
-			for i := range seq1 {
-				if !seq1[i].Equal(seq2[i]) {
-					return false
-				}
-			}
-			return true
-		}
-		return false
+	// The generic value_cmp hook, tried from the left operand and then from the
+	// right for commutativity. This is BoundaryML's engine delta.
+	if cmp, ok := valueCmpBothWays(v, other, false); ok {
+		return cmp == 0
 	}
 
-	// Map comparison
-	if m1, ok := v.AsMap(); ok {
-		if m2, ok := other.AsMap(); ok {
-			if len(m1) != len(m2) {
-				return false
+	return v.containerEqual(other)
+}
+
+// containerEqual is the object/container arm of equality: what Rust reaches once
+// coercion and value_cmp have both declined.
+func (v Value) containerEqual(other Value) bool {
+	if obj1, ok := v.AsObject(); ok {
+		if obj2, ok := other.AsObject(); ok {
+			if obj1 == obj2 {
+				return true
 			}
-			for k, val1 := range m1 {
-				if val2, exists := m2[k]; !exists || !val1.Equal(val2) {
-					return false
-				}
+			if cmp, ok := CompareObjects(obj1, obj2); ok {
+				return cmp == 0
 			}
-			return true
 		}
-		return false
 	}
 
-	return false
+	switch k1, k2 := v.Kind(), other.Kind(); {
+	case k1 == KindMap && k2 == KindMap:
+		keys1, _ := v.MapKeys()
+		keys2, _ := other.MapKeys()
+		if len(keys1) != len(keys2) {
+			return false
+		}
+		for _, k := range keys1 {
+			val1, ok1 := mapLookup(v, k)
+			val2, ok2 := mapLookup(other, k)
+			if !ok1 || !ok2 || !val1.Equal(val2) {
+				return false
+			}
+		}
+		return true
+	case isSeqLike(k1) && isSeqLike(k2):
+		// A sequence and an iterable with the same items are equal: Rust
+		// compares their iterators, not their reprs.
+		items1, items2 := v.Iter(), other.Iter()
+		if len(items1) != len(items2) {
+			return false
+		}
+		for i := range items1 {
+			if !items1[i].Equal(items2[i]) {
+				return false
+			}
+		}
+		return true
+	case isPlainLike(k1) && isPlainLike(k2):
+		// Rust's own comment calls this a terrible fallback, but it is the
+		// behaviour: two plain objects compare by their rendering.
+		return v.String() == other.String()
+	default:
+		return false
+	}
 }
 
 // UncomparableNumbers is the value [Value.Compare] panics with when two numbers
@@ -419,46 +472,47 @@ func (u UncomparableNumbers) Error() string {
 }
 
 // Compare returns -1 if v < other, 0 if equal, 1 if v > other.
-// Unlike Equal, Compare uses kind ordering first (like Rust's Ord).
 //
-// It PANICS with [UncomparableNumbers] on the one input the engine panics on;
-// see that type.
+// This follows the Rust engine's Ord for Value (boundaryml/minijinja@8cfc770
+// value/mod.rs). Three consequences are worth naming because they differ from a
+// naive implementation:
+//
+//   - The generic value_cmp hook runs before kind ordering, so an object can
+//     order itself against a string or a number.
+//   - Floats are ordered with a total order (f64::total_cmp), not with `<`. NaN
+//     is therefore ordered rather than unordered, and -0.0 sorts below 0.0 even
+//     though they are equal.
+//   - It PANICS with [UncomparableNumbers] on the one input the engine panics
+//     on; see that type.
+//
+// ok is false only for a pair the engine has no rule for at all, which is the
+// position where Rust's implementation is unreachable.
 func (v Value) Compare(other Value) (int, bool) {
-	// Compare by kind first (like Rust)
-	// Kind order: Undefined < None < Bool < Number < String < Bytes < Seq < Map
-	kindOrder := func(k ValueKind) int {
-		switch k {
-		case KindUndefined:
-			return 0
-		case KindNone:
-			return 1
-		case KindBool:
-			return 2
-		case KindNumber:
-			return 3
-		case KindString:
-			return 4
-		case KindBytes:
-			return 5
-		case KindSeq:
-			return 6
-		case KindMap:
-			return 7
-		default:
-			return 8
-		}
+	// Before kind ordering, so cross-type object comparison is possible.
+	if cmp, ok := valueCmpBothWays(v, other, true); ok {
+		return cmp, true
 	}
 
-	k1, k2 := kindOrder(v.Kind()), kindOrder(other.Kind())
-	if k1 < k2 {
-		return -1, true
-	}
-	if k1 > k2 {
+	if k1, k2 := kindOrder(v.Kind()), kindOrder(other.Kind()); k1 != k2 {
+		if k1 < k2 {
+			return -1, true
+		}
 		return 1, true
 	}
 
-	// Same kind - do value comparison.
-	//
+	// Same kind. Kinds with no payload to compare are equal to each other.
+	if v.IsNone() && other.IsNone() {
+		return 0, true
+	}
+	if v.IsUndefined() && other.IsUndefined() {
+		return 0, true
+	}
+	if b1, ok := v.data.([]byte); ok {
+		if b2, ok := other.data.([]byte); ok {
+			return bytes.Compare(b1, b2), true
+		}
+	}
+
 	// Bools, numbers and strings reach the engine's `Ord` fallthrough,
 	// `ops::coerce(self, other, false)` (value/mod.rs:634-637). Integers are
 	// ordered in i128 rather than through float64, and floats are ordered by
@@ -493,62 +547,163 @@ func (v Value) Compare(other Value) (int, bool) {
 		return strings.Compare(c.as, c.bs), true
 	}
 
-	// Sequence comparison (lexicographic)
-	if seq1, ok := v.AsSlice(); ok {
-		if seq2, ok := other.AsSlice(); ok {
-			minLen := len(seq1)
-			if len(seq2) < minLen {
-				minLen = len(seq2)
-			}
-			for i := 0; i < minLen; i++ {
-				if cmp, ok := seq1[i].Compare(seq2[i]); ok && cmp != 0 {
-					return cmp, true
-				}
-			}
-			if len(seq1) < len(seq2) {
-				return -1, true
-			}
-			if len(seq1) > len(seq2) {
-				return 1, true
-			}
-			return 0, true
-		}
-	}
-
-	// Object comparison using ObjectWithCmp
-	if obj1, ok := v.AsObject(); ok {
-		if obj2, ok := other.AsObject(); ok {
-			return CompareObjects(obj1, obj2)
-		}
-	}
-
-	return 0, false
+	return v.containerCompare(other)
 }
 
-// Contains checks if v contains other.
-func (v Value) Contains(other Value) bool {
-	switch d := v.data.(type) {
-	case string:
-		if s, ok := other.AsString(); ok {
-			return strings.Contains(d, s)
-		}
-	case safeString:
-		if s, ok := other.AsString(); ok {
-			return strings.Contains(string(d), s)
-		}
-	case []Value:
-		for _, item := range d {
-			if item.Equal(other) {
-				return true
+// containerCompare is the object/container arm of ordering.
+func (v Value) containerCompare(other Value) (int, bool) {
+	if obj1, ok := v.AsObject(); ok {
+		if obj2, ok := other.AsObject(); ok {
+			if obj1 == obj2 {
+				return 0, true
+			}
+			if cmp, ok := CompareObjects(obj1, obj2); ok {
+				return cmp, true
 			}
 		}
+	}
+
+	switch k1, k2 := v.Kind(), other.Kind(); {
+	case k1 == KindMap && k2 == KindMap:
+		// Ordering compares key/value pairs in iteration order. Rust documents
+		// that this makes the result depend on insertion order and accepts it
+		// rather than paying to sort.
+		keys1, _ := v.MapKeys()
+		keys2, _ := other.MapKeys()
+		for i := 0; i < len(keys1) && i < len(keys2); i++ {
+			if cmp := strings.Compare(keys1[i], keys2[i]); cmp != 0 {
+				return cmp, true
+			}
+			val1, _ := mapLookup(v, keys1[i])
+			val2, _ := mapLookup(other, keys2[i])
+			if cmp, ok := val1.Compare(val2); ok && cmp != 0 {
+				return cmp, true
+			}
+		}
+		return compareLengths(len(keys1), len(keys2)), true
+	case isSeqLike(k1) && isSeqLike(k2):
+		items1, items2 := v.Iter(), other.Iter()
+		for i := 0; i < len(items1) && i < len(items2); i++ {
+			if cmp, ok := items1[i].Compare(items2[i]); ok && cmp != 0 {
+				return cmp, true
+			}
+		}
+		return compareLengths(len(items1), len(items2)), true
+	case isPlainLike(k1) && isPlainLike(k2):
+		return strings.Compare(v.String(), other.String()), true
+	default:
+		return 0, false
+	}
+}
+
+func compareLengths(a, b int) int {
+	switch {
+	case a < b:
+		return -1
+	case a > b:
+		return 1
+	default:
+		return 0
+	}
+}
+
+// isSeqLike reports whether a kind is compared by iterating its items. A
+// sequence and an iterable are interchangeable here, which is why range(3)
+// equals [0, 1, 2].
+func isSeqLike(k ValueKind) bool {
+	return k == KindSeq || k == KindIterable
+}
+
+// isPlainLike reports whether a kind is compared by its rendering. The Rust
+// engine has no callable kind — a function is a plain object — so a callable
+// belongs here too.
+func isPlainLike(k ValueKind) bool {
+	return k == KindPlain || k == KindCallable
+}
+
+// mapLookup reads one entry of a mapping, whatever backs it.
+func mapLookup(v Value, key string) (Value, bool) {
+	switch d := v.data.(type) {
+	case *OrderedMap:
+		return d.Get(key)
 	case map[string]Value:
-		if s, ok := other.AsString(); ok {
-			_, exists := d[s]
-			return exists
+		val, ok := d[key]
+		return val, ok
+	}
+	got := v.GetItem(FromString(key))
+	if got.IsUndefined() {
+		return got, false
+	}
+	return got, true
+}
+
+// Contains reports whether v contains other.
+//
+// It answers false rather than reporting an error when v cannot hold values at
+// all. Use [Value.TryContains] to get the engine's behaviour, which is to raise:
+// the `in` operator must not silently answer false for `1 in 5`.
+func (v Value) Contains(other Value) bool {
+	got, err := v.TryContains(other)
+	if err != nil {
+		return false
+	}
+	return got
+}
+
+// TryContains reports whether v contains other, following the Rust engine's
+// `contains` (boundaryml/minijinja@8cfc770 value/ops.rs).
+//
+// The rules are asymmetric on purpose:
+//
+//   - An undefined container holds nothing: false, not an error.
+//   - A string container stringifies a non-string needle, so `1 in '1'` is true.
+//   - A mapping tests its keys; a sequence or iterable tests its items by
+//     equality (and therefore reaches the value_cmp hook).
+//   - Anything else is an error, because it is not a container.
+func (v Value) TryContains(other Value) (bool, error) {
+	if v.IsUndefined() {
+		return false, nil
+	}
+	if s, ok := v.AsString(); ok {
+		if needle, ok := other.AsString(); ok {
+			return strings.Contains(s, needle), nil
+		}
+		return strings.Contains(s, other.String()), nil
+	}
+	switch v.Kind() {
+	case KindMap:
+		if keys, ok := v.MapKeys(); ok {
+			needle, isStr := other.AsString()
+			if !isStr {
+				// A mapping is keyed by string here, so a non-string key can
+				// never be present. The Rust engine looks the key up as a
+				// Value, which for a string-keyed map has the same answer.
+				return false, nil
+			}
+			for _, k := range keys {
+				if k == needle {
+					return true, nil
+				}
+			}
+		}
+		return false, nil
+	case KindSeq, KindIterable:
+		for _, item := range v.Iter() {
+			if item.Equal(other) {
+				return true, nil
+			}
+		}
+		return false, nil
+	case KindPlain, KindCallable:
+		// A plain object holds nothing, but it is still a container as far as
+		// the operator is concerned: Rust answers false rather than raising.
+		if _, ok := v.AsObject(); ok {
+			return false, nil
 		}
 	}
-	return false
+	// Everything else, bytes included, is not a container: the Rust engine's
+	// containment check only knows strings and objects.
+	return false, fmt.Errorf("cannot perform a containment check on this value")
 }
 
 // Concat performs the tilde (~) string concatenation.

@@ -53,7 +53,13 @@ jobs:
             internal/parser/features_test.go \
             value/numeric.go \
             value/numeric_test.go \
-            numeric_contract_test.go)"
+            numeric_contract_test.go \
+            value/coerce.go \
+            value/valuecmp.go \
+            value/orderedmap.go \
+            value/coercion_fork_test.go \
+            value/valuecmp_fork_test.go \
+            value/orderedmap_fork_test.go)"
           if [ -n "$unformatted" ]; then
             echo "these files need gofmt:"
             echo "$unformatted"

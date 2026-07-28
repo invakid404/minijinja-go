@@ -2,18 +2,6 @@
   "schema_version": 1,
   "entries": [
     {
-      "id": "cmp/int-in-string",
-      "class": "engine",
-      "summary": "Containment coercion: Rust stringifies the left operand for a string container, so 1 in '1' is true; the Go port only matches string operands.",
-      "rust_signatures": [
-        "ok|true|true"
-      ],
-      "go_signatures": [
-        "ok|false|false"
-      ],
-      "slice": "4 coercion, containers, VM operations"
-    },
-    {
       "id": "str/lower-dotted-capital-i",
       "class": "engine",
       "summary": "Rust str::to_lowercase applies full Unicode case mapping, lowering U+0130 to i + U+0307; Go's strings.ToLower applies simple per-rune mapping and drops the combining dot.",
@@ -38,78 +26,6 @@
       "slice": "5 builtins and pycompat"
     },
     {
-      "id": "container/map-render-insertion-order",
-      "class": "engine",
-      "summary": "BAML builds the engine with preserve_order so maps display in insertion order; the Go port's map value sorts keys (value/value.go:936-946).",
-      "rust_signatures": [
-        "ok|-|{\"b\": 1, \"a\": 2}"
-      ],
-      "go_signatures": [
-        "ok|-|{\"a\": 2, \"b\": 1}"
-      ],
-      "slice": "4 coercion, containers, VM operations"
-    },
-    {
-      "id": "container/map-loop-insertion-order",
-      "class": "engine",
-      "summary": "The same ordering difference observed through iteration: rendered prompt bytes depend on map order, so this is not display-only.",
-      "rust_signatures": [
-        "ok|-|b=1;a=2;"
-      ],
-      "go_signatures": [
-        "ok|-|a=2;b=1;"
-      ],
-      "slice": "4 coercion, containers, VM operations"
-    },
-    {
-      "id": "valuecmp/object-eq-string",
-      "class": "engine",
-      "summary": "The #597 enum fence in generic form. BoundaryML's engine delta asks an object's value_cmp before ordinary equality; the fork has no such hook, only object-to-object ObjectCmp.",
-      "rust_signatures": [
-        "ok|true|true"
-      ],
-      "go_signatures": [
-        "ok|false|false"
-      ],
-      "slice": "2 BAML profile / value-model foundation (generic value_cmp API)"
-    },
-    {
-      "id": "valuecmp/string-eq-object",
-      "class": "engine",
-      "summary": "Reverse operand order of the same fence: Rust retries value_cmp from the right-hand operand for commutativity.",
-      "rust_signatures": [
-        "ok|true|true"
-      ],
-      "go_signatures": [
-        "ok|false|false"
-      ],
-      "slice": "2 BAML profile / value-model foundation (generic value_cmp API)"
-    },
-    {
-      "id": "valuecmp/string-in-object-list",
-      "class": "engine",
-      "summary": "Containment reaches the same equality dispatch, so 'RED' in [Color.RED] is false on the fork.",
-      "rust_signatures": [
-        "ok|true|true"
-      ],
-      "go_signatures": [
-        "ok|false|false"
-      ],
-      "slice": "2 BAML profile / value-model foundation (generic value_cmp API)"
-    },
-    {
-      "id": "valuecmp/object-eq-object",
-      "class": "engine",
-      "summary": "Even object-to-object equality fails: the fork dispatches ObjectCmp from Value.Compare (value/ops.go:420-425) but Value.Equal never reaches it, so two objects with the same canonical value compare unequal.",
-      "rust_signatures": [
-        "ok|true|true"
-      ],
-      "go_signatures": [
-        "ok|false|false"
-      ],
-      "slice": "2 BAML profile / value-model foundation (generic value_cmp API)"
-    },
-    {
       "id": "err/go-only-urlencode-filter",
       "class": "engine",
       "summary": "urlencode is a Go-port default (defaults.go:13-130) but BAML does not enable the urlencode feature, so the engine rejects it. A Go-only extra must not become a supported BAML behaviour.",
@@ -120,6 +36,18 @@
         "ok|-|a%20b"
       ],
       "slice": "5 builtins and pycompat"
+    },
+    {
+      "id": "container/dict-function-kwargs-order",
+      "class": "engine",
+      "summary": "dict() builds a mapping from keyword arguments, and Rust keeps the order they were written in. This fork passes keyword arguments to functions and filters as a Go map (value.Callable, filters.Filter), so the order is lost at the call boundary, before the function can preserve it. Ordered map values fixed every other mapping surface; this one needs the callable signature to carry an ordered mapping.",
+      "rust_signatures": [
+        "ok|-|{\"b\": 1, \"a\": 2}"
+      ],
+      "go_signatures": [
+        "ok|-|{\"a\": 2, \"b\": 1}"
+      ],
+      "slice": "5 builtins and pycompat (keyword-argument plumbing)"
     }
   ]
 }

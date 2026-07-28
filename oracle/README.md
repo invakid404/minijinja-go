@@ -163,6 +163,16 @@ Running the *Rust harness* on both architectures is what surfaced that: it
 disagreed with itself on exactly those two rows. A defect in the fixture, not in
 either engine.
 
+**`coercion.json`** — 256 rows for the coercion, comparison, container and VM
+class: equality, ordering and containment over a cross-product of typed operands
+**in both operand orders**; truthiness, `and`/`or`/`not`, ternaries, `~` and `is`
+tests; the generic `value_cmp` hook from either side; ordered-mapping iteration,
+display, `items`, `reverse` and JSON; subscript and slice edges (bools, negative
+steps, bounds past either end, inverted ranges, non-integer bounds, the i64
+float boundary); `range`; and the display form of every container shape. The rows
+the fork agrees on are as load-bearing as the red ones: they are what makes a
+regression in this class fail.
+
 ### Engine profiles
 
 `trim_blocks`, `lstrip_blocks` and `keep_trailing_newline` cannot be reached
