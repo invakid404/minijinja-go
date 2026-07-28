@@ -53,6 +53,12 @@ FORK_ADDED=(
   # Slice 6: the engine's one documented fault, pinned in the root module.
   # PATCHES.md #9.
   "engine_contract_test.go"
+  # Slice 3: the error-form contract, pinned in the root module.  PATCHES.md #31.
+  "numeric_contract_test.go"
+  # Slice 3 (numeric core): the exact model of the engine's numeric core, and
+  # the tests that pin it.  PATCHES.md #10-#30.
+  "value/numeric.go"
+  "value/numeric_test.go"
 )
 
 # Derived files this fork intentionally modifies, each with the PATCHES.md entry
@@ -63,13 +69,18 @@ SEMANTIC_DELTA=(
   "internal/parser/parser.go"       # #2 statement gate, #8 message wording
   "internal/parser/parser_test.go"  # #2 gated corpus entries are asserted
   "internal/lexer/lexer.go"         # #3 Unicode whitespace trimming
-  "internal/errors/error.go"        # #6 ErrCannotUnpack, #8 ErrUnknownMethod
+  "internal/errors/error.go"        # #6 ErrCannotUnpack, #8 ErrUnknownMethod, #31 empty detail
   "internal_helpers.go"             # #6, #8 re-exports of the new kinds
   "state.go"                        # #2, #4, #5, #6, #7, #8
   "minijinja_test.go"               # #2 tests of removed statements
   "template_test.go"                # #2 inherited corpus asserts the gate
   "template_state_test.go"          # #2 block-based state tests
   "environment_api_test.go"         # #2 include-based tests
+  "value/ops.go"                    # #10-#16, #18, #21 operators and comparison
+  "value/value.go"                  # #17, #19, #20 conversions, payloads, rendering
+  "defaults.go"                     # #24 range argument conversion
+  "filters/filters.go"              # #23 int/abs payload dispatch
+  "tests/tests.go"                  # #25 odd/even/integer at i128 width
 )
 
 ALLOW_SEMANTIC_DELTA=0

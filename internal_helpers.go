@@ -35,6 +35,14 @@ func NewError(kind ErrorKind, msg string) *Error {
 	return errors.NewError(kind, msg)
 }
 
+// NewErrorWithoutDetail creates an error with no detail at all, which renders
+// as just the kind — the engine's `Error::from(ErrorKind)`. An empty message
+// passed to NewError is a different thing: it is a detail that happens to be
+// empty, and it still renders its separator.
+func NewErrorWithoutDetail(kind ErrorKind) *Error {
+	return errors.NewErrorWithoutDetail(kind)
+}
+
 func valueToNative(v value.Value) interface{} {
 	switch v.Kind() {
 	case value.KindUndefined, value.KindNone:

@@ -52,6 +52,9 @@ const (
 	VerdictMissing Verdict = "missing-harness-result"
 )
 
+// NumericLane is the corpus lane slice 3 owns.
+const NumericLane = "numeric"
+
 // RowResult is the differential outcome for one corpus row.
 type RowResult struct {
 	// Corpus is the name of the corpus file the row came from.
@@ -62,6 +65,16 @@ type RowResult struct {
 	Verdict Verdict
 	Class   Class
 	Note    string
+}
+
+// IsNumericClass reports whether a row belongs to the numeric core, the class
+// slice 3 must make byte-exact.
+//
+// It is the whole numeric lane plus the arithmetic rows the seed lane already
+// carried, so a numeric regression cannot escape the gate by living in the
+// older lane.
+func (r RowResult) IsNumericClass() bool {
+	return r.Corpus == NumericLane || r.Row.Surface == "arithmetic"
 }
 
 // CorpusRun records which engine outcomes one corpus file was compared against.
@@ -96,12 +109,26 @@ func (r *Report) Counts() map[Verdict]int {
 }
 
 // Failures returns the results that must fail a differential run.
+//
+// A DECLARED divergence normally passes: those are the permanent regression
+// rows the later semantic slices exist to close, and the ledger is what keeps
+// them visible. A lane whose slice has landed is the exception. Slice 3's exit
+// gate is byte-exactness with no decline, so a numeric row that is merely
+// "known" is a merge blocker rather than a record — otherwise declaring a
+// numeric mismatch in the ledger would be enough to turn the gate green, which
+// is precisely how a decline would slip through.
+//
+// A later slice adds its own lane here the same way as it lands.
 func (r *Report) Failures() []RowResult {
 	var out []RowResult
 	for _, res := range r.Results {
 		switch res.Verdict {
 		case VerdictNewDivergence, VerdictLedgerStale, VerdictMissing:
 			out = append(out, res)
+		case VerdictKnownDivergence:
+			if res.IsNumericClass() {
+				out = append(out, res)
+			}
 		}
 	}
 	return out

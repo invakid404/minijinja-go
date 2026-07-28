@@ -233,6 +233,18 @@ type Error struct {
 
 	// Cause is the wrapped source error, if any.
 	Cause error
+
+	// noDetail marks an error that has no detail AT ALL, as opposed to one
+	// whose detail happens to be empty.
+	//
+	// The engine has both: most errors are `Error::new(kind, detail)` and print
+	// `kind: detail`, but a few are `Error::from(kind)` and print just `kind`.
+	// The two are not distinguishable by looking at Message, because a detail
+	// can legitimately be empty at runtime — `GetTemplate("")` builds a
+	// not-found error whose detail is the (empty) template name, and that must
+	// keep printing `template not found: `. So the distinction is carried
+	// explicitly, and only [NewErrorWithoutDetail] sets it.
+	noDetail bool
 }
 
 // Error returns a formatted error message string.
@@ -248,13 +260,21 @@ type Error struct {
 //	undefined variable: name 'foo' is not defined (at line 12)
 //	invalid operation: cannot add string and number
 func (e *Error) Error() string {
+	// `kind: detail`, or just `kind` for the engine's detail-less
+	// `Error::from(kind)` form. Only an error built by NewErrorWithoutDetail
+	// takes the second branch: an empty Message is still a detail, and still
+	// prints its separator, because a detail can be empty at runtime.
+	detail := ": " + e.Message
+	if e.noDetail {
+		detail = ""
+	}
 	if e.Name != "" && e.Span != nil {
-		return fmt.Sprintf("%s: %s (at %s line %d)", e.Kind, e.Message, e.Name, e.Span.StartLine)
+		return fmt.Sprintf("%s%s (at %s line %d)", e.Kind, detail, e.Name, e.Span.StartLine)
 	}
 	if e.Span != nil {
-		return fmt.Sprintf("%s: %s (at line %d)", e.Kind, e.Message, e.Span.StartLine)
+		return fmt.Sprintf("%s%s (at line %d)", e.Kind, detail, e.Span.StartLine)
 	}
-	return fmt.Sprintf("%s: %s", e.Kind, e.Message)
+	return fmt.Sprintf("%s%s", e.Kind, detail)
 }
 
 // Format implements fmt.Formatter to provide detailed error output with debug info.
@@ -299,6 +319,17 @@ func (e *Error) Format(f fmt.State, verb rune) {
 //	}
 func NewError(kind ErrorKind, msg string) *Error {
 	return &Error{Kind: kind, Message: msg}
+}
+
+// NewErrorWithoutDetail creates an error that has no detail at all, which
+// renders as just the kind.
+//
+// This is the engine's `Error::from(ErrorKind)` (as opposed to
+// `Error::new(kind, detail)`), and it is deliberately a separate constructor
+// rather than `NewError(kind, "")`: an empty detail is a detail, and errors
+// built from dynamic input can legitimately have one.
+func NewErrorWithoutDetail(kind ErrorKind) *Error {
+	return &Error{Kind: kind, noDetail: true}
 }
 
 // WithSpan adds source location information to an error.

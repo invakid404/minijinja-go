@@ -427,6 +427,27 @@ func FromInt(v int64) Value {
 	return Value{data: v}
 }
 
+// FromUint64 creates a Value from a uint64.
+//
+// This is the engine's `Value::from(u64)`, i.e. ValueRepr::U64, and it is a
+// distinct representation from [FromInt]'s ValueRepr::I64 rather than a
+// convenience wrapper. The two behave identically everywhere except one place:
+// the LOSSLESS coercion that equality and ordering use against a float casts
+// the float back to the operand's own type, and the two types saturate
+// differently. `FromUint64(math.MaxInt64)` is therefore NOT equal to
+// `2^63` as a float, while `FromInt(math.MaxInt64)` is — which is exactly what
+// the engine does, and why an integer LITERAL (lexed as u64) answers
+// differently from a host-supplied i64 of the same magnitude.
+//
+// Values past i64::MAX are carried as a big integer tagged with the same repr,
+// so the whole u64 range is representable.
+func FromUint64(v uint64) Value {
+	if v > math.MaxInt64 {
+		return Value{data: bigIntValue{Int: new(big.Int).SetUint64(v), repr: reprU64}}
+	}
+	return Value{data: u64Value(v)}
+}
+
 // FromFloat creates a Value from a float64.
 //
 // Floating-point values support arithmetic operations. Special values
@@ -474,9 +495,15 @@ func FromSafeString(v string) Value {
 // safeString is an internal wrapper for strings that should not be escaped.
 type safeString string
 
-// bigIntValue wraps a big.Int for large integer values.
+// bigIntValue wraps a big.Int for an integer outside the int64 range.
+//
+// repr records which of the engine's integer ValueRepr variants this payload
+// stands for. It is load-bearing rather than descriptive: see the "integer
+// payload model" section of numeric.go for the two behaviours that depend on
+// the variant and not on the magnitude.
 type bigIntValue struct {
 	*big.Int
+	repr intRepr
 }
 
 // Iterator represents a lazy iterator value.
@@ -501,10 +528,17 @@ func (i *Iterator) Items() []Value {
 	return i.items
 }
 
-// FromBigInt creates a Value from a big.Int for arbitrary-precision integers.
+// FromBigInt creates a Value from a big.Int for integers outside int64.
 //
-// Big integers are used when values exceed the range of int64. They support
-// the same arithmetic operations as regular integers.
+// This is the constructor for an integer LITERAL, which the engine lexes as a
+// `u64` when it fits and a `u128` otherwise (compiler/lexer.rs:481-491), so the
+// resulting value carries the matching ValueRepr.
+//
+// The engine's integer range is [i128::MIN, u128::MAX] and nothing wider
+// exists in it. A magnitude outside that range has no counterpart variant, so
+// it is carried as a u128 and every conversion refuses it — arithmetic on it
+// is an invalid operation rather than a silently wider answer than the engine
+// could ever produce.
 //
 // Example usage:
 //
@@ -513,7 +547,14 @@ func (i *Iterator) Items() []Value {
 //	val := FromBigInt(large)
 //	// In template: {{ val + 1 }}
 func FromBigInt(v *big.Int) Value {
-	return Value{data: bigIntValue{v}}
+	if v.IsInt64() && v.Sign() >= 0 {
+		// A non-negative literal that fits int64 is still a ValueRepr::U64.
+		return Value{data: u64Value(v.Int64())}
+	}
+	if v.IsInt64() {
+		return FromInt(v.Int64())
+	}
+	return Value{data: bigIntValue{Int: v, repr: reprForLiteral(v)}}
 }
 
 // FromBytes creates a Value from a byte slice.
@@ -683,7 +724,9 @@ func fromReflectValue(rv reflect.Value) Value {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		return FromInt(rv.Int())
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		return FromInt(int64(rv.Uint()))
+		// ValueRepr::U64, as `Value::from(u64)` gives. Routing this through
+		// FromInt also wrapped a u64 past i64::MAX into a negative number.
+		return FromUint64(rv.Uint())
 	case reflect.Float32, reflect.Float64:
 		f := rv.Float()
 		// Convert whole number floats to integers for consistency with JSON parsing
@@ -767,7 +810,7 @@ func (v Value) Kind() ValueKind {
 		return KindNone
 	case bool:
 		return KindBool
-	case int64, float64, bigIntValue:
+	case int64, u64Value, float64, bigIntValue:
 		return KindNumber
 	case string, safeString:
 		return KindString
@@ -865,6 +908,8 @@ func (v Value) IsTrue() bool {
 		return d
 	case int64:
 		return d != 0
+	case u64Value:
+		return d != 0
 	case float64:
 		return d != 0 && !math.IsNaN(d)
 	case string:
@@ -898,23 +943,12 @@ func (v Value) String() string {
 		return "false"
 	case int64:
 		return fmt.Sprintf("%d", d)
+	case u64Value:
+		return fmt.Sprintf("%d", int64(d))
 	case bigIntValue:
 		return d.String()
 	case float64:
-		// Match Jinja2's float formatting
-		if math.IsInf(d, 1) {
-			return "inf"
-		}
-		if math.IsInf(d, -1) {
-			return "-inf"
-		}
-		if math.IsNaN(d) {
-			return "nan"
-		}
-		if d == math.Trunc(d) && math.Abs(d) < 1e15 {
-			return fmt.Sprintf("%.1f", d)
-		}
-		return fmt.Sprintf("%g", d)
+		return formatFloat(d)
 	case string:
 		return d
 	case safeString:
@@ -963,13 +997,15 @@ func (v Value) Repr() string {
 		return "false"
 	case int64:
 		return fmt.Sprintf("%d", d)
+	case u64Value:
+		return fmt.Sprintf("%d", int64(d))
 	case bigIntValue:
 		return d.String()
 	case float64:
-		if d == math.Trunc(d) && math.Abs(d) < 1e15 {
-			return fmt.Sprintf("%.1f", d)
-		}
-		return fmt.Sprintf("%g", d)
+		// `Debug for ValueRepr` (value/mod.rs:444) delegates to Rust's own f64
+		// Debug, which is the same shortest round-tripping decimal the Display
+		// arm builds, with the ".0" already forced on an integral value.
+		return formatFloat(d)
 	case string:
 		return fmt.Sprintf("%q", d)
 	case safeString:
@@ -1017,9 +1053,17 @@ func (v Value) IsSafe() bool {
 
 // IsActualInt returns true if the value is stored as an integer (not a float).
 // This distinguishes 42 from 42.0.
+//
+// It is the engine's `Value::is_integer` (value/mod.rs:1138-1143): a question
+// about the payload, true for every integer ValueRepr including the ones past
+// int64, and false for a bool or an integral float.
 func (v Value) IsActualInt() bool {
-	_, ok := v.data.(int64)
-	return ok
+	switch v.data.(type) {
+	case int64, u64Value, bigIntValue:
+		return true
+	default:
+		return false
+	}
 }
 
 // IsActualFloat returns true if the value is stored as a float64.
@@ -1087,13 +1131,39 @@ func (v Value) AsString() (string, bool) {
 }
 
 // AsInt returns the integer value if it is one.
+//
+// This is the engine's `impl TryFrom<Value> for i64` (argtypes.rs:410-433),
+// the conversion every integer-consuming operator, filter, test, index and
+// slice bound in the engine goes through. Three parts of it are easy to get
+// wrong and all three are load-bearing:
+//
+//   - A bool converts: false is 0 and true is 1.
+//   - A float converts only when it round-trips through Rust's SATURATING
+//     float-to-int cast. `2.0` converts to 2; `1.5` does not convert at all;
+//     2^63 converts to i64::MAX because the saturated value casts back to
+//     exactly 2^63; 2^64 does not convert.
+//   - The conversion is deterministic on every architecture. Go's
+//     `int64(float64)` is implementation-defined out of range — it saturates
+//     on arm64 and wraps on amd64 — so the saturation is explicit.
+//
+// The engine's own i128 conversion, [Value.AsBigInt], is what an integer past
+// int64 needs; AsInt refuses it, exactly as `i64::try_from` does.
 func (v Value) AsInt() (int64, bool) {
 	switch d := v.data.(type) {
+	case bool:
+		if d {
+			return 1, true
+		}
+		return 0, true
 	case int64:
 		return d, true
+	case u64Value:
+		return int64(d), true
 	case float64:
-		if d == math.Trunc(d) {
-			return int64(d), true
+		return f64ToI64(d)
+	case bigIntValue:
+		if d.Int.IsInt64() {
+			return d.Int.Int64(), true
 		}
 		return 0, false
 	default:
@@ -1102,12 +1172,21 @@ func (v Value) AsInt() (int64, bool) {
 }
 
 // AsFloat returns the float value if it is numeric.
+//
+// This is the engine's `impl TryFrom<Value> for f64` (argtypes.rs:461-467):
+// every integer repr converts, rounding to nearest with ties to even, and a
+// bool does not. (`ops::as_f64`, which arithmetic and comparison use, is a
+// different function and does accept a bool.)
 func (v Value) AsFloat() (float64, bool) {
 	switch d := v.data.(type) {
 	case int64:
 		return float64(d), true
+	case u64Value:
+		return float64(d), true
 	case float64:
 		return d, true
+	case bigIntValue:
+		return bigToF64(d.Int), true
 	default:
 		return 0, false
 	}
@@ -1356,6 +1435,13 @@ func (v Value) Clone() Value {
 }
 
 // Raw returns the underlying Go value.
+//
+// The engine's integer repr is an internal coercion detail and is not exposed
+// here: a ValueRepr::U64 inside int64 range is returned as a plain int64, so
+// `Raw` answers the same thing for `{{ 5 }}` and for FromInt(5).
 func (v Value) Raw() any {
+	if d, ok := v.data.(u64Value); ok {
+		return int64(d)
+	}
 	return v.data
 }

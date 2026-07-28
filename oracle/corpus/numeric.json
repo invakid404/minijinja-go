@@ -1,0 +1,1458 @@
+{
+  "schema_version": 1,
+  "rows": [
+    {
+      "id": "num/add-2pow53-plus-one",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "9007199254740993 + 1",
+      "expect": "bytes",
+      "notes": "2^53+1 is not representable in f64. The engine adds in checked i128; routing the operands through float64 collapsed 2^53+1 onto 2^53 and answered 9007199254740992."
+    },
+    {
+      "id": "num/sub-2pow53-adjacent",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "9007199254740993 - 9007199254740992",
+      "expect": "bytes",
+      "notes": "Both operands share one f64 image, so the float path answered 0."
+    },
+    {
+      "id": "num/add-2pow53-chain",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "9007199254740992 + 1 + 1 + 1",
+      "expect": "bytes",
+      "notes": "A chain that crosses 2^53 one operator at a time rather than at a single literal."
+    },
+    {
+      "id": "num/sub-i64max",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "9223372036854775807 - 1",
+      "expect": "bytes",
+      "notes": "i64::MAX rounds UP to 2^63 as an f64, so int64(f) was out of range: the port rendered 9223372036854775807 on arm64 and -9223372036854775808 on amd64 for the same input. This is the row that made the differential run on both architectures."
+    },
+    {
+      "id": "num/add-i64max-widens",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "9223372036854775807 + 1",
+      "expect": "bytes",
+      "notes": "The sum leaves i64 and the engine keeps it as ValueRepr::I128 rather than wrapping."
+    },
+    {
+      "id": "num/mul-2pow62-by-two",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "4611686018427387904 * 2",
+      "expect": "bytes",
+      "notes": "2^62 * 2 = 2^63, one past i64::MAX."
+    },
+    {
+      "id": "num/mul-i64max-squared",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "9223372036854775807 * 9223372036854775807",
+      "expect": "bytes",
+      "notes": "A product that needs the full i128 width."
+    },
+    {
+      "id": "num/i64min-literal",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "0 - 9223372036854775808",
+      "expect": "bytes",
+      "notes": "i64::MIN. The literal itself is a u64 to the lexer; only the subtraction makes it negative."
+    },
+    {
+      "id": "num/i128max-literal",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "170141183460469231731687303715884105727",
+      "expect": "bytes",
+      "notes": "i128::MAX renders exactly rather than through an f64."
+    },
+    {
+      "id": "num/add-i128max-overflow",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "170141183460469231731687303715884105727 + 1",
+      "expect": "error",
+      "notes": "checked_add returns None past i128::MAX, which is an error and never a wrap."
+    },
+    {
+      "id": "num/mul-i128max-overflow",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "170141183460469231731687303715884105727 * 2",
+      "expect": "error",
+      "notes": "checked_mul past i128::MAX."
+    },
+    {
+      "id": "num/sub-i128-min-overflow",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "(0 - 170141183460469231731687303715884105727 - 1) - 1",
+      "expect": "error",
+      "notes": "checked_sub past i128::MIN."
+    },
+    {
+      "id": "num/i128-min",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "(0 - 170141183460469231731687303715884105727 - 1)",
+      "expect": "bytes",
+      "notes": "i128::MIN, which has no literal form."
+    },
+    {
+      "id": "num/u128-max-literal",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "340282366920938463463374607431768211455",
+      "expect": "bytes",
+      "notes": "u128::MAX is a ValueRepr::U128 literal: the widest integer the engine can hold."
+    },
+    {
+      "id": "num/u128-pair-wrapping",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "340282366920938463463374607431768211455 + 340282366920938463463374607431768211455",
+      "expect": "bytes",
+      "notes": "coerce's (U128, U128) arm casts BOTH operands to i128 by wrapping, so u128::MAX becomes -1 and the sum is -2. Every other pairing of a u128 past i128::MAX refuses instead."
+    },
+    {
+      "id": "num/u128-mixed-refuses",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "340282366920938463463374607431768211455 + 1",
+      "expect": "error",
+      "notes": "A u128 past i128::MAX paired with anything else goes through i128::try_from, which fails, so coerce yields nothing and the operator is an impossible operation."
+    },
+    {
+      "id": "num/sub-2pow127-refuses",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "0 - 170141183460469231731687303715884105728",
+      "expect": "error",
+      "notes": "2^127 is a u128 literal one past i128::MAX, so pairing it with anything that is not also a u128 refuses -- there is no i128 to subtract it from. i128::MIN is reachable only by arithmetic, which num/i128-min does."
+    },
+    {
+      "id": "num/neg-i128-min-overflow",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "-(0 - 170141183460469231731687303715884105727 - 1)",
+      "expect": "error",
+      "notes": "neg is checked_mul(-1), so negating i128::MIN overflows."
+    },
+    {
+      "id": "num/floordiv-neg-denominator",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "7 // -2",
+      "expect": "bytes",
+      "notes": "checked_div_euclid, not floor division: 7 = -2*-3 + 1, so the answer is -3 where math.Floor(7/-2) is -4."
+    },
+    {
+      "id": "num/floordiv-neg-numerator",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "-7 // 2",
+      "expect": "bytes",
+      "notes": "Euclidean and floored division agree here; the row pins that the fix did not overshoot."
+    },
+    {
+      "id": "num/floordiv-both-negative",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "-7 // -2",
+      "expect": "bytes",
+      "notes": "-7 = -2*4 + 1 under Euclidean division."
+    },
+    {
+      "id": "num/floordiv-float-neg-denominator",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "7.0 // -2.0",
+      "expect": "bytes",
+      "notes": "f64::div_euclid, which is also not math.Floor."
+    },
+    {
+      "id": "num/floordiv-float-neg-numerator",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "-7.0 // 2.0",
+      "expect": "bytes",
+      "notes": "The float arm where the two conventions agree."
+    },
+    {
+      "id": "num/floordiv-by-zero",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "1 // 0",
+      "expect": "error",
+      "notes": "Integer floor division by zero is an error."
+    },
+    {
+      "id": "num/floordiv-float-by-zero",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "1.0 // 0.0",
+      "expect": "bytes",
+      "notes": "The float arm yields infinity instead."
+    },
+    {
+      "id": "num/floordiv-i128-min-by-neg-one",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "(0 - 170141183460469231731687303715884105727 - 1) // (0 - 1)",
+      "expect": "error",
+      "notes": "The one overflowing Euclidean division."
+    },
+    {
+      "id": "num/rem-neg-denominator",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "7 % -2",
+      "expect": "bytes",
+      "notes": "checked_rem_euclid is never negative."
+    },
+    {
+      "id": "num/rem-both-negative",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "-7 % -2",
+      "expect": "bytes",
+      "notes": "Euclidean remainder of two negatives."
+    },
+    {
+      "id": "num/rem-large",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "9007199254740993 % 2",
+      "expect": "bytes",
+      "notes": "A remainder that needs the operand to survive past 2^53."
+    },
+    {
+      "id": "num/rem-by-zero",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "1 % 0",
+      "expect": "error",
+      "notes": "Integer remainder by zero is an error."
+    },
+    {
+      "id": "num/rem-float",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "-7.5 % 2",
+      "expect": "bytes",
+      "notes": "The float arm is the ordinary truncated remainder, so it keeps the dividend's sign."
+    },
+    {
+      "id": "num/rem-float-by-zero",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "1.0 % 0.0",
+      "expect": "bytes",
+      "notes": "The float arm yields NaN rather than erroring."
+    },
+    {
+      "id": "num/div-int-exact",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "7 / 2",
+      "expect": "bytes",
+      "notes": "True division is always f64, even for two integers."
+    },
+    {
+      "id": "num/div-int-whole",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "4 / 2",
+      "expect": "bytes",
+      "notes": "Two integers that divide evenly still produce a float."
+    },
+    {
+      "id": "num/div-neg-by-zero",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "-1 / 0",
+      "expect": "bytes",
+      "notes": "Division by zero is -inf, not an error."
+    },
+    {
+      "id": "num/div-zero-by-zero",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "0 / 0",
+      "expect": "bytes",
+      "notes": "0/0 is NaN."
+    },
+    {
+      "id": "num/div-large-exact",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "9007199254740993 / 1",
+      "expect": "bytes",
+      "notes": "Division reads both operands as f64, so the integer's f64 image is what renders."
+    },
+    {
+      "id": "num/pow-negative-exponent",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "2 ** (0 - 1)",
+      "expect": "error",
+      "notes": "The exponent is a u32, so a negative one fails to convert and the operator errors rather than falling back to floating point."
+    },
+    {
+      "id": "num/pow-float-exponent",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "2 ** 0.5",
+      "expect": "bytes",
+      "notes": "A float on either side puts the whole operation in powf."
+    },
+    {
+      "id": "num/pow-int-float-integral-exponent",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "2 ** 3.0",
+      "expect": "bytes",
+      "notes": "An INTEGRAL float exponent still makes this a float operation: the payload decides, not the value."
+    },
+    {
+      "id": "num/pow-left-assoc",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "2 ** 3 ** 2",
+      "expect": "bytes",
+      "notes": "The engine's ** is left-associative, so this is (2**3)**2."
+    },
+    {
+      "id": "num/pow-overflow",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "2 ** 127",
+      "expect": "error",
+      "notes": "2^127 is one past i128::MAX."
+    },
+    {
+      "id": "num/pow-i128-edge",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "2 ** 126",
+      "expect": "bytes",
+      "notes": "The largest power of two the engine can hold."
+    },
+    {
+      "id": "num/pow-zero-zero",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "0 ** 0",
+      "expect": "bytes",
+      "notes": "checked_pow with a zero exponent is 1 for every base."
+    },
+    {
+      "id": "num/pow-exponent-past-u32",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "2 ** 4294967296",
+      "expect": "error",
+      "notes": "An exponent past u32::MAX fails to convert."
+    },
+    {
+      "id": "num/pow-neg-base",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "(0 - 2) ** 3",
+      "expect": "bytes",
+      "notes": "Exact integer exponentiation of a negative base."
+    },
+    {
+      "id": "num/pow-neg-base-even",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "(0 - 2) ** 64",
+      "expect": "bytes",
+      "notes": "A negative base raised past i64."
+    },
+    {
+      "id": "num/pow-float-base-2pow63",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "2.0 ** 63",
+      "expect": "bytes",
+      "notes": "The #649 round-10 case. The port read BOTH operands through AsInt, which accepts an integral float, so this became int64(float64(2^63)) -- MinInt64 on amd64. The engine keeps a float base in f64."
+    },
+    {
+      "id": "num/pow-promoted-composition",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "(2.0 ** 52) * (2.0 ** 11)",
+      "expect": "bytes",
+      "notes": "The #649 round-11 case: two individually in-range promoted powers meeting a later integer op."
+    },
+    {
+      "id": "num/float-literal-rounds-to-2pow49",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "562949953421312.000000000000001 * 16384",
+      "expect": "bytes",
+      "notes": "The #649 round-12 case. At 2^49 an f64 ULP is 0.125, so the grammar-legal tail rounds entirely away and the payload is exactly 2^49."
+    },
+    {
+      "id": "num/float-literal-rounding-equal",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "562949953421312.000000000000001 == 562949953421312.0",
+      "expect": "boolean",
+      "notes": "Same payload, two spellings."
+    },
+    {
+      "id": "num/float-2pow53-plus-one-payload",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "9007199254740993.0 == 9007199254740992.0",
+      "expect": "boolean",
+      "notes": "Two float literals that ARE the same f64: unlike their integer spellings, these are genuinely equal."
+    },
+    {
+      "id": "num/int-plus-integral-float",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "2.0 + 1",
+      "expect": "bytes",
+      "notes": "A float operand keeps the operation in f64 in both engines."
+    },
+    {
+      "id": "num/rem-integral-float",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "4.0 % 3",
+      "expect": "bytes",
+      "notes": "Rem's operands go through coerce, so an integral float stays a float and the result is 1.0 rather than 1."
+    },
+    {
+      "id": "num/rem-integral-float-both",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "4.0 % 3.0",
+      "expect": "bytes",
+      "notes": "The same through two float literals."
+    },
+    {
+      "id": "num/float-mul-large",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "999999999999999.0 * 999999999999999.0",
+      "expect": "bytes",
+      "notes": "A non-promoting float op that must NOT start behaving like integer arithmetic."
+    },
+    {
+      "id": "num/float-add-int",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "1.5 + 1",
+      "expect": "bytes",
+      "notes": "The ordinary mixed case."
+    },
+    {
+      "id": "num/eq-2pow53-adjacent",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "9007199254740993 == 9007199254740992",
+      "expect": "boolean",
+      "notes": "Comparison is i128 too: two integers one apart at 2^53 are distinct, where comparing their f64 images said equal."
+    },
+    {
+      "id": "num/lt-2pow53-adjacent",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "9007199254740992 \u003c 9007199254740993",
+      "expect": "boolean",
+      "notes": "The ordering form of the same question."
+    },
+    {
+      "id": "num/eq-int-float-lossy",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "9007199254740993 == 9007199254740992.0",
+      "expect": "boolean",
+      "notes": "Equality coerces LOSSLESSLY: the integer does not survive the round trip to f64, so the two never reach a comparison and the answer is false."
+    },
+    {
+      "id": "num/eq-i64max-adjacent",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "9223372036854775807 == 9223372036854775806",
+      "expect": "boolean",
+      "notes": "The i64 edge, exactly."
+    },
+    {
+      "id": "num/eq-bigint-int",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "9223372036854775808 == 9223372036854775807",
+      "expect": "boolean",
+      "notes": "One operand is past i64 and the other is not; both go up to i128."
+    },
+    {
+      "id": "num/lt-bigint",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "9223372036854775807 \u003c 9223372036854775808",
+      "expect": "boolean",
+      "notes": "Ordering across the i64 boundary."
+    },
+    {
+      "id": "num/eq-neg-zero",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "-0.0 == 0.0",
+      "expect": "boolean",
+      "notes": "IEEE-754 equality: negative zero equals zero."
+    },
+    {
+      "id": "num/lt-neg-zero",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "-0.0 \u003c 0.0",
+      "expect": "boolean",
+      "notes": "Ordering is f64_total_cmp, a TOTAL order in which negative zero sorts BELOW zero even though the two are equal."
+    },
+    {
+      "id": "num/lt-nan",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "1.0 \u003c ('nan'|float)",
+      "expect": "boolean",
+      "notes": "Under the total order a positive NaN sorts above every number."
+    },
+    {
+      "id": "num/gt-nan",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "('nan'|float) \u003e 1.0",
+      "expect": "boolean",
+      "notes": "The reverse direction of the same total order."
+    },
+    {
+      "id": "num/lt-neg-nan",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "(-('nan'|float)) \u003c 1.0",
+      "expect": "boolean",
+      "notes": "And a negative NaN sorts below every number, which is what makes the order total rather than merely NaN-tolerant."
+    },
+    {
+      "id": "num/render-parsed-nan",
+      "surface": "rendering",
+      "form": "expression",
+      "source": "'nan'|float",
+      "expect": "bytes",
+      "notes": "The NaN the ordering rows use, so its own rendering is pinned rather than assumed."
+    },
+    {
+      "id": "num/eq-nan",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "(0.0 / 0.0) == (0.0 / 0.0)",
+      "expect": "boolean",
+      "notes": "Equality is still IEEE-754: NaN is equal to nothing."
+    },
+    {
+      "id": "num/eq-bool-int",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "true == 1",
+      "expect": "boolean",
+      "notes": "A bool converts to an integer for comparison."
+    },
+    {
+      "id": "num/eq-bool-float",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "true == 1.0",
+      "expect": "boolean",
+      "notes": "And to a float when a float is involved."
+    },
+    {
+      "id": "num/lt-bool-int",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "false \u003c 1",
+      "expect": "boolean",
+      "notes": "Ordering a bool against a number."
+    },
+    {
+      "id": "num/eq-i64max-vs-2pow63-float",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "9223372036854775807 == 9223372036854775808.0",
+      "expect": "boolean",
+      "notes": "i64::MAX is a U64 literal. Its f64 image is 2^63, which casts back through u64 as 2^63 and does not round-trip, so the two never reach a comparison. Held as an I64 the same magnitude would saturate back to i64::MAX and answer true."
+    },
+    {
+      "id": "num/eq-u64max-vs-2pow64-float",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "18446744073709551615 == 18446744073709551616.0",
+      "expect": "boolean",
+      "notes": "The mirror image, and the control that keeps the row above from being satisfiable by a model that simply refuses near a boundary: u64::MAX's f64 image is 2^64, which SATURATES back through u64 to u64::MAX, so it does round-trip and the two are equal."
+    },
+    {
+      "id": "num/eq-i64max-self",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "9223372036854775807 == 9223372036854775807",
+      "expect": "boolean",
+      "notes": "Two U64 literals at the same boundary still compare exactly, so the repr did not become a refusal."
+    },
+    {
+      "id": "num/lt-i64max-vs-2pow63-float",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "9223372036854775807 \u003c 9223372036854775808.0",
+      "expect": "boolean",
+      "notes": "The ordering form of the U64 window: the coercion fails, so this is the panic case rather than an answer."
+    },
+    {
+      "id": "num/lt-int-float-lossy",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "9007199254740993 \u003c 1.5",
+      "expect": "boolean",
+      "notes": "An integer past 2^53 ordered against a float: the coercion is lossless and fails, and the engine panics."
+    },
+    {
+      "id": "num/gt-float-int-lossy",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "1.5 \u003e 9007199254740993",
+      "expect": "boolean",
+      "notes": "The same with the operands the other way round."
+    },
+    {
+      "id": "num/lt-u128-vs-int",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "340282366920938463463374607431768211455 \u003c 1",
+      "expect": "boolean",
+      "notes": "A u128 past i128::MAX ordered against anything that is not also a u128: i128::try_from fails, so the coercion yields nothing and the same panic follows."
+    },
+    {
+      "id": "num/sort-uncomparable",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "[9007199254740993, 1.5]|sort",
+      "expect": "bytes",
+      "notes": "The panic is reached through a builtin as well as through an operator, because sort orders with the same comparison."
+    },
+    {
+      "id": "num/eq-u128-vs-int",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "340282366920938463463374607431768211455 == 1",
+      "expect": "boolean",
+      "notes": "EQUALITY over the same pair is answerable: PartialEq handles the failed coercion safely where Ord does not."
+    },
+    {
+      "id": "num/add-bool-int",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "true + 1",
+      "expect": "bytes",
+      "notes": "i128::try_from accepts a bool, so a bool is an integer to every arithmetic operator."
+    },
+    {
+      "id": "num/add-bool-bool",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "true + true",
+      "expect": "bytes",
+      "notes": "Two bools add as integers."
+    },
+    {
+      "id": "num/div-bool",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "true / 2",
+      "expect": "bytes",
+      "notes": "Division reads both operands with as_f64, which also accepts a bool."
+    },
+    {
+      "id": "num/neg-bool",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "-true",
+      "expect": "error",
+      "notes": "neg is guarded on ValueKind::Number, which a bool is not."
+    },
+    {
+      "id": "num/mul-bool-int",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "true * 3",
+      "expect": "bytes",
+      "notes": "A bool multiplies as 1."
+    },
+    {
+      "id": "num/int-filter-1e30",
+      "surface": "conversion",
+      "form": "expression",
+      "source": "1e30|int",
+      "expect": "bytes",
+      "notes": "The int filter's float arm is a saturating f64-\u003ei128 cast. The port used int64(float64), which is implementation-defined out of range: it saturated on arm64 and wrapped on amd64."
+    },
+    {
+      "id": "num/int-filter-1e40",
+      "surface": "conversion",
+      "form": "expression",
+      "source": "1e40|int",
+      "expect": "bytes",
+      "notes": "Past i128::MAX the cast saturates rather than wrapping."
+    },
+    {
+      "id": "num/int-filter-neg-1e40",
+      "surface": "conversion",
+      "form": "expression",
+      "source": "-1e40|int",
+      "expect": "bytes",
+      "notes": "And saturates at i128::MIN going the other way."
+    },
+    {
+      "id": "num/int-filter-nan",
+      "surface": "conversion",
+      "form": "expression",
+      "source": "(0.0 / 0.0)|int",
+      "expect": "bytes",
+      "notes": "NaN casts to 0."
+    },
+    {
+      "id": "num/int-filter-inf",
+      "surface": "conversion",
+      "form": "expression",
+      "source": "(1.0 / 0.0)|int",
+      "expect": "bytes",
+      "notes": "Infinity saturates."
+    },
+    {
+      "id": "num/int-filter-2pow63-float",
+      "surface": "conversion",
+      "form": "expression",
+      "source": "9223372036854775808.0|int",
+      "expect": "bytes",
+      "notes": "Exactly 2^63 as a float."
+    },
+    {
+      "id": "num/int-filter-string-i128",
+      "surface": "conversion",
+      "form": "expression",
+      "source": "\"170141183460469231731687303715884105727\"|int",
+      "expect": "bytes",
+      "notes": "A string parses as an i128, not an i64."
+    },
+    {
+      "id": "num/int-filter-string-float",
+      "surface": "conversion",
+      "form": "expression",
+      "source": "\"1e30\"|int",
+      "expect": "bytes",
+      "notes": "A string that is not an integer falls back to the float parse and the same saturating cast."
+    },
+    {
+      "id": "num/int-filter-bool",
+      "surface": "conversion",
+      "form": "expression",
+      "source": "true|int",
+      "expect": "bytes",
+      "notes": "A bool converts to 1."
+    },
+    {
+      "id": "num/int-filter-bigint",
+      "surface": "conversion",
+      "form": "expression",
+      "source": "9223372036854775808|int",
+      "expect": "bytes",
+      "notes": "An integer past i64 passes through unchanged."
+    },
+    {
+      "id": "num/abs-i64-min",
+      "surface": "conversion",
+      "form": "expression",
+      "source": "(0 - 9223372036854775807 - 1)|abs",
+      "expect": "bytes",
+      "notes": "abs of i64::MIN widens to i128 rather than overflowing."
+    },
+    {
+      "id": "num/abs-i128-min",
+      "surface": "conversion",
+      "form": "expression",
+      "source": "(0 - 170141183460469231731687303715884105727 - 1)|abs",
+      "expect": "error",
+      "notes": "abs of i128::MIN has nowhere to widen to."
+    },
+    {
+      "id": "num/abs-bool",
+      "surface": "conversion",
+      "form": "expression",
+      "source": "true|abs",
+      "expect": "error",
+      "notes": "abs dispatches on the payload, and a bool is not a number."
+    },
+    {
+      "id": "num/abs-float",
+      "surface": "conversion",
+      "form": "expression",
+      "source": "(0.0 - 2.5)|abs",
+      "expect": "bytes",
+      "notes": "The float arm of abs."
+    },
+    {
+      "id": "num/abs-bigint",
+      "surface": "conversion",
+      "form": "expression",
+      "source": "(0 - 170141183460469231731687303715884105727)|abs",
+      "expect": "bytes",
+      "notes": "abs of a negative i128."
+    },
+    {
+      "id": "num/round-bigint",
+      "surface": "conversion",
+      "form": "expression",
+      "source": "9223372036854775808|round",
+      "expect": "bytes",
+      "notes": "round returns an integer payload unchanged."
+    },
+    {
+      "id": "num/float-filter-bigint",
+      "surface": "conversion",
+      "form": "expression",
+      "source": "9223372036854775808|float",
+      "expect": "bytes",
+      "notes": "An integer past i64 converts to f64 by round-to-nearest."
+    },
+    {
+      "id": "num/index-float-key",
+      "surface": "container",
+      "form": "expression",
+      "source": "xs[1.0]",
+      "inputs": [
+        {
+          "name": "xs",
+          "value": {
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              },
+              {
+                "kind": "int",
+                "value": 3
+              }
+            ],
+            "kind": "list"
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "An integral float indexes, because the engine's i64 conversion accepts it."
+    },
+    {
+      "id": "num/index-frac-key",
+      "surface": "container",
+      "form": "expression",
+      "source": "xs[1.5]",
+      "inputs": [
+        {
+          "name": "xs",
+          "value": {
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              },
+              {
+                "kind": "int",
+                "value": 3
+              }
+            ],
+            "kind": "list"
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "A fractional index converts to nothing and the subscript is undefined."
+    },
+    {
+      "id": "num/index-2pow63-float-key",
+      "surface": "container",
+      "form": "expression",
+      "source": "xs[9223372036854775808.0]",
+      "inputs": [
+        {
+          "name": "xs",
+          "value": {
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              },
+              {
+                "kind": "int",
+                "value": 3
+              }
+            ],
+            "kind": "list"
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "2^63 as a float converts to i64::MAX by saturation, which is out of range for the sequence."
+    },
+    {
+      "id": "num/index-bool-key",
+      "surface": "container",
+      "form": "expression",
+      "source": "xs[true]",
+      "inputs": [
+        {
+          "name": "xs",
+          "value": {
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              },
+              {
+                "kind": "int",
+                "value": 3
+              }
+            ],
+            "kind": "list"
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "A bool indexes as 1."
+    },
+    {
+      "id": "num/slice-float-start",
+      "surface": "container",
+      "form": "expression",
+      "source": "xs[1.0:]|list",
+      "inputs": [
+        {
+          "name": "xs",
+          "value": {
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              },
+              {
+                "kind": "int",
+                "value": 3
+              }
+            ],
+            "kind": "list"
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "An integral float is a valid slice bound."
+    },
+    {
+      "id": "num/slice-frac-start",
+      "surface": "container",
+      "form": "expression",
+      "source": "xs[1.5:]|list",
+      "inputs": [
+        {
+          "name": "xs",
+          "value": {
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              },
+              {
+                "kind": "int",
+                "value": 3
+              }
+            ],
+            "kind": "list"
+          }
+        }
+      ],
+      "expect": "error",
+      "notes": "The #649 round-15 case. A bound that does not convert is an ERROR; leaving it unset made it indistinguishable from an omitted bound, so the port sliced the whole sequence."
+    },
+    {
+      "id": "num/slice-frac-stop",
+      "surface": "container",
+      "form": "expression",
+      "source": "xs[:1.5]|list",
+      "inputs": [
+        {
+          "name": "xs",
+          "value": {
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              },
+              {
+                "kind": "int",
+                "value": 3
+              }
+            ],
+            "kind": "list"
+          }
+        }
+      ],
+      "expect": "error",
+      "notes": "The same for the stop bound."
+    },
+    {
+      "id": "num/slice-frac-step",
+      "surface": "container",
+      "form": "expression",
+      "source": "xs[::1.5]|list",
+      "inputs": [
+        {
+          "name": "xs",
+          "value": {
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              },
+              {
+                "kind": "int",
+                "value": 3
+              }
+            ],
+            "kind": "list"
+          }
+        }
+      ],
+      "expect": "error",
+      "notes": "The same for the step."
+    },
+    {
+      "id": "num/slice-string-start",
+      "surface": "container",
+      "form": "expression",
+      "source": "xs['x':]|list",
+      "inputs": [
+        {
+          "name": "xs",
+          "value": {
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              },
+              {
+                "kind": "int",
+                "value": 3
+              }
+            ],
+            "kind": "list"
+          }
+        }
+      ],
+      "expect": "error",
+      "notes": "A string bound does not convert either."
+    },
+    {
+      "id": "num/slice-2pow63-float-start",
+      "surface": "container",
+      "form": "expression",
+      "source": "xs[9223372036854775808.0:]|list",
+      "inputs": [
+        {
+          "name": "xs",
+          "value": {
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              },
+              {
+                "kind": "int",
+                "value": 3
+              }
+            ],
+            "kind": "list"
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "A bound that saturates to i64::MAX is valid and simply selects nothing."
+    },
+    {
+      "id": "num/slice-none-bound",
+      "surface": "container",
+      "form": "expression",
+      "source": "xs[none:2]|list",
+      "inputs": [
+        {
+          "name": "xs",
+          "value": {
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              },
+              {
+                "kind": "int",
+                "value": 3
+              }
+            ],
+            "kind": "list"
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "An explicit none bound is the one value the engine treats as absent."
+    },
+    {
+      "id": "num/range-float",
+      "surface": "conversion",
+      "form": "expression",
+      "source": "range(3.0)|list",
+      "expect": "bytes",
+      "notes": "An integral float is a valid range bound."
+    },
+    {
+      "id": "num/range-frac",
+      "surface": "conversion",
+      "form": "expression",
+      "source": "range(1.5)|list",
+      "expect": "error",
+      "notes": "A fractional bound does not convert. The port silently substituted zero and produced an empty range."
+    },
+    {
+      "id": "num/range-bool",
+      "surface": "conversion",
+      "form": "expression",
+      "source": "range(true)|list",
+      "expect": "bytes",
+      "notes": "A bool converts to 1."
+    },
+    {
+      "id": "num/range-huge-float",
+      "surface": "conversion",
+      "form": "expression",
+      "source": "range(1e30)|list",
+      "expect": "error",
+      "notes": "A bound past i64 does not convert; the port's int64(float64) made it architecture-dependent."
+    },
+    {
+      "id": "num/mul-string-repeat-float",
+      "surface": "conversion",
+      "form": "expression",
+      "source": "'ab' * 2.0",
+      "expect": "bytes",
+      "notes": "String repetition reads its count through the same conversion."
+    },
+    {
+      "id": "num/mul-string-repeat-negative",
+      "surface": "conversion",
+      "form": "expression",
+      "source": "'ab' * (0 - 1)",
+      "expect": "error",
+      "notes": "A negative repetition count is an error."
+    },
+    {
+      "id": "num/is-odd-bool",
+      "surface": "conversion",
+      "form": "expression",
+      "source": "true is odd",
+      "expect": "boolean",
+      "notes": "is odd converts through i128, which accepts a bool."
+    },
+    {
+      "id": "num/is-even-bigint",
+      "surface": "conversion",
+      "form": "expression",
+      "source": "9223372036854775808 is even",
+      "expect": "boolean",
+      "notes": "An integer past i64 still decides."
+    },
+    {
+      "id": "num/is-even-2pow63-float",
+      "surface": "conversion",
+      "form": "expression",
+      "source": "9223372036854775808.0 is even",
+      "expect": "boolean",
+      "notes": "The #649 round-13 case: 2^63 as a float converts by SATURATION to i64::MAX, which is odd. The port's int64(float64) gave MinInt64 on amd64, which is even."
+    },
+    {
+      "id": "num/is-integer-bigint",
+      "surface": "conversion",
+      "form": "expression",
+      "source": "9223372036854775808 is integer",
+      "expect": "boolean",
+      "notes": "is integer is a question about the payload, and every integer repr answers true."
+    },
+    {
+      "id": "num/is-integer-bool",
+      "surface": "conversion",
+      "form": "expression",
+      "source": "true is integer",
+      "expect": "boolean",
+      "notes": "A bool is not an integer payload."
+    },
+    {
+      "id": "num/is-integer-integral-float",
+      "surface": "conversion",
+      "form": "expression",
+      "source": "2.0 is integer",
+      "expect": "boolean",
+      "notes": "Nor is an integral float."
+    },
+    {
+      "id": "num/is-float-integral",
+      "surface": "conversion",
+      "form": "expression",
+      "source": "2.0 is float",
+      "expect": "boolean",
+      "notes": "It is a float."
+    },
+    {
+      "id": "num/is-number-bigint",
+      "surface": "conversion",
+      "form": "expression",
+      "source": "9223372036854775808 is number",
+      "expect": "boolean",
+      "notes": "Kind, not repr."
+    },
+    {
+      "id": "num/render-one-third",
+      "surface": "rendering",
+      "form": "expression",
+      "source": "1 / 3",
+      "expect": "bytes",
+      "notes": "Rust renders the shortest decimal that round-trips; Go's %g rendered six significant digits."
+    },
+    {
+      "id": "num/render-int-valued-float",
+      "surface": "rendering",
+      "form": "expression",
+      "source": "4 / 2",
+      "expect": "bytes",
+      "notes": "An integral float renders with a forced .0"
+    },
+    {
+      "id": "num/render-1e300",
+      "surface": "rendering",
+      "form": "expression",
+      "source": "1e300",
+      "expect": "bytes",
+      "notes": "Rust's float Display never uses exponent form."
+    },
+    {
+      "id": "num/render-1e-10",
+      "surface": "rendering",
+      "form": "expression",
+      "source": "1e-10",
+      "expect": "bytes",
+      "notes": "The same going the other way."
+    },
+    {
+      "id": "num/render-nan",
+      "surface": "rendering",
+      "form": "expression",
+      "source": "0.0 / 0.0",
+      "expect": "bytes",
+      "notes": "NaN, capitalized."
+    },
+    {
+      "id": "num/render-inf",
+      "surface": "rendering",
+      "form": "expression",
+      "source": "1.0 / 0.0",
+      "expect": "bytes",
+      "notes": "Positive infinity."
+    },
+    {
+      "id": "num/render-neg-inf",
+      "surface": "rendering",
+      "form": "expression",
+      "source": "-1.0 / 0.0",
+      "expect": "bytes",
+      "notes": "Negative infinity."
+    },
+    {
+      "id": "num/render-neg-zero",
+      "surface": "rendering",
+      "form": "expression",
+      "source": "-0.0",
+      "expect": "bytes",
+      "notes": "Negative zero keeps its sign."
+    },
+    {
+      "id": "num/render-float-epsilon",
+      "surface": "rendering",
+      "form": "expression",
+      "source": "0.1 + 0.2",
+      "expect": "bytes",
+      "notes": "The canonical shortest-round-trip case."
+    },
+    {
+      "id": "num/render-float-in-list",
+      "surface": "rendering",
+      "form": "expression",
+      "source": "[1.5, 2.0, 1 / 3]",
+      "expect": "bytes",
+      "notes": "Floats inside a sequence go through the same formatting."
+    },
+    {
+      "id": "num/render-bigint",
+      "surface": "rendering",
+      "form": "expression",
+      "source": "9223372036854775808 + 0",
+      "expect": "bytes",
+      "notes": "An integer past i64 renders exactly."
+    },
+    {
+      "id": "num/input-int-2pow53-eq",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "big == other",
+      "inputs": [
+        {
+          "name": "big",
+          "value": {
+            "kind": "int",
+            "value": 9007199254740993
+          }
+        },
+        {
+          "name": "other",
+          "value": {
+            "kind": "int",
+            "value": 9007199254740992
+          }
+        }
+      ],
+      "expect": "boolean",
+      "notes": "The same 2^53 question reached through the value model rather than through literals."
+    },
+    {
+      "id": "num/input-float-2pow63-is-even",
+      "surface": "conversion",
+      "form": "expression",
+      "source": "f is even",
+      "inputs": [
+        {
+          "name": "f",
+          "value": {
+            "kind": "float",
+            "value": 9223372036854775808
+          }
+        }
+      ],
+      "expect": "boolean",
+      "notes": "A value-model float at 2^63 reaching a test that converts."
+    },
+    {
+      "id": "num/input-int-i64max-abs",
+      "surface": "conversion",
+      "form": "expression",
+      "source": "big|abs",
+      "inputs": [
+        {
+          "name": "big",
+          "value": {
+            "kind": "int",
+            "value": 9223372036854775807
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "abs over a value-model i64::MAX."
+    },
+    {
+      "id": "num/input-int-i64min-neg",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "-big",
+      "inputs": [
+        {
+          "name": "big",
+          "value": {
+            "kind": "int",
+            "value": -9223372036854775808
+          }
+        }
+      ],
+      "expect": "bytes",
+      "notes": "Negating a value-model i64::MIN widens to i128."
+    },
+    {
+      "id": "num/loop-range-sum",
+      "surface": "arithmetic",
+      "form": "template",
+      "source": "{% for i in range(5) %}{{ i * 9007199254740993 }};{% endfor %}",
+      "expect": "bytes",
+      "notes": "Exact arithmetic driven from a loop, in full-template form."
+    },
+    {
+      "id": "num/template-accumulate",
+      "surface": "arithmetic",
+      "form": "template",
+      "source": "{% set n = 9007199254740992 %}{{ n + 1 }} {{ n + 2 }} {{ n + 1 == n + 2 }}",
+      "expect": "bytes",
+      "notes": "Two sums either side of 2^53 and the comparison between them, all in one template."
+    }
+  ]
+}

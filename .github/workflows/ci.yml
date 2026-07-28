@@ -50,7 +50,10 @@ jobs:
             feature_gate_test.go \
             engine_contract_test.go \
             internal/parser/features.go \
-            internal/parser/features_test.go)"
+            internal/parser/features_test.go \
+            value/numeric.go \
+            value/numeric_test.go \
+            numeric_contract_test.go)"
           if [ -n "$unformatted" ]; then
             echo "these files need gofmt:"
             echo "$unformatted"

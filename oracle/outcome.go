@@ -73,6 +73,11 @@ func (o Outcome) Signature() string {
 	case StatusError:
 		return "error|" + o.Category
 	default:
+		// A panic reduces to just "panic": aborting evaluation is the whole of
+		// its semantic outcome, and the accompanying diagnostic is the host
+		// language runtime's message rather than either engine's. That field is
+		// deliberately not compared here — it is pinned from both sides by
+		// panics_test.go, which also states the contract.
 		return string(o.Status)
 	}
 }

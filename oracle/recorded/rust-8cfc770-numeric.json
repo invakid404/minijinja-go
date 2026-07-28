@@ -1,0 +1,1212 @@
+{
+  "schema_version": 1,
+  "provenance": {
+    "engine_repo": "https://github.com/boundaryml/minijinja",
+    "engine_branch": "value-cmp",
+    "engine_rev": "8cfc770a5dffeda2de5b910d2b9f870d7edeff7c",
+    "engine_features": [
+      "macros",
+      "builtins",
+      "debug",
+      "preserve_order",
+      "adjacent_loop_items",
+      "unicode",
+      "json",
+      "unstable_machinery",
+      "custom_syntax",
+      "deserialization",
+      "serde"
+    ],
+    "harness_version": "1",
+    "os": "macos",
+    "arch": "aarch64",
+    "corpus_sha256": "7f6cd25da9b8f325d2192c10b3e37891ac750bb3c0784760c37ec88b355fcf19"
+  },
+  "results": [
+    {
+      "id": "num/add-2pow53-plus-one",
+      "outcome": {
+        "status": "ok",
+        "render": "9007199254740994",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/sub-2pow53-adjacent",
+      "outcome": {
+        "status": "ok",
+        "render": "1",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/add-2pow53-chain",
+      "outcome": {
+        "status": "ok",
+        "render": "9007199254740995",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/sub-i64max",
+      "outcome": {
+        "status": "ok",
+        "render": "9223372036854775806",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/add-i64max-widens",
+      "outcome": {
+        "status": "ok",
+        "render": "9223372036854775808",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/mul-2pow62-by-two",
+      "outcome": {
+        "status": "ok",
+        "render": "9223372036854775808",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/mul-i64max-squared",
+      "outcome": {
+        "status": "ok",
+        "render": "85070591730234615847396907784232501249",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/i64min-literal",
+      "outcome": {
+        "status": "ok",
+        "render": "-9223372036854775808",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/i128max-literal",
+      "outcome": {
+        "status": "ok",
+        "render": "170141183460469231731687303715884105727",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/add-i128max-overflow",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: unable to calculate 170141183460469231731687303715884105727 + 1 (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "num/mul-i128max-overflow",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: unable to calculate 170141183460469231731687303715884105727 * 2 (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "num/sub-i128-min-overflow",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: unable to calculate -170141183460469231731687303715884105728 - 1 (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "num/i128-min",
+      "outcome": {
+        "status": "ok",
+        "render": "-170141183460469231731687303715884105728",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/u128-max-literal",
+      "outcome": {
+        "status": "ok",
+        "render": "340282366920938463463374607431768211455",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/u128-pair-wrapping",
+      "outcome": {
+        "status": "ok",
+        "render": "-2",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/u128-mixed-refuses",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: tried to use + operator on unsupported types number and number (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "num/sub-2pow127-refuses",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: tried to use - operator on unsupported types number and number (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "num/neg-i128-min-overflow",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: overflow (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "num/floordiv-neg-denominator",
+      "outcome": {
+        "status": "ok",
+        "render": "-3",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/floordiv-neg-numerator",
+      "outcome": {
+        "status": "ok",
+        "render": "-4",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/floordiv-both-negative",
+      "outcome": {
+        "status": "ok",
+        "render": "4",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/floordiv-float-neg-denominator",
+      "outcome": {
+        "status": "ok",
+        "render": "-3.0",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/floordiv-float-neg-numerator",
+      "outcome": {
+        "status": "ok",
+        "render": "-4.0",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/floordiv-by-zero",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: unable to calculate 1 // 0 (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "num/floordiv-float-by-zero",
+      "outcome": {
+        "status": "ok",
+        "render": "inf",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/floordiv-i128-min-by-neg-one",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: unable to calculate -170141183460469231731687303715884105728 // -1 (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "num/rem-neg-denominator",
+      "outcome": {
+        "status": "ok",
+        "render": "1",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/rem-both-negative",
+      "outcome": {
+        "status": "ok",
+        "render": "1",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/rem-large",
+      "outcome": {
+        "status": "ok",
+        "render": "1",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/rem-by-zero",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: unable to calculate 1 % 0 (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "num/rem-float",
+      "outcome": {
+        "status": "ok",
+        "render": "-1.5",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/rem-float-by-zero",
+      "outcome": {
+        "status": "ok",
+        "render": "NaN",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/div-int-exact",
+      "outcome": {
+        "status": "ok",
+        "render": "3.5",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/div-int-whole",
+      "outcome": {
+        "status": "ok",
+        "render": "2.0",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/div-neg-by-zero",
+      "outcome": {
+        "status": "ok",
+        "render": "-inf",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/div-zero-by-zero",
+      "outcome": {
+        "status": "ok",
+        "render": "NaN",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/div-large-exact",
+      "outcome": {
+        "status": "ok",
+        "render": "9007199254740992.0",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/pow-negative-exponent",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: unable to calculate 2 ** -1 (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "num/pow-float-exponent",
+      "outcome": {
+        "status": "ok",
+        "render": "1.4142135623730951",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/pow-int-float-integral-exponent",
+      "outcome": {
+        "status": "ok",
+        "render": "8.0",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/pow-left-assoc",
+      "outcome": {
+        "status": "ok",
+        "render": "64",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/pow-overflow",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: unable to calculate 2 ** 127 (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "num/pow-i128-edge",
+      "outcome": {
+        "status": "ok",
+        "render": "85070591730234615865843651857942052864",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/pow-zero-zero",
+      "outcome": {
+        "status": "ok",
+        "render": "1",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/pow-exponent-past-u32",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: unable to calculate 2 ** 4294967296 (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "num/pow-neg-base",
+      "outcome": {
+        "status": "ok",
+        "render": "-8",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/pow-neg-base-even",
+      "outcome": {
+        "status": "ok",
+        "render": "18446744073709551616",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/pow-float-base-2pow63",
+      "outcome": {
+        "status": "ok",
+        "render": "9223372036854776000.0",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/pow-promoted-composition",
+      "outcome": {
+        "status": "ok",
+        "render": "9223372036854776000.0",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/float-literal-rounds-to-2pow49",
+      "outcome": {
+        "status": "ok",
+        "render": "9223372036854776000.0",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/float-literal-rounding-equal",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "num/float-2pow53-plus-one-payload",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "num/int-plus-integral-float",
+      "outcome": {
+        "status": "ok",
+        "render": "3.0",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/rem-integral-float",
+      "outcome": {
+        "status": "ok",
+        "render": "1.0",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/rem-integral-float-both",
+      "outcome": {
+        "status": "ok",
+        "render": "1.0",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/float-mul-large",
+      "outcome": {
+        "status": "ok",
+        "render": "999999999999998000000000000000.0",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/float-add-int",
+      "outcome": {
+        "status": "ok",
+        "render": "2.5",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/eq-2pow53-adjacent",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "num/lt-2pow53-adjacent",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "num/eq-int-float-lossy",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "num/eq-i64max-adjacent",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "num/eq-bigint-int",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "num/lt-bigint",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "num/eq-neg-zero",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "num/lt-neg-zero",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "num/lt-nan",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "num/gt-nan",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "num/lt-neg-nan",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "num/render-parsed-nan",
+      "outcome": {
+        "status": "ok",
+        "render": "NaN",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/eq-nan",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "num/eq-bool-int",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "num/eq-bool-float",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "num/lt-bool-int",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "num/eq-i64max-vs-2pow63-float",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "num/eq-u64max-vs-2pow64-float",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "num/eq-i64max-self",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "num/lt-i64max-vs-2pow63-float",
+      "outcome": {
+        "status": "panic",
+        "message": "called `Option::unwrap()` on a `None` value"
+      }
+    },
+    {
+      "id": "num/lt-int-float-lossy",
+      "outcome": {
+        "status": "panic",
+        "message": "called `Option::unwrap()` on a `None` value"
+      }
+    },
+    {
+      "id": "num/gt-float-int-lossy",
+      "outcome": {
+        "status": "panic",
+        "message": "called `Option::unwrap()` on a `None` value"
+      }
+    },
+    {
+      "id": "num/lt-u128-vs-int",
+      "outcome": {
+        "status": "panic",
+        "message": "called `Option::unwrap()` on a `None` value"
+      }
+    },
+    {
+      "id": "num/sort-uncomparable",
+      "outcome": {
+        "status": "panic",
+        "message": "called `Option::unwrap()` on a `None` value"
+      }
+    },
+    {
+      "id": "num/eq-u128-vs-int",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "num/add-bool-int",
+      "outcome": {
+        "status": "ok",
+        "render": "2",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/add-bool-bool",
+      "outcome": {
+        "status": "ok",
+        "render": "2",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/div-bool",
+      "outcome": {
+        "status": "ok",
+        "render": "0.5",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/neg-bool",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "num/mul-bool-int",
+      "outcome": {
+        "status": "ok",
+        "render": "3",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/int-filter-1e30",
+      "outcome": {
+        "status": "ok",
+        "render": "1000000000000000019884624838656",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/int-filter-1e40",
+      "outcome": {
+        "status": "ok",
+        "render": "170141183460469231731687303715884105727",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/int-filter-neg-1e40",
+      "outcome": {
+        "status": "ok",
+        "render": "-170141183460469231731687303715884105728",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/int-filter-nan",
+      "outcome": {
+        "status": "ok",
+        "render": "0",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/int-filter-inf",
+      "outcome": {
+        "status": "ok",
+        "render": "170141183460469231731687303715884105727",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/int-filter-2pow63-float",
+      "outcome": {
+        "status": "ok",
+        "render": "9223372036854775808",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/int-filter-string-i128",
+      "outcome": {
+        "status": "ok",
+        "render": "170141183460469231731687303715884105727",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/int-filter-string-float",
+      "outcome": {
+        "status": "ok",
+        "render": "1000000000000000019884624838656",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/int-filter-bool",
+      "outcome": {
+        "status": "ok",
+        "render": "1",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/int-filter-bigint",
+      "outcome": {
+        "status": "ok",
+        "render": "9223372036854775808",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/abs-i64-min",
+      "outcome": {
+        "status": "ok",
+        "render": "9223372036854775808",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/abs-i128-min",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: overflow on abs (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "num/abs-bool",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot get absolute value (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "num/abs-float",
+      "outcome": {
+        "status": "ok",
+        "render": "2.5",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/abs-bigint",
+      "outcome": {
+        "status": "ok",
+        "render": "170141183460469231731687303715884105727",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/round-bigint",
+      "outcome": {
+        "status": "ok",
+        "render": "9223372036854775808",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/float-filter-bigint",
+      "outcome": {
+        "status": "ok",
+        "render": "9223372036854776000.0",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/index-float-key",
+      "outcome": {
+        "status": "ok",
+        "render": "2",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/index-frac-key",
+      "outcome": {
+        "status": "ok",
+        "render": "",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/index-2pow63-float-key",
+      "outcome": {
+        "status": "ok",
+        "render": "",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/index-bool-key",
+      "outcome": {
+        "status": "ok",
+        "render": "2",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/slice-float-start",
+      "outcome": {
+        "status": "ok",
+        "render": "[2, 3]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/slice-frac-start",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot convert number to i64 (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "num/slice-frac-stop",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot convert number to i64 (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "num/slice-frac-step",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot convert number to i64 (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "num/slice-string-start",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot convert string to i64 (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "num/slice-2pow63-float-start",
+      "outcome": {
+        "status": "ok",
+        "render": "[]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/slice-none-bound",
+      "outcome": {
+        "status": "ok",
+        "render": "[1, 2]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/range-float",
+      "outcome": {
+        "status": "ok",
+        "render": "[0, 1, 2]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/range-frac",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot convert number to isize (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "num/range-bool",
+      "outcome": {
+        "status": "ok",
+        "render": "[0]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/range-huge-float",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot convert number to isize (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "num/mul-string-repeat-float",
+      "outcome": {
+        "status": "ok",
+        "render": "abab",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/mul-string-repeat-negative",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: strings can only be multiplied with integers (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "num/is-odd-bool",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "num/is-even-bigint",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "num/is-even-2pow63-float",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "num/is-integer-bigint",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "num/is-integer-bool",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "num/is-integer-integral-float",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "num/is-float-integral",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "num/is-number-bigint",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "num/render-one-third",
+      "outcome": {
+        "status": "ok",
+        "render": "0.3333333333333333",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/render-int-valued-float",
+      "outcome": {
+        "status": "ok",
+        "render": "2.0",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/render-1e300",
+      "outcome": {
+        "status": "ok",
+        "render": "1000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000.0",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/render-1e-10",
+      "outcome": {
+        "status": "ok",
+        "render": "0.0000000001",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/render-nan",
+      "outcome": {
+        "status": "ok",
+        "render": "NaN",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/render-inf",
+      "outcome": {
+        "status": "ok",
+        "render": "inf",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/render-neg-inf",
+      "outcome": {
+        "status": "ok",
+        "render": "-inf",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/render-neg-zero",
+      "outcome": {
+        "status": "ok",
+        "render": "-0.0",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/render-float-epsilon",
+      "outcome": {
+        "status": "ok",
+        "render": "0.30000000000000004",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/render-float-in-list",
+      "outcome": {
+        "status": "ok",
+        "render": "[1.5, 2.0, 0.3333333333333333]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/render-bigint",
+      "outcome": {
+        "status": "ok",
+        "render": "9223372036854775808",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/input-int-2pow53-eq",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "num/input-float-2pow63-is-even",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "num/input-int-i64max-abs",
+      "outcome": {
+        "status": "ok",
+        "render": "9223372036854775807",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/input-int-i64min-neg",
+      "outcome": {
+        "status": "ok",
+        "render": "9223372036854775808",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/loop-range-sum",
+      "outcome": {
+        "status": "ok",
+        "render": "0;9007199254740993;18014398509481986;27021597764222979;36028797018963972;",
+        "boolean": null
+      }
+    },
+    {
+      "id": "num/template-accumulate",
+      "outcome": {
+        "status": "ok",
+        "render": "9007199254740993 9007199254740994 false",
+        "boolean": null
+      }
+    }
+  ]
+}

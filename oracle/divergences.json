@@ -2,56 +2,6 @@
   "schema_version": 1,
   "entries": [
     {
-      "id": "arith/int-add-above-2pow53",
-      "class": "engine",
-      "summary": "Integer addition is laundered through float64 (value/ops.go:37-72), so operands above 2^53 lose precision; Rust does checked i128 arithmetic.",
-      "rust_signatures": [
-        "ok|-|9007199254740994"
-      ],
-      "go_signatures": [
-        "ok|-|9007199254740992"
-      ],
-      "slice": "3 numeric core"
-    },
-    {
-      "id": "arith/int-mul-i64-edge",
-      "class": "engine",
-      "summary": "At the i64 edge Rust promotes past i64::MAX (i128) while the Go port's float64 round-trip lands on an i64 boundary value. The Go result is architecture-dependent: darwin/arm64 saturates to math.MaxInt64, linux/amd64 wraps to math.MinInt64 -- the platform-dependent int64(float64) conversion the scope predicted.",
-      "rust_signatures": [
-        "ok|-|9223372036854775808"
-      ],
-      "go_signatures": [
-        "ok|-|9223372036854775807",
-        "ok|-|-9223372036854775808"
-      ],
-      "architecture_dependent": true,
-      "slice": "3 numeric core"
-    },
-    {
-      "id": "arith/rem-negative",
-      "class": "engine",
-      "summary": "Remainder sign: Rust minijinja returns the Euclidean remainder 1 for -7 % 2; Go's math.Mod returns -1.",
-      "rust_signatures": [
-        "ok|-|1"
-      ],
-      "go_signatures": [
-        "ok|-|-1"
-      ],
-      "slice": "3 numeric core"
-    },
-    {
-      "id": "arith/div-by-zero",
-      "class": "engine",
-      "summary": "Rust divides as float and renders inf for 1/0; the Go port raises an invalid-operation error. The whole outcome category differs, not just the bytes.",
-      "rust_signatures": [
-        "ok|-|inf"
-      ],
-      "go_signatures": [
-        "error|invalid_operation"
-      ],
-      "slice": "3 numeric core"
-    },
-    {
       "id": "cmp/int-in-string",
       "class": "engine",
       "summary": "Containment coercion: Rust stringifies the left operand for a string container, so 1 in '1' is true; the Go port only matches string operands.",

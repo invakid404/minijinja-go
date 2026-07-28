@@ -131,20 +131,40 @@ func registerDefaultFunctions(env *Environment) {
 
 // --- Functions ---
 
+// rangeArg is the engine's `isize` ArgType conversion for a range bound
+// (functions.rs:326, value/argtypes.rs:410-435). A bound that does not convert
+// is an error, not a silent zero: `range(1.5)` and `range(9e99)` both fail
+// where the port previously produced an empty or wrong range.
+func rangeArg(v value.Value) (int64, error) {
+	i, ok := v.AsInt()
+	if !ok {
+		return 0, NewError(ErrInvalidOperation,
+			fmt.Sprintf("cannot convert %s to isize", v.Kind()))
+	}
+	return i, nil
+}
+
 func fnRange(_ *State, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
 	var start, stop, step int64 = 0, 0, 1
 
-	switch len(args) {
-	case 1:
-		stop, _ = args[0].AsInt()
-	case 2:
-		start, _ = args[0].AsInt()
-		stop, _ = args[1].AsInt()
-	case 3:
-		start, _ = args[0].AsInt()
-		stop, _ = args[1].AsInt()
-		step, _ = args[2].AsInt()
-	default:
+	if len(args) >= 1 && len(args) <= 3 {
+		bounds := make([]int64, len(args))
+		for i, arg := range args {
+			n, err := rangeArg(arg)
+			if err != nil {
+				return value.Undefined(), err
+			}
+			bounds[i] = n
+		}
+		switch len(bounds) {
+		case 1:
+			stop = bounds[0]
+		case 2:
+			start, stop = bounds[0], bounds[1]
+		case 3:
+			start, stop, step = bounds[0], bounds[1], bounds[2]
+		}
+	} else {
 		return value.FromIterator(value.NewIterator("range", nil)), nil
 	}
 
