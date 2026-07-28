@@ -83,12 +83,46 @@ enum Form {
     Template,
 }
 
+/// Engine configuration a row is evaluated under.
+///
+/// Every variant is *engine configuration only* — the same knobs the Go runner
+/// sets on its side. BAML's environment (get_env, pycompat, regex_match/sum,
+/// prompt lowering, ctx/_/enum globals) is deliberately not here; it arrives as
+/// its own profile in a later slice.
+///
+/// The whitespace variants exist because trim_blocks/lstrip_blocks/
+/// keep_trailing_newline cannot be reached from template source. BAML's own
+/// environment sets trim_blocks and lstrip_blocks (jinja_helpers.rs:7-35), so
+/// the machinery they drive has to be compared under them too.
 #[derive(Deserialize, Default, PartialEq)]
 #[serde(rename_all = "snake_case")]
 enum Profile {
     /// Stock engine defaults. No BAML environment setup.
     #[default]
     Stock,
+    /// set_trim_blocks(true)
+    TrimBlocks,
+    /// set_lstrip_blocks(true)
+    LstripBlocks,
+    /// Both, the combination BAML's own environment uses.
+    TrimLstrip,
+    /// set_keep_trailing_newline(true)
+    KeepTrailingNewline,
+}
+
+impl Profile {
+    fn apply(&self, env: &mut Environment) {
+        match self {
+            Profile::Stock => {}
+            Profile::TrimBlocks => env.set_trim_blocks(true),
+            Profile::LstripBlocks => env.set_lstrip_blocks(true),
+            Profile::TrimLstrip => {
+                env.set_trim_blocks(true);
+                env.set_lstrip_blocks(true);
+            }
+            Profile::KeepTrailingNewline => env.set_keep_trailing_newline(true),
+        }
+    }
 }
 
 #[derive(Deserialize, Default, PartialEq)]
@@ -218,6 +252,12 @@ enum Outcome {
     },
     /// The harness could not model the row at all. Never a silent pass: the Go
     /// runner labels any mismatch involving this as `harness-incomplete`.
+    ///
+    /// Nothing constructs it here today — an unknown profile now fails corpus
+    /// deserialization outright, which is louder than a per-row outcome — but
+    /// it stays part of the shared schema because the Go runner still emits it
+    /// and both sides must be able to parse it.
+    #[allow(dead_code)]
     Unsupported {
         message: String,
     },
@@ -282,12 +322,6 @@ fn normalize_boolean(rendered: &str) -> Option<bool> {
 }
 
 fn evaluate(row: &Row) -> Outcome {
-    if row.profile != Profile::Stock {
-        return Outcome::Unsupported {
-            message: "unknown engine profile".into(),
-        };
-    }
-
     let source = match row.form {
         // Same wrapping BAML uses for constraint predicates.
         Form::Expression => format!("{{{{ {} }}}}", row.source),
@@ -295,6 +329,9 @@ fn evaluate(row: &Row) -> Outcome {
     };
 
     let mut env = Environment::new();
+    // Whitespace configuration must be in place before the template is added:
+    // trailing-newline stripping happens when the tokenizer is constructed.
+    row.profile.apply(&mut env);
     // `.txt` keeps the default auto-escape callback on "none" on both sides.
     let name = "corpus.txt";
     // `add_template` borrows for `'source`; `add_template_owned` is behind the

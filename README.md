@@ -10,8 +10,14 @@
 > [`scripts/verify-seed.sh`](scripts/verify-seed.sh). (`-baml.0` and `-baml.1`
 > are retained but superseded; see [Releases](UPSTREAM.md#releases).)
 >
+> Semantic patches land on top of that baseline, each one declared and pinned to
+> a differential corpus row. **The statements `block`, `extends`, `include`,
+> `import`, `from`, `break` and `continue` do not exist in this engine**: BAML
+> builds minijinja without the features that carry them, so a template using one
+> fails to compile exactly as it does there. See [PATCHES.md](PATCHES.md) #2.
+>
 > - [UPSTREAM.md](UPSTREAM.md) — pins, ownership boundary, upstream merge procedure
-> - [PATCHES.md](PATCHES.md) — every intentional semantic delta (currently none)
+> - [PATCHES.md](PATCHES.md) — every intentional semantic delta
 > - [oracle/](oracle/) — the differential oracle against BAML's Rust engine
 >
 > If you are not targeting BAML, use upstream. The README below is upstream's,

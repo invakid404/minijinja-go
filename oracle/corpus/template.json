@@ -1,0 +1,2654 @@
+{
+  "schema_version": 1,
+  "rows": [
+    {
+      "id": "tmpl/if-true-branch",
+      "surface": "control",
+      "form": "template",
+      "source": "{% if flag %}yes{% else %}no{% endif %}",
+      "inputs": [
+        {
+          "name": "flag",
+          "value": {
+            "kind": "bool",
+            "value": true
+          }
+        }
+      ],
+      "notes": "The simplest if/else. Anchors the family: a failure here means the whole control lane is wrong."
+    },
+    {
+      "id": "tmpl/if-false-branch",
+      "surface": "control",
+      "form": "template",
+      "source": "{% if flag %}yes{% else %}no{% endif %}",
+      "inputs": [
+        {
+          "name": "flag",
+          "value": {
+            "kind": "bool",
+            "value": false
+          }
+        }
+      ],
+      "notes": "Else arm of the same template."
+    },
+    {
+      "id": "tmpl/if-no-else-false",
+      "surface": "control",
+      "form": "template",
+      "source": "[{% if flag %}yes{% endif %}]",
+      "inputs": [
+        {
+          "name": "flag",
+          "value": {
+            "kind": "bool",
+            "value": false
+          }
+        }
+      ],
+      "notes": "An if with no else emits nothing, not an empty-string placeholder."
+    },
+    {
+      "id": "tmpl/if-elif-second",
+      "surface": "control",
+      "form": "template",
+      "source": "{% if n == 1 %}one{% elif n == 2 %}two{% elif n == 3 %}three{% else %}many{% endif %}",
+      "inputs": [
+        {
+          "name": "n",
+          "value": {
+            "kind": "int",
+            "value": 2
+          }
+        }
+      ],
+      "notes": "elif chain, middle arm."
+    },
+    {
+      "id": "tmpl/if-elif-last",
+      "surface": "control",
+      "form": "template",
+      "source": "{% if n == 1 %}one{% elif n == 2 %}two{% elif n == 3 %}three{% else %}many{% endif %}",
+      "inputs": [
+        {
+          "name": "n",
+          "value": {
+            "kind": "int",
+            "value": 3
+          }
+        }
+      ],
+      "notes": "elif chain, last arm before else."
+    },
+    {
+      "id": "tmpl/if-elif-fallthrough",
+      "surface": "control",
+      "form": "template",
+      "source": "{% if n == 1 %}one{% elif n == 2 %}two{% elif n == 3 %}three{% else %}many{% endif %}",
+      "inputs": [
+        {
+          "name": "n",
+          "value": {
+            "kind": "int",
+            "value": 9
+          }
+        }
+      ],
+      "notes": "elif chain falling through to else."
+    },
+    {
+      "id": "tmpl/if-nested",
+      "surface": "control",
+      "form": "template",
+      "source": "{% if a %}A{% if b %}B{% else %}b{% endif %}{% else %}x{% endif %}",
+      "inputs": [
+        {
+          "name": "a",
+          "value": {
+            "kind": "bool",
+            "value": true
+          }
+        },
+        {
+          "name": "b",
+          "value": {
+            "kind": "bool",
+            "value": false
+          }
+        }
+      ],
+      "notes": "Nested if inside the taken arm of an outer if."
+    },
+    {
+      "id": "tmpl/if-truthy-empty-string",
+      "surface": "control",
+      "form": "template",
+      "source": "{% if s %}t{% else %}f{% endif %}",
+      "inputs": [
+        {
+          "name": "s",
+          "value": {
+            "kind": "string",
+            "value": ""
+          }
+        }
+      ],
+      "notes": "Statement-level truthiness of the empty string."
+    },
+    {
+      "id": "tmpl/if-truthy-zero",
+      "surface": "control",
+      "form": "template",
+      "source": "{% if n %}t{% else %}f{% endif %}",
+      "inputs": [
+        {
+          "name": "n",
+          "value": {
+            "kind": "int",
+            "value": 0
+          }
+        }
+      ],
+      "notes": "Statement-level truthiness of integer zero."
+    },
+    {
+      "id": "tmpl/if-truthy-empty-list",
+      "surface": "control",
+      "form": "template",
+      "source": "{% if xs %}t{% else %}f{% endif %}",
+      "inputs": [
+        {
+          "name": "xs",
+          "value": {
+            "kind": "list",
+            "items": []
+          }
+        }
+      ],
+      "notes": "Statement-level truthiness of an empty sequence."
+    },
+    {
+      "id": "tmpl/if-truthy-empty-map",
+      "surface": "control",
+      "form": "template",
+      "source": "{% if m %}t{% else %}f{% endif %}",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": []
+          }
+        }
+      ],
+      "notes": "Statement-level truthiness of an empty mapping."
+    },
+    {
+      "id": "tmpl/if-truthy-none",
+      "surface": "control",
+      "form": "template",
+      "source": "{% if v %}t{% else %}f{% endif %}",
+      "inputs": [
+        {
+          "name": "v",
+          "value": {
+            "kind": "null"
+          }
+        }
+      ],
+      "notes": "Statement-level truthiness of none."
+    },
+    {
+      "id": "tmpl/if-truthy-undefined",
+      "surface": "control",
+      "form": "template",
+      "source": "{% if missing %}t{% else %}f{% endif %}",
+      "notes": "An undefined name in a condition is falsy under the default (lenient) undefined behaviour rather than an error."
+    },
+    {
+      "id": "tmpl/if-condition-error",
+      "surface": "control",
+      "form": "template",
+      "source": "{% if missing.attr.deep %}t{% else %}f{% endif %}",
+      "expect": "error",
+      "notes": "Attribute access chained off an undefined value inside a condition: whether the statement swallows it or raises."
+    },
+    {
+      "id": "tmpl/if-inline-ternary",
+      "surface": "control",
+      "form": "template",
+      "source": "{{ 'a' if flag else 'b' }}",
+      "inputs": [
+        {
+          "name": "flag",
+          "value": {
+            "kind": "bool",
+            "value": false
+          }
+        }
+      ],
+      "notes": "Inline conditional expression, the interpolation-level counterpart of the if statement."
+    },
+    {
+      "id": "tmpl/for-basic",
+      "surface": "control",
+      "form": "template",
+      "source": "{% for x in xs %}{{ x }};{% endfor %}",
+      "inputs": [
+        {
+          "name": "xs",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              },
+              {
+                "kind": "int",
+                "value": 3
+              }
+            ]
+          }
+        }
+      ],
+      "notes": "Anchor row for the for family."
+    },
+    {
+      "id": "tmpl/for-empty-no-else",
+      "surface": "control",
+      "form": "template",
+      "source": "[{% for x in xs %}{{ x }}{% endfor %}]",
+      "inputs": [
+        {
+          "name": "xs",
+          "value": {
+            "kind": "list",
+            "items": []
+          }
+        }
+      ],
+      "notes": "An empty sequence emits the loop body zero times."
+    },
+    {
+      "id": "tmpl/for-else-taken",
+      "surface": "control",
+      "form": "template",
+      "source": "{% for x in xs %}{{ x }}{% else %}empty{% endfor %}",
+      "inputs": [
+        {
+          "name": "xs",
+          "value": {
+            "kind": "list",
+            "items": []
+          }
+        }
+      ],
+      "notes": "for/else with an empty sequence runs the else body."
+    },
+    {
+      "id": "tmpl/for-else-not-taken",
+      "surface": "control",
+      "form": "template",
+      "source": "{% for x in xs %}{{ x }}{% else %}empty{% endfor %}",
+      "inputs": [
+        {
+          "name": "xs",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 7
+              }
+            ]
+          }
+        }
+      ],
+      "notes": "for/else with a non-empty sequence must not run the else body."
+    },
+    {
+      "id": "tmpl/for-filtered",
+      "surface": "control",
+      "form": "template",
+      "source": "{% for x in xs if x > 1 %}{{ x }};{% endfor %}",
+      "inputs": [
+        {
+          "name": "xs",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              },
+              {
+                "kind": "int",
+                "value": 3
+              }
+            ]
+          }
+        }
+      ],
+      "notes": "Filtered for loop. Rust compiles it as an accumulating inner loop plus a normal outer loop (codegen.rs compile_for_loop)."
+    },
+    {
+      "id": "tmpl/for-filtered-else",
+      "surface": "control",
+      "form": "template",
+      "source": "{% for x in xs if x > 5 %}{{ x }}{% else %}none{% endfor %}",
+      "inputs": [
+        {
+          "name": "xs",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              }
+            ]
+          }
+        }
+      ],
+      "notes": "A filter that rejects everything must still reach the else body."
+    },
+    {
+      "id": "tmpl/for-unpack-pairs",
+      "surface": "control",
+      "form": "template",
+      "source": "{% for a, b in xs %}{{ a }}-{{ b }};{% endfor %}",
+      "inputs": [
+        {
+          "name": "xs",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "int",
+                    "value": 1
+                  },
+                  {
+                    "kind": "int",
+                    "value": 2
+                  }
+                ]
+              },
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "int",
+                    "value": 3
+                  },
+                  {
+                    "kind": "int",
+                    "value": 4
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "notes": "Target-list unpacking in a for statement."
+    },
+    {
+      "id": "tmpl/for-unpack-arity-mismatch",
+      "surface": "control",
+      "form": "template",
+      "source": "{% for a, b in xs %}{{ a }}{% endfor %}",
+      "inputs": [
+        {
+          "name": "xs",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "list",
+                "items": [
+                  {
+                    "kind": "int",
+                    "value": 1
+                  },
+                  {
+                    "kind": "int",
+                    "value": 2
+                  },
+                  {
+                    "kind": "int",
+                    "value": 3
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "error",
+      "notes": "Unpacking a 3-element item into 2 targets. Rust has a dedicated CannotUnpack kind; this row pins what the fork reports."
+    },
+    {
+      "id": "tmpl/for-over-string",
+      "surface": "control",
+      "form": "template",
+      "source": "{% for c in s %}{{ c }}.{% endfor %}",
+      "inputs": [
+        {
+          "name": "s",
+          "value": {
+            "kind": "string",
+            "value": "abc"
+          }
+        }
+      ],
+      "notes": "Iterating a string yields characters."
+    },
+    {
+      "id": "tmpl/for-over-map-keys",
+      "surface": "control",
+      "form": "template",
+      "source": "{% for k in m %}{{ k }};{% endfor %}",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              },
+              {
+                "key": "b",
+                "value": {
+                  "kind": "int",
+                  "value": 2
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "notes": "Iterating a mapping yields keys. Insertion order is alphabetical here on purpose, so this row isolates iteration from the known preserve_order divergence (container/map-loop-insertion-order)."
+    },
+    {
+      "id": "tmpl/for-over-map-items",
+      "surface": "control",
+      "form": "template",
+      "source": "{% for k, v in m|items %}{{ k }}={{ v }};{% endfor %}",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              },
+              {
+                "key": "b",
+                "value": {
+                  "kind": "int",
+                  "value": 2
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "notes": "Unpacking pairs out of |items. Alphabetical insertion order for the same reason as the previous row."
+    },
+    {
+      "id": "tmpl/for-over-range",
+      "surface": "control",
+      "form": "template",
+      "source": "{% for i in range(3) %}{{ i }};{% endfor %}",
+      "notes": "Iterating a lazily produced sequence rather than a materialized list."
+    },
+    {
+      "id": "tmpl/for-over-int",
+      "surface": "control",
+      "form": "template",
+      "source": "{% for x in 5 %}{{ x }}{% endfor %}",
+      "expect": "error",
+      "notes": "Iterating a non-iterable. Error category, not bytes."
+    },
+    {
+      "id": "tmpl/for-over-undefined",
+      "surface": "control",
+      "form": "template",
+      "source": "[{% for x in missing %}{{ x }}{% endfor %}]",
+      "expect": "error",
+      "notes": "Iterating an undefined name under default undefined behaviour."
+    },
+    {
+      "id": "tmpl/for-over-none",
+      "surface": "control",
+      "form": "template",
+      "source": "[{% for x in v %}{{ x }}{% endfor %}]",
+      "inputs": [
+        {
+          "name": "v",
+          "value": {
+            "kind": "null"
+          }
+        }
+      ],
+      "expect": "error",
+      "notes": "Iterating none, which is a different value from undefined."
+    },
+    {
+      "id": "tmpl/for-nested",
+      "surface": "control",
+      "form": "template",
+      "source": "{% for x in xs %}{% for y in xs %}{{ x }}{{ y }} {% endfor %}{% endfor %}",
+      "inputs": [
+        {
+          "name": "xs",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              }
+            ]
+          }
+        }
+      ],
+      "notes": "Nested loops over the same sequence: the inner loop must not disturb the outer iterator."
+    },
+    {
+      "id": "tmpl/for-target-scope-after-loop",
+      "surface": "control",
+      "form": "template",
+      "source": "{% for x in xs %}{% endfor %}[{{ x }}]",
+      "inputs": [
+        {
+          "name": "xs",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              }
+            ]
+          }
+        }
+      ],
+      "notes": "The loop target must not leak out of the loop frame."
+    },
+    {
+      "id": "tmpl/loop-index",
+      "surface": "control",
+      "form": "template",
+      "source": "{% for x in xs %}{{ loop.index }}/{{ loop.index0 }};{% endfor %}",
+      "inputs": [
+        {
+          "name": "xs",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "string",
+                "value": "a"
+              },
+              {
+                "kind": "string",
+                "value": "b"
+              },
+              {
+                "kind": "string",
+                "value": "c"
+              }
+            ]
+          }
+        }
+      ],
+      "notes": "loop.index / loop.index0."
+    },
+    {
+      "id": "tmpl/loop-revindex",
+      "surface": "control",
+      "form": "template",
+      "source": "{% for x in xs %}{{ loop.revindex }}/{{ loop.revindex0 }};{% endfor %}",
+      "inputs": [
+        {
+          "name": "xs",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "string",
+                "value": "a"
+              },
+              {
+                "kind": "string",
+                "value": "b"
+              },
+              {
+                "kind": "string",
+                "value": "c"
+              }
+            ]
+          }
+        }
+      ],
+      "notes": "loop.revindex / loop.revindex0, which Rust computes with saturating subtraction."
+    },
+    {
+      "id": "tmpl/loop-first-last-length",
+      "surface": "control",
+      "form": "template",
+      "source": "{% for x in xs %}{{ loop.first }},{{ loop.last }},{{ loop.length }};{% endfor %}",
+      "inputs": [
+        {
+          "name": "xs",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "string",
+                "value": "a"
+              },
+              {
+                "kind": "string",
+                "value": "b"
+              }
+            ]
+          }
+        }
+      ],
+      "notes": "loop.first / loop.last / loop.length, including the rendered spelling of the booleans."
+    },
+    {
+      "id": "tmpl/loop-single-item-first-and-last",
+      "surface": "control",
+      "form": "template",
+      "source": "{% for x in xs %}{{ loop.first }}{{ loop.last }}{% endfor %}",
+      "inputs": [
+        {
+          "name": "xs",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              }
+            ]
+          }
+        }
+      ],
+      "notes": "A one-item loop is both first and last."
+    },
+    {
+      "id": "tmpl/loop-length-lazy-iterator",
+      "surface": "control",
+      "form": "template",
+      "source": "{% for i in range(3) %}[{{ loop.length }},{{ loop.revindex }},{{ loop.last }}]{% endfor %}",
+      "notes": "Rust derives loop.length from an exact size hint and returns undefined when there is none (loop_object.rs). This row pins what a range-backed loop reports."
+    },
+    {
+      "id": "tmpl/loop-length-filtered",
+      "surface": "control",
+      "form": "template",
+      "source": "{% for x in xs if x > 1 %}{{ loop.length }};{% endfor %}",
+      "inputs": [
+        {
+          "name": "xs",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              },
+              {
+                "kind": "int",
+                "value": 3
+              }
+            ]
+          }
+        }
+      ],
+      "notes": "A filtered loop iterates an accumulated list, so its length is the post-filter count."
+    },
+    {
+      "id": "tmpl/loop-depth-nested",
+      "surface": "control",
+      "form": "template",
+      "source": "{% for x in xs %}{% for y in xs %}{{ loop.depth }}{{ loop.depth0 }};{% endfor %}{% endfor %}",
+      "inputs": [
+        {
+          "name": "xs",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              }
+            ]
+          }
+        }
+      ],
+      "notes": "loop.depth / loop.depth0 in a nested (non-recursive) loop: nesting alone does not increase depth in minijinja."
+    },
+    {
+      "id": "tmpl/loop-adjacent-items",
+      "surface": "control",
+      "form": "template",
+      "source": "{% for x in xs %}[{{ loop.previtem }}|{{ x }}|{{ loop.nextitem }}]{% endfor %}",
+      "inputs": [
+        {
+          "name": "xs",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              },
+              {
+                "kind": "int",
+                "value": 3
+              }
+            ]
+          }
+        }
+      ],
+      "notes": "adjacent_loop_items is one of BAML's enabled engine features. previtem/nextitem are undefined at the edges and undefined renders as empty."
+    },
+    {
+      "id": "tmpl/loop-nextitem-then-iterate",
+      "surface": "control",
+      "form": "template",
+      "source": "{% for x in xs %}{{ loop.nextitem }}:{{ x }};{% endfor %}",
+      "inputs": [
+        {
+          "name": "xs",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              }
+            ]
+          }
+        }
+      ],
+      "notes": "Reading nextitem pulls from the underlying iterator; the peeked item must still be produced by the loop itself."
+    },
+    {
+      "id": "tmpl/loop-adjacent-items-lazy",
+      "surface": "control",
+      "form": "template",
+      "source": "{% for i in range(3) %}[{{ loop.previtem }}|{{ i }}|{{ loop.nextitem }}]{% endfor %}",
+      "notes": "The same adjacency machinery over a lazy iterator rather than a list."
+    },
+    {
+      "id": "tmpl/loop-cycle",
+      "surface": "control",
+      "form": "template",
+      "source": "{% for x in xs %}{{ loop.cycle('a','b') }}{% endfor %}",
+      "inputs": [
+        {
+          "name": "xs",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              },
+              {
+                "kind": "int",
+                "value": 3
+              },
+              {
+                "kind": "int",
+                "value": 4
+              }
+            ]
+          }
+        }
+      ],
+      "notes": "loop.cycle over two values across four iterations."
+    },
+    {
+      "id": "tmpl/loop-cycle-no-args",
+      "surface": "control",
+      "form": "template",
+      "source": "{% for x in xs %}{{ loop.cycle() }}{% endfor %}",
+      "inputs": [
+        {
+          "name": "xs",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "error",
+      "notes": "Adversarial: Rust computes idx % args.len() before checking the argument list (loop_object.rs call_method), so an empty argument list is a remainder-by-zero. A panic is an outcome here, not a crashed run."
+    },
+    {
+      "id": "tmpl/loop-changed",
+      "surface": "control",
+      "form": "template",
+      "source": "{% for x in xs %}{{ loop.changed(x) }};{% endfor %}",
+      "inputs": [
+        {
+          "name": "xs",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              },
+              {
+                "kind": "int",
+                "value": 2
+              }
+            ]
+          }
+        }
+      ],
+      "notes": "loop.changed remembers the previous argument tuple across iterations."
+    },
+    {
+      "id": "tmpl/loop-changed-multi-arg",
+      "surface": "control",
+      "form": "template",
+      "source": "{% for x in xs %}{{ loop.changed(x, 1) }};{% endfor %}",
+      "inputs": [
+        {
+          "name": "xs",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              }
+            ]
+          }
+        }
+      ],
+      "notes": "loop.changed compares the whole argument tuple, not just the first argument."
+    },
+    {
+      "id": "tmpl/loop-unknown-method",
+      "surface": "control",
+      "form": "template",
+      "source": "{% for x in xs %}{{ loop.nope() }}{% endfor %}",
+      "inputs": [
+        {
+          "name": "xs",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "error",
+      "notes": "The loop object answers exactly two methods; anything else is an unknown-method error in Rust."
+    },
+    {
+      "id": "tmpl/loop-object-render",
+      "surface": "control",
+      "form": "template",
+      "source": "{% for x in xs %}{{ loop }};{% endfor %}",
+      "inputs": [
+        {
+          "name": "xs",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              }
+            ]
+          }
+        }
+      ],
+      "notes": "Rust renders the loop object as `<loop idx/len>` (loop_object.rs render). Rendered bytes, so this is a prompt-visible surface."
+    },
+    {
+      "id": "tmpl/loop-outside-loop",
+      "surface": "control",
+      "form": "template",
+      "source": "[{{ loop }}]",
+      "notes": "`loop` is a reserved name but is only bound inside a loop frame."
+    },
+    {
+      "id": "tmpl/loop-inner-shadows-outer",
+      "surface": "control",
+      "form": "template",
+      "source": "{% for x in xs %}{% for y in xs %}{{ loop.index }}{% endfor %}{{ loop.index }};{% endfor %}",
+      "inputs": [
+        {
+          "name": "xs",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              }
+            ]
+          }
+        }
+      ],
+      "notes": "The inner loop shadows `loop` and the outer binding must be restored when the inner frame pops."
+    },
+    {
+      "id": "tmpl/loop-recursive",
+      "surface": "control",
+      "form": "template",
+      "source": "{% for item in tree recursive %}{{ item.name }}({{ loop.depth }}){% if item.children %}[{{ loop(item.children) }}]{% endif %};{% endfor %}",
+      "inputs": [
+        {
+          "name": "tree",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "map",
+                "entries": [
+                  {
+                    "key": "children",
+                    "value": {
+                      "kind": "list",
+                      "items": [
+                        {
+                          "kind": "map",
+                          "entries": [
+                            {
+                              "key": "children",
+                              "value": {
+                                "kind": "list",
+                                "items": []
+                              }
+                            },
+                            {
+                              "key": "name",
+                              "value": {
+                                "kind": "string",
+                                "value": "a1"
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "key": "name",
+                    "value": {
+                      "kind": "string",
+                      "value": "a"
+                    }
+                  }
+                ]
+              },
+              {
+                "kind": "map",
+                "entries": [
+                  {
+                    "key": "children",
+                    "value": {
+                      "kind": "list",
+                      "items": []
+                    }
+                  },
+                  {
+                    "key": "name",
+                    "value": {
+                      "kind": "string",
+                      "value": "b"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "notes": "Recursive for loop driven by loop(...), including loop.depth at each level. Map keys are alphabetical so this row does not double as an ordering probe."
+    },
+    {
+      "id": "tmpl/loop-call-outside-recursive",
+      "surface": "control",
+      "form": "template",
+      "source": "{% for x in xs %}{{ loop(xs) }}{% endfor %}",
+      "inputs": [
+        {
+          "name": "xs",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "error",
+      "notes": "Calling loop() in a loop that was not declared recursive."
+    },
+    {
+      "id": "tmpl/set-basic",
+      "surface": "control",
+      "form": "template",
+      "source": "{% set x = 1 %}{{ x }}",
+      "notes": "Anchor row for set."
+    },
+    {
+      "id": "tmpl/set-reassign",
+      "surface": "control",
+      "form": "template",
+      "source": "{% set x = 1 %}{% set x = x + 1 %}{{ x }}",
+      "notes": "Reassignment reading the previous binding."
+    },
+    {
+      "id": "tmpl/set-tuple-unpack",
+      "surface": "control",
+      "form": "template",
+      "source": "{% set a, b = xs %}{{ a }}{{ b }}",
+      "inputs": [
+        {
+          "name": "xs",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              }
+            ]
+          }
+        }
+      ],
+      "notes": "Unpacking assignment outside a loop."
+    },
+    {
+      "id": "tmpl/set-block",
+      "surface": "control",
+      "form": "template",
+      "source": "{% set greeting %}hello {{ name }}{% endset %}[{{ greeting }}]",
+      "inputs": [
+        {
+          "name": "name",
+          "value": {
+            "kind": "string",
+            "value": "world"
+          }
+        }
+      ],
+      "notes": "Block form of set captures the rendered body."
+    },
+    {
+      "id": "tmpl/set-block-with-filter",
+      "surface": "control",
+      "form": "template",
+      "source": "{% set x | trim %}   padded   {% endset %}[{{ x }}]",
+      "notes": "Block set with a filter applied to the captured body."
+    },
+    {
+      "id": "tmpl/set-inside-if",
+      "surface": "control",
+      "form": "template",
+      "source": "{% set x = 1 %}{% if true %}{% set x = 2 %}{% endif %}{{ x }}",
+      "notes": "An if statement does not open a new assignment scope."
+    },
+    {
+      "id": "tmpl/set-inside-for-does-not-escape",
+      "surface": "control",
+      "form": "template",
+      "source": "{% set x = 0 %}{% for i in xs %}{% set x = i %}{% endfor %}{{ x }}",
+      "inputs": [
+        {
+          "name": "xs",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              }
+            ]
+          }
+        }
+      ],
+      "notes": "The classic Jinja scoping rule: a set inside a loop frame does not survive the loop."
+    },
+    {
+      "id": "tmpl/set-namespace-accumulator",
+      "surface": "control",
+      "form": "template",
+      "source": "{% set ns = namespace(total=0) %}{% for i in xs %}{% set ns.total = ns.total + i %}{% endfor %}{{ ns.total }}",
+      "inputs": [
+        {
+          "name": "xs",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              },
+              {
+                "kind": "int",
+                "value": 3
+              }
+            ]
+          }
+        }
+      ],
+      "notes": "The documented way to accumulate across a loop frame: dotted set on a namespace object."
+    },
+    {
+      "id": "tmpl/set-dotted-on-plain-map",
+      "surface": "control",
+      "form": "template",
+      "source": "{% set m = {'a': 1} %}{% set m.a = 2 %}{{ m.a }}",
+      "expect": "error",
+      "notes": "Dotted assignment onto a non-namespace object."
+    },
+    {
+      "id": "tmpl/set-reserved-name",
+      "surface": "control",
+      "form": "template",
+      "source": "{% set loop = 1 %}{{ loop }}",
+      "expect": "error",
+      "notes": "RESERVED_NAMES rejects assignment to loop/self/true/false/none at parse time."
+    },
+    {
+      "id": "tmpl/with-block",
+      "surface": "control",
+      "form": "template",
+      "source": "{% with x = 1 %}{{ x }}{% endwith %}[{{ x }}]",
+      "notes": "with opens a scope that its bindings do not outlive."
+    },
+    {
+      "id": "tmpl/with-shadowing",
+      "surface": "control",
+      "form": "template",
+      "source": "{% set x = 1 %}{% with x = 2 %}{{ x }}{% endwith %}{{ x }}",
+      "notes": "with shadows an outer binding and restores it."
+    },
+    {
+      "id": "tmpl/filter-block",
+      "surface": "control",
+      "form": "template",
+      "source": "[{% filter trim %}   spaced   {% endfilter %}]",
+      "notes": "filter block applies a filter to its rendered body."
+    },
+    {
+      "id": "tmpl/filter-block-with-args",
+      "surface": "control",
+      "form": "template",
+      "source": "{% filter replace('a', 'b') %}banana{% endfilter %}",
+      "notes": "filter block with filter arguments."
+    },
+    {
+      "id": "tmpl/filter-block-unknown-filter",
+      "surface": "control",
+      "form": "template",
+      "source": "{% filter no_such_filter %}x{% endfilter %}",
+      "expect": "error",
+      "notes": "Unknown filter reached through the block form rather than the pipe form."
+    },
+    {
+      "id": "tmpl/autoescape-block-true",
+      "surface": "control",
+      "form": "template",
+      "source": "{% autoescape true %}{{ s }}{% endautoescape %}",
+      "inputs": [
+        {
+          "name": "s",
+          "value": {
+            "kind": "string",
+            "value": "<b>&</b>"
+          }
+        }
+      ],
+      "notes": "The autoescape statement switches escaping on inside a .txt template, whose default is none."
+    },
+    {
+      "id": "tmpl/autoescape-block-false",
+      "surface": "control",
+      "form": "template",
+      "source": "{% autoescape false %}{{ s }}{% endautoescape %}{{ s }}",
+      "inputs": [
+        {
+          "name": "s",
+          "value": {
+            "kind": "string",
+            "value": "<b>&</b>"
+          }
+        }
+      ],
+      "notes": "Explicitly disabling autoescape, and the state afterwards."
+    },
+    {
+      "id": "tmpl/autoescape-block-restores",
+      "surface": "control",
+      "form": "template",
+      "source": "{% autoescape true %}{{ s }}{% endautoescape %}|{{ s }}",
+      "inputs": [
+        {
+          "name": "s",
+          "value": {
+            "kind": "string",
+            "value": "<b>"
+          }
+        }
+      ],
+      "notes": "Escaping state must be restored when the block ends."
+    },
+    {
+      "id": "tmpl/do-statement",
+      "surface": "control",
+      "form": "template",
+      "source": "[{% do 1 + 1 %}]",
+      "notes": "do evaluates and discards. Unlike include/extends, it is not gated behind multi_template."
+    },
+    {
+      "id": "tmpl/do-statement-side-effect",
+      "surface": "control",
+      "form": "template",
+      "source": "{% set ns = namespace(v=1) %}{% do ns %}{{ ns.v }}",
+      "notes": "do with a bare expression that has no output."
+    },
+    {
+      "id": "tmpl/comment-basic",
+      "surface": "control",
+      "form": "template",
+      "source": "a{# hidden #}b",
+      "notes": "A comment contributes no bytes."
+    },
+    {
+      "id": "tmpl/comment-keeps-surrounding-space",
+      "surface": "control",
+      "form": "template",
+      "source": "a  {# hidden #}  b",
+      "notes": "Without trim markers the whitespace around a comment survives."
+    },
+    {
+      "id": "tmpl/comment-trim-markers",
+      "surface": "control",
+      "form": "template",
+      "source": "a  {#- hidden -#}  b",
+      "notes": "Explicit trim markers on a comment."
+    },
+    {
+      "id": "tmpl/comment-multiline",
+      "surface": "control",
+      "form": "template",
+      "source": "a\n{# line one\nline two #}\nb",
+      "notes": "A comment spanning lines: the newlines around it are template data."
+    },
+    {
+      "id": "tmpl/comment-contains-tags",
+      "surface": "control",
+      "form": "template",
+      "source": "a{# {% if x %} {{ y }} #}b",
+      "notes": "Statement and interpolation syntax inside a comment is inert."
+    },
+    {
+      "id": "tmpl/comment-unterminated",
+      "surface": "control",
+      "form": "template",
+      "source": "a{# never closed",
+      "expect": "error",
+      "notes": "Unterminated comment."
+    },
+    {
+      "id": "tmpl/raw-basic",
+      "surface": "control",
+      "form": "template",
+      "source": "{% raw %}{{ x }}{% if y %}{% endraw %}",
+      "notes": "raw emits its body verbatim, including things that would otherwise be syntax."
+    },
+    {
+      "id": "tmpl/raw-preserves-whitespace",
+      "surface": "control",
+      "form": "template",
+      "source": "a{% raw %}\n  spaced  \n{% endraw %}b",
+      "notes": "raw is byte-preserving in the default whitespace configuration."
+    },
+    {
+      "id": "tmpl/raw-trim-markers",
+      "surface": "control",
+      "form": "template",
+      "source": "a  {%- raw -%}  body  {%- endraw -%}  b",
+      "notes": "Trim markers on both raw delimiters. Rust applies trim_start/trim_end to the raw body itself (lexer.rs)."
+    },
+    {
+      "id": "tmpl/raw-unterminated",
+      "surface": "control",
+      "form": "template",
+      "source": "{% raw %}never closed",
+      "expect": "error",
+      "notes": "Unterminated raw block: a lexer-level syntax error."
+    },
+    {
+      "id": "tmpl/raw-endraw-lookalike",
+      "surface": "control",
+      "form": "template",
+      "source": "{% raw %}{% endrawx %}{% endraw %}",
+      "notes": "A tag that merely starts with endraw must not close the raw block."
+    },
+    {
+      "id": "tmpl/macro-basic",
+      "surface": "macros",
+      "form": "template",
+      "source": "{% macro greet(name) %}Hello {{ name }}!{% endmacro %}{{ greet('world') }}",
+      "notes": "Anchor row for macros, which BAML enables and relies on for template-string injection."
+    },
+    {
+      "id": "tmpl/macro-default-arg",
+      "surface": "macros",
+      "form": "template",
+      "source": "{% macro greet(name, punct='!') %}{{ name }}{{ punct }}{% endmacro %}{{ greet('a') }}{{ greet('b', '?') }}",
+      "notes": "Default argument used and overridden."
+    },
+    {
+      "id": "tmpl/macro-keyword-args",
+      "surface": "macros",
+      "form": "template",
+      "source": "{% macro m(a, b) %}{{ a }}-{{ b }}{% endmacro %}{{ m(b=2, a=1) }}",
+      "notes": "Keyword arguments out of positional order."
+    },
+    {
+      "id": "tmpl/macro-missing-arg",
+      "surface": "macros",
+      "form": "template",
+      "source": "{% macro m(a, b) %}[{{ a }}][{{ b }}]{% endmacro %}{{ m(1) }}",
+      "notes": "A macro argument that is not supplied is undefined rather than an error (macro_object.rs fills Value::UNDEFINED)."
+    },
+    {
+      "id": "tmpl/macro-too-many-args",
+      "surface": "macros",
+      "form": "template",
+      "source": "{% macro m(a) %}{{ a }}{% endmacro %}{{ m(1, 2) }}",
+      "expect": "error",
+      "notes": "More positional arguments than the macro declares."
+    },
+    {
+      "id": "tmpl/macro-unknown-kwarg",
+      "surface": "macros",
+      "form": "template",
+      "source": "{% macro m(a) %}{{ a }}{% endmacro %}{{ m(1, nope=2) }}",
+      "expect": "error",
+      "notes": "Rust reports an unknown keyword argument as TooManyArguments."
+    },
+    {
+      "id": "tmpl/macro-duplicate-arg",
+      "surface": "macros",
+      "form": "template",
+      "source": "{% macro m(a) %}{{ a }}{% endmacro %}{{ m(1, a=2) }}",
+      "expect": "error",
+      "notes": "The same argument supplied positionally and by keyword."
+    },
+    {
+      "id": "tmpl/macro-object-render",
+      "surface": "macros",
+      "form": "template",
+      "source": "{% macro m(a) %}{% endmacro %}{{ m }}",
+      "notes": "Rust renders a macro value as `<macro name>` (macro_object.rs render)."
+    },
+    {
+      "id": "tmpl/macro-attr-name",
+      "surface": "macros",
+      "form": "template",
+      "source": "{% macro m(a, b) %}{% endmacro %}{{ m.name }}",
+      "notes": "The macro object exposes name/arguments/caller."
+    },
+    {
+      "id": "tmpl/macro-attr-arguments",
+      "surface": "macros",
+      "form": "template",
+      "source": "{% macro m(a, b) %}{% endmacro %}{{ m.arguments }}",
+      "notes": "The argument-name list, including how a sequence of strings renders."
+    },
+    {
+      "id": "tmpl/macro-attr-caller-false",
+      "surface": "macros",
+      "form": "template",
+      "source": "{% macro m(a) %}{% endmacro %}{{ m.caller }}",
+      "notes": "caller is false for a macro that does not reference caller()."
+    },
+    {
+      "id": "tmpl/macro-attr-caller-true",
+      "surface": "macros",
+      "form": "template",
+      "source": "{% macro m(a) %}{{ caller() }}{% endmacro %}{{ m.caller }}",
+      "notes": "Referencing caller() in the body flips the macro's caller flag at compile time (codegen.rs)."
+    },
+    {
+      "id": "tmpl/macro-closure-capture",
+      "surface": "macros",
+      "form": "template",
+      "source": "{% set outer = 'O' %}{% macro m() %}{{ outer }}{% endmacro %}{{ m() }}",
+      "notes": "A macro closes over the enclosing scope at definition time."
+    },
+    {
+      "id": "tmpl/macro-closure-not-later-rebinding",
+      "surface": "macros",
+      "form": "template",
+      "source": "{% set v = 'first' %}{% macro m() %}{{ v }}{% endmacro %}{% set v = 'second' %}{{ m() }}",
+      "notes": "Whether the closure sees the value at definition time or at call time."
+    },
+    {
+      "id": "tmpl/macro-recursive",
+      "surface": "macros",
+      "form": "template",
+      "source": "{% macro count(n) %}{{ n }}{% if n > 1 %}{{ count(n - 1) }}{% endif %}{% endmacro %}{{ count(3) }}",
+      "notes": "A macro that calls itself."
+    },
+    {
+      "id": "tmpl/macro-called-in-loop",
+      "surface": "macros",
+      "form": "template",
+      "source": "{% macro row(i, v) %}{{ i }}:{{ v }};{% endmacro %}{% for x in xs %}{{ row(loop.index, x) }}{% endfor %}",
+      "inputs": [
+        {
+          "name": "xs",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "string",
+                "value": "a"
+              },
+              {
+                "kind": "string",
+                "value": "b"
+              }
+            ]
+          }
+        }
+      ],
+      "notes": "Macro invoked from inside a loop frame, taking loop metadata as an argument. This is the shape BAML's injected template-string macros are used in."
+    },
+    {
+      "id": "tmpl/macro-nested-invocation",
+      "surface": "macros",
+      "form": "template",
+      "source": "{% macro inner(x) %}<{{ x }}>{% endmacro %}{% macro outer(x) %}[{{ inner(x) }}]{% endmacro %}{{ outer('v') }}",
+      "notes": "A macro calling another macro defined earlier in the same template."
+    },
+    {
+      "id": "tmpl/macro-forward-reference",
+      "surface": "macros",
+      "form": "template",
+      "source": "{% macro outer(x) %}[{{ inner(x) }}]{% endmacro %}{% macro inner(x) %}<{{ x }}>{% endmacro %}{{ outer('v') }}",
+      "notes": "A macro referring to one defined after it: whether the closure resolves late."
+    },
+    {
+      "id": "tmpl/macro-defined-in-if",
+      "surface": "macros",
+      "form": "template",
+      "source": "{% if true %}{% macro m() %}in-if{% endmacro %}{% endif %}{{ m() }}",
+      "notes": "Macro defined inside a conditional branch and called outside it."
+    },
+    {
+      "id": "tmpl/macro-body-whitespace",
+      "surface": "macros",
+      "form": "template",
+      "source": "{% macro m() %}\n  body\n{% endmacro %}[{{ m() }}]",
+      "notes": "A macro body's leading/trailing newlines are part of its output in the default whitespace configuration."
+    },
+    {
+      "id": "tmpl/call-block-basic",
+      "surface": "macros",
+      "form": "template",
+      "source": "{% macro wrap() %}[{{ caller() }}]{% endmacro %}{% call wrap() %}inner{% endcall %}",
+      "notes": "call block: the body becomes the macro's caller()."
+    },
+    {
+      "id": "tmpl/call-block-with-params",
+      "surface": "macros",
+      "form": "template",
+      "source": "{% macro each(xs) %}{% for x in xs %}{{ caller(x, loop.index) }}{% endfor %}{% endmacro %}{% call(v, i) each(xs) %}{{ i }}={{ v }};{% endcall %}",
+      "inputs": [
+        {
+          "name": "xs",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "string",
+                "value": "a"
+              },
+              {
+                "kind": "string",
+                "value": "b"
+              }
+            ]
+          }
+        }
+      ],
+      "notes": "call with its own parameter list, invoked repeatedly from inside the macro."
+    },
+    {
+      "id": "tmpl/call-block-macro-args",
+      "surface": "macros",
+      "form": "template",
+      "source": "{% macro wrap(tag) %}<{{ tag }}>{{ caller() }}</{{ tag }}>{% endmacro %}{% call wrap('b') %}x{% endcall %}",
+      "notes": "call block where the macro itself also takes arguments."
+    },
+    {
+      "id": "tmpl/call-block-nested",
+      "surface": "macros",
+      "form": "template",
+      "source": "{% macro wrap(c) %}({{ c }}:{{ caller() }}){% endmacro %}{% call wrap('outer') %}{% call wrap('inner') %}x{% endcall %}{% endcall %}",
+      "notes": "Nested call blocks: the inner caller must not clobber the outer one."
+    },
+    {
+      "id": "tmpl/caller-without-call-block",
+      "surface": "macros",
+      "form": "template",
+      "source": "{% macro m() %}[{{ caller() }}]{% endmacro %}{{ m() }}",
+      "expect": "error",
+      "notes": "A macro that references caller() but is invoked without a call block."
+    },
+    {
+      "id": "tmpl/caller-outside-macro",
+      "surface": "macros",
+      "form": "template",
+      "source": "[{{ caller() }}]",
+      "expect": "error",
+      "notes": "caller() at top level, where no macro frame supplies it."
+    },
+    {
+      "id": "tmpl/macro-library-prompt-shape",
+      "surface": "macros",
+      "form": "template",
+      "source": "{% macro role(name) %}[{{ name }}]{% endmacro %}{% macro block(title, body) %}{{ role(title) }}\n{{ body }}\n{% endmacro %}{{ block('system', sys) }}{{ block('user', usr) }}",
+      "inputs": [
+        {
+          "name": "sys",
+          "value": {
+            "kind": "string",
+            "value": "be helpful"
+          }
+        },
+        {
+          "name": "usr",
+          "value": {
+            "kind": "string",
+            "value": "hi"
+          }
+        }
+      ],
+      "notes": "Prompt-shaped macro library: several macros defined then composed, which is how BAML's injected template-string macros are consumed."
+    },
+    {
+      "id": "tmpl/negative-include",
+      "surface": "loader",
+      "form": "template",
+      "source": "a{% include 'other.txt' %}b",
+      "expect": "error",
+      "notes": "NEGATIVE CONTROL. BAML builds the engine without multi_template, so `include` is not a statement at all: the parser reports `unknown statement include` (parser.rs parse_stmt_unprotected). The fork must not resolve or load anything here."
+    },
+    {
+      "id": "tmpl/negative-include-ignore-missing",
+      "surface": "loader",
+      "form": "template",
+      "source": "{% include 'other.txt' ignore missing %}",
+      "expect": "error",
+      "notes": "NEGATIVE CONTROL. The ignore-missing form must not silently succeed either."
+    },
+    {
+      "id": "tmpl/negative-extends",
+      "surface": "loader",
+      "form": "template",
+      "source": "{% extends 'base.txt' %}x",
+      "expect": "error",
+      "notes": "NEGATIVE CONTROL. Template inheritance is unavailable without multi_template."
+    },
+    {
+      "id": "tmpl/negative-import",
+      "surface": "loader",
+      "form": "template",
+      "source": "{% import 'm.txt' as m %}{{ m.x() }}",
+      "expect": "error",
+      "notes": "NEGATIVE CONTROL. Module import is unavailable without multi_template."
+    },
+    {
+      "id": "tmpl/negative-from-import",
+      "surface": "loader",
+      "form": "template",
+      "source": "{% from 'm.txt' import x %}{{ x() }}",
+      "expect": "error",
+      "notes": "NEGATIVE CONTROL. from-import is unavailable without multi_template."
+    },
+    {
+      "id": "tmpl/negative-block",
+      "surface": "loader",
+      "form": "template",
+      "source": "{% block body %}x{% endblock %}",
+      "expect": "error",
+      "notes": "NEGATIVE CONTROL. `block` is gated behind multi_template too, so even a self-contained block is a syntax error."
+    },
+    {
+      "id": "tmpl/negative-block-super",
+      "surface": "loader",
+      "form": "template",
+      "source": "{% block body %}{{ super() }}{% endblock %}",
+      "expect": "error",
+      "notes": "NEGATIVE CONTROL. super() inside a block, which cannot exist without multi_template."
+    },
+    {
+      "id": "tmpl/negative-super-outside-block",
+      "surface": "loader",
+      "form": "template",
+      "source": "{{ super() }}",
+      "expect": "error",
+      "notes": "NEGATIVE CONTROL. super() is compiled unconditionally (codegen.rs FastSuper) but has no block to super into."
+    },
+    {
+      "id": "tmpl/negative-self-block-call",
+      "surface": "loader",
+      "form": "template",
+      "source": "{{ self.body() }}",
+      "expect": "error",
+      "notes": "NEGATIVE CONTROL. The self/block call form is only compiled with multi_template; without it this is an ordinary attribute call."
+    },
+    {
+      "id": "tmpl/negative-break",
+      "surface": "loader",
+      "form": "template",
+      "source": "{% for x in xs %}{% break %}{% endfor %}",
+      "inputs": [
+        {
+          "name": "xs",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "error",
+      "notes": "NEGATIVE CONTROL. loop_controls is not among BAML's features, so `break` is an unknown statement."
+    },
+    {
+      "id": "tmpl/negative-continue",
+      "surface": "loader",
+      "form": "template",
+      "source": "{% for x in xs %}{% continue %}{% endfor %}",
+      "inputs": [
+        {
+          "name": "xs",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "error",
+      "notes": "NEGATIVE CONTROL. Same for `continue`."
+    },
+    {
+      "id": "tmpl/negative-stray-endblock",
+      "surface": "loader",
+      "form": "template",
+      "source": "x{% endblock %}",
+      "expect": "error",
+      "notes": "NEGATIVE CONTROL. A closing tag for a statement the engine does not have."
+    },
+    {
+      "id": "tmpl/err-unclosed-if",
+      "surface": "control",
+      "form": "template",
+      "source": "{% if true %}x",
+      "expect": "error",
+      "notes": "Unclosed if. Pins that a compile failure is classifiable by an external consumer."
+    },
+    {
+      "id": "tmpl/err-unclosed-for",
+      "surface": "control",
+      "form": "template",
+      "source": "{% for x in xs %}x",
+      "expect": "error",
+      "notes": "Unclosed for."
+    },
+    {
+      "id": "tmpl/err-unclosed-macro",
+      "surface": "control",
+      "form": "template",
+      "source": "{% macro m() %}x",
+      "expect": "error",
+      "notes": "Unclosed macro."
+    },
+    {
+      "id": "tmpl/err-endfor-without-for",
+      "surface": "control",
+      "form": "template",
+      "source": "x{% endfor %}",
+      "expect": "error",
+      "notes": "A closing tag with no opening statement."
+    },
+    {
+      "id": "tmpl/err-mismatched-end-tag",
+      "surface": "control",
+      "form": "template",
+      "source": "{% if true %}x{% endfor %}",
+      "expect": "error",
+      "notes": "Closing an if with endfor."
+    },
+    {
+      "id": "tmpl/err-elif-after-else",
+      "surface": "control",
+      "form": "template",
+      "source": "{% if a %}1{% else %}2{% elif b %}3{% endif %}",
+      "expect": "error",
+      "notes": "elif after else."
+    },
+    {
+      "id": "tmpl/err-double-else",
+      "surface": "control",
+      "form": "template",
+      "source": "{% if a %}1{% else %}2{% else %}3{% endif %}",
+      "expect": "error",
+      "notes": "Two else arms."
+    },
+    {
+      "id": "tmpl/err-unknown-statement",
+      "surface": "control",
+      "form": "template",
+      "source": "{% frobnicate %}",
+      "expect": "error",
+      "notes": "An identifier that is not a statement keyword."
+    },
+    {
+      "id": "tmpl/err-empty-statement",
+      "surface": "control",
+      "form": "template",
+      "source": "{% %}",
+      "expect": "error",
+      "notes": "An empty statement tag."
+    },
+    {
+      "id": "tmpl/err-statement-not-ident",
+      "surface": "control",
+      "form": "template",
+      "source": "{% 1 %}",
+      "expect": "error",
+      "notes": "A non-identifier where a block keyword is expected."
+    },
+    {
+      "id": "tmpl/err-unclosed-variable",
+      "surface": "control",
+      "form": "template",
+      "source": "a{{ x",
+      "expect": "error",
+      "notes": "Unterminated interpolation."
+    },
+    {
+      "id": "tmpl/err-unclosed-block-tag",
+      "surface": "control",
+      "form": "template",
+      "source": "{% if true ",
+      "expect": "error",
+      "notes": "Unterminated statement tag."
+    },
+    {
+      "id": "tmpl/err-empty-interpolation",
+      "surface": "control",
+      "form": "template",
+      "source": "{{ }}",
+      "expect": "error",
+      "notes": "An interpolation with no expression."
+    },
+    {
+      "id": "tmpl/err-unclosed-string",
+      "surface": "control",
+      "form": "template",
+      "source": "{{ 'abc }}",
+      "expect": "error",
+      "notes": "Unterminated string literal inside an interpolation."
+    },
+    {
+      "id": "tmpl/err-for-missing-target",
+      "surface": "control",
+      "form": "template",
+      "source": "{% for %}x{% endfor %}",
+      "expect": "error",
+      "notes": "for with neither target nor iterable."
+    },
+    {
+      "id": "tmpl/err-for-missing-in",
+      "surface": "control",
+      "form": "template",
+      "source": "{% for x xs %}{% endfor %}",
+      "expect": "error",
+      "notes": "for with a missing `in` keyword."
+    },
+    {
+      "id": "tmpl/err-set-missing-value",
+      "surface": "control",
+      "form": "template",
+      "source": "{% set x = %}",
+      "expect": "error",
+      "notes": "set with an empty right-hand side."
+    },
+    {
+      "id": "tmpl/err-endset-without-set",
+      "surface": "control",
+      "form": "template",
+      "source": "x{% endset %}",
+      "expect": "error",
+      "notes": "A stray endset."
+    },
+    {
+      "id": "tmpl/err-endcall-without-call",
+      "surface": "control",
+      "form": "template",
+      "source": "x{% endcall %}",
+      "expect": "error",
+      "notes": "A stray endcall."
+    },
+    {
+      "id": "tmpl/err-call-without-macro",
+      "surface": "macros",
+      "form": "template",
+      "source": "{% call nope() %}x{% endcall %}",
+      "expect": "error",
+      "notes": "A call block naming something that is not a macro."
+    },
+    {
+      "id": "tmpl/err-unknown-function",
+      "surface": "control",
+      "form": "template",
+      "source": "{{ no_such_function() }}",
+      "expect": "error",
+      "notes": "Calling a name that is not bound: the runtime counterpart of the syntax rows above."
+    },
+    {
+      "id": "tmpl/err-filter-block-unclosed",
+      "surface": "control",
+      "form": "template",
+      "source": "{% filter trim %}x",
+      "expect": "error",
+      "notes": "Unclosed filter block."
+    },
+    {
+      "id": "tmpl/err-with-unclosed",
+      "surface": "control",
+      "form": "template",
+      "source": "{% with x = 1 %}{{ x }}",
+      "expect": "error",
+      "notes": "Unclosed with block."
+    },
+    {
+      "id": "tmpl/err-autoescape-unclosed",
+      "surface": "control",
+      "form": "template",
+      "source": "{% autoescape true %}x",
+      "expect": "error",
+      "notes": "Unclosed autoescape block."
+    },
+    {
+      "id": "tmpl/ws-default-block-lines",
+      "surface": "whitespace",
+      "form": "template",
+      "source": "a\n{% if true %}\nb\n{% endif %}\nc\n",
+      "notes": "The whitespace baseline: no trim_blocks, no lstrip_blocks, no keep_trailing_newline. Every newline around the tags is template data, and the final newline is stripped at tokenizer construction."
+    },
+    {
+      "id": "tmpl/ws-trim-blocks-block-lines",
+      "surface": "whitespace",
+      "form": "template",
+      "profile": "trim_blocks",
+      "source": "a\n{% if true %}\nb\n{% endif %}\nc\n",
+      "notes": "trim_blocks eats the first newline after a block tag (lexer.rs skip_newline_if_trim_blocks)."
+    },
+    {
+      "id": "tmpl/ws-lstrip-blocks-block-lines",
+      "surface": "whitespace",
+      "form": "template",
+      "profile": "lstrip_blocks",
+      "source": "a\n  {% if true %}\nb\n  {% endif %}\nc\n",
+      "notes": "lstrip_blocks removes horizontal whitespace before a block tag that starts a line."
+    },
+    {
+      "id": "tmpl/ws-trim-lstrip-block-lines",
+      "surface": "whitespace",
+      "form": "template",
+      "profile": "trim_lstrip",
+      "source": "a\n  {% if true %}\nb\n  {% endif %}\nc\n",
+      "notes": "Both flags together: the configuration BAML's own environment sets (jinja_helpers.rs). The engine machinery is what is being compared here."
+    },
+    {
+      "id": "tmpl/ws-lstrip-not-applied-to-variable",
+      "surface": "whitespace",
+      "form": "template",
+      "profile": "lstrip_blocks",
+      "source": "a\n   {{ 1 }}\nb",
+      "notes": "lstrip_blocks deliberately does not apply to interpolations (should_lstrip_block excludes StartMarker::Variable)."
+    },
+    {
+      "id": "tmpl/ws-lstrip-only-at-line-start",
+      "surface": "whitespace",
+      "form": "template",
+      "profile": "lstrip_blocks",
+      "source": "x  {% if true %}y{% endif %}  z",
+      "notes": "A tag with non-whitespace earlier on the line is not lstripped."
+    },
+    {
+      "id": "tmpl/ws-lstrip-at-file-start",
+      "surface": "whitespace",
+      "form": "template",
+      "profile": "lstrip_blocks",
+      "source": "   {% if true %}x{% endif %}",
+      "notes": "Start of file counts as start of line for lstrip_blocks."
+    },
+    {
+      "id": "tmpl/ws-trim-blocks-crlf",
+      "surface": "whitespace",
+      "form": "template",
+      "profile": "trim_blocks",
+      "source": "a\r\n{% if true %}\r\nb\r\n{% endif %}\r\nc",
+      "notes": "trim_blocks with CRLF line endings: Rust skips a \\r and then a \\n."
+    },
+    {
+      "id": "tmpl/ws-default-crlf",
+      "surface": "whitespace",
+      "form": "template",
+      "source": "a\r\n{% if true %}\r\nb\r\n{% endif %}\r\nc",
+      "notes": "The same CRLF template without trim_blocks: every CR and LF is template data."
+    },
+    {
+      "id": "tmpl/ws-minus-left",
+      "surface": "whitespace",
+      "form": "template",
+      "source": "a   \n  {%- if true %}b{% endif %}",
+      "notes": "A left trim marker removes preceding whitespace including newlines."
+    },
+    {
+      "id": "tmpl/ws-minus-right",
+      "surface": "whitespace",
+      "form": "template",
+      "source": "{% if true -%}   \n   b{% endif %}",
+      "notes": "A right trim marker removes following whitespace."
+    },
+    {
+      "id": "tmpl/ws-minus-both",
+      "surface": "whitespace",
+      "form": "template",
+      "source": "a  {%- if true -%}  b  {%- endif -%}  c",
+      "notes": "Trim markers on every delimiter of a statement pair."
+    },
+    {
+      "id": "tmpl/ws-minus-on-interpolation",
+      "surface": "whitespace",
+      "form": "template",
+      "source": "a   {{- 1 -}}   b",
+      "notes": "Trim markers on an interpolation rather than a statement."
+    },
+    {
+      "id": "tmpl/ws-plus-overrides-trim-blocks",
+      "surface": "whitespace",
+      "form": "template",
+      "profile": "trim_blocks",
+      "source": "{% if true +%}\nx{% endif %}",
+      "notes": "An explicit + marker preserves the newline trim_blocks would have eaten."
+    },
+    {
+      "id": "tmpl/ws-plus-overrides-lstrip-blocks",
+      "surface": "whitespace",
+      "form": "template",
+      "profile": "lstrip_blocks",
+      "source": "a\n   {%+ if true %}x{% endif %}",
+      "notes": "An explicit + marker preserves the indentation lstrip_blocks would have removed."
+    },
+    {
+      "id": "tmpl/ws-minus-beats-trim-blocks",
+      "surface": "whitespace",
+      "form": "template",
+      "profile": "trim_blocks",
+      "source": "{% if true -%}\n\n   x{% endif %}",
+      "notes": "With trim_blocks on, a - marker still trims all following whitespace, not just one newline."
+    },
+    {
+      "id": "tmpl/ws-trailing-newline-stripped",
+      "surface": "whitespace",
+      "form": "template",
+      "source": "x\n",
+      "notes": "The default configuration strips one trailing newline from the source."
+    },
+    {
+      "id": "tmpl/ws-trailing-newline-kept",
+      "surface": "whitespace",
+      "form": "template",
+      "profile": "keep_trailing_newline",
+      "source": "x\n",
+      "notes": "keep_trailing_newline preserves it."
+    },
+    {
+      "id": "tmpl/ws-trailing-crlf-stripped",
+      "surface": "whitespace",
+      "form": "template",
+      "source": "x\r\n",
+      "notes": "Rust strips a trailing \\n and then a trailing \\r, so a CRLF-terminated template loses both."
+    },
+    {
+      "id": "tmpl/ws-trailing-double-newline",
+      "surface": "whitespace",
+      "form": "template",
+      "source": "x\n\n",
+      "notes": "Only one trailing newline is stripped."
+    },
+    {
+      "id": "tmpl/ws-comment-lstrip",
+      "surface": "whitespace",
+      "form": "template",
+      "profile": "trim_lstrip",
+      "source": "a\n   {# note #}\nb",
+      "notes": "Comments participate in lstrip_blocks and trim_blocks like statements do."
+    },
+    {
+      "id": "tmpl/ws-raw-trim-blocks",
+      "surface": "whitespace",
+      "form": "template",
+      "profile": "trim_blocks",
+      "source": "{% raw %}\nbody\n{% endraw %}\ntail",
+      "notes": "trim_blocks applies to the raw delimiters, and Rust implements that inside the raw scanner itself."
+    },
+    {
+      "id": "tmpl/ws-raw-lstrip-blocks",
+      "surface": "whitespace",
+      "form": "template",
+      "profile": "lstrip_blocks",
+      "source": "{% raw %}\nbody\n   {% endraw %}tail",
+      "notes": "lstrip_blocks trims the indentation before {% endraw %} out of the raw body."
+    },
+    {
+      "id": "tmpl/ws-nbsp-before-minus-marker",
+      "surface": "whitespace",
+      "form": "template",
+      "source": "a {%- if true %}b{% endif %}",
+      "notes": "Rust trims with char::is_whitespace, which includes U+00A0. An ASCII-only trim leaves the byte in the output, so this row is a byte-level probe of the trim character class."
+    },
+    {
+      "id": "tmpl/ws-nbsp-after-minus-marker",
+      "surface": "whitespace",
+      "form": "template",
+      "source": "{% if true -%} b{% endif %}",
+      "notes": "The same character class question on the trailing side, which Rust implements with skip_whitespace over chars."
+    },
+    {
+      "id": "tmpl/ws-vertical-tab-before-minus-marker",
+      "surface": "whitespace",
+      "form": "template",
+      "source": "a\u000b{%- if true %}b{% endif %}",
+      "notes": "U+000B VERTICAL TAB is whitespace to Rust's trim_end but not to an ASCII space/tab/CR/LF set."
+    },
+    {
+      "id": "tmpl/ws-form-feed-after-minus-marker",
+      "surface": "whitespace",
+      "form": "template",
+      "source": "{% if true -%}\fb{% endif %}",
+      "notes": "U+000C FORM FEED on the trailing side."
+    },
+    {
+      "id": "tmpl/ws-nbsp-indent-lstrip",
+      "surface": "whitespace",
+      "form": "template",
+      "profile": "lstrip_blocks",
+      "source": "a\n   {% if true %}x{% endif %}",
+      "notes": "lstrip_blocks with a non-ASCII whitespace character in the indentation: Rust's lstrip_block trims any whitespace that is not a newline."
+    },
+    {
+      "id": "tmpl/ws-nbsp-raw-minus",
+      "surface": "whitespace",
+      "form": "template",
+      "source": "{%- raw -%} body {%- endraw -%}",
+      "notes": "The raw scanner uses trim_start/trim_end on the raw body, so it has the same character-class question."
+    },
+    {
+      "id": "tmpl/ws-prompt-shaped",
+      "surface": "whitespace",
+      "form": "template",
+      "profile": "trim_lstrip",
+      "source": "System:\n{% for m in msgs %}\n  {% if m.role == 'user' %}\nUser: {{ m.text }}\n  {% else %}\nBot: {{ m.text }}\n  {% endif %}\n{% endfor %}\nEnd\n",
+      "inputs": [
+        {
+          "name": "msgs",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "map",
+                "entries": [
+                  {
+                    "key": "role",
+                    "value": {
+                      "kind": "string",
+                      "value": "user"
+                    }
+                  },
+                  {
+                    "key": "text",
+                    "value": {
+                      "kind": "string",
+                      "value": "hi"
+                    }
+                  }
+                ]
+              },
+              {
+                "kind": "map",
+                "entries": [
+                  {
+                    "key": "role",
+                    "value": {
+                      "kind": "string",
+                      "value": "bot"
+                    }
+                  },
+                  {
+                    "key": "text",
+                    "value": {
+                      "kind": "string",
+                      "value": "hello"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "notes": "A realistic prompt-shaped template under BAML's whitespace configuration: indentation, loop, branch and blank-line handling all at once. Map keys are alphabetical so ordering is not a variable here."
+    },
+    {
+      "id": "tmpl/ws-macro-indentation",
+      "surface": "whitespace",
+      "form": "template",
+      "profile": "trim_lstrip",
+      "source": "{% macro item(x) %}\n  - {{ x }}\n{% endmacro %}\n{% for x in xs %}\n{{ item(x) }}\n{% endfor %}\n",
+      "inputs": [
+        {
+          "name": "xs",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "string",
+                "value": "a"
+              },
+              {
+                "kind": "string",
+                "value": "b"
+              }
+            ]
+          }
+        }
+      ],
+      "notes": "Macro output composed inside a loop under trim/lstrip: the exact newline count is the thing being pinned."
+    },
+    {
+      "id": "tmpl/set-unpack-arity-mismatch",
+      "surface": "control",
+      "form": "template",
+      "source": "{% set a, b = xs %}{{ a }}",
+      "inputs": [
+        {
+          "name": "xs",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              },
+              {
+                "kind": "int",
+                "value": 3
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "error",
+      "notes": "Unpacking arity is checked outside a for loop too: Rust compiles both through the same UnpackList instruction."
+    },
+    {
+      "id": "tmpl/set-unpack-non-iterable",
+      "surface": "control",
+      "form": "template",
+      "source": "{% set a, b = 5 %}{{ a }}",
+      "expect": "error",
+      "notes": "Unpacking something that cannot be iterated at all."
+    },
+    {
+      "id": "tmpl/set-attr-on-undefined",
+      "surface": "control",
+      "form": "template",
+      "source": "{% set missing.attr = 1 %}",
+      "expect": "error",
+      "notes": "Dotted assignment onto an undefined name, the other half of the namespace-only assignment rule."
+    },
+    {
+      "id": "tmpl/with-unpack-pairs",
+      "surface": "control",
+      "form": "template",
+      "source": "{% with a, b = xs %}{{ a }}{{ b }}{% endwith %}",
+      "inputs": [
+        {
+          "name": "xs",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              }
+            ]
+          }
+        }
+      ],
+      "notes": "Whether a with block accepts a target list at all, and with what result."
+    },
+    {
+      "id": "tmpl/call-non-callable-string",
+      "surface": "control",
+      "form": "template",
+      "source": "{% set s = 'x' %}{{ s() }}",
+      "expect": "error",
+      "notes": "A bound value that is not callable is a different error from an unbound name (vm/mod.rs CallFunction)."
+    },
+    {
+      "id": "tmpl/call-undefined-binding",
+      "surface": "control",
+      "form": "template",
+      "source": "{% set u = missing %}{{ u() }}",
+      "expect": "error",
+      "notes": "Bound to undefined rather than unbound: Rust reports 'value of type undefined is not callable'."
+    },
+    {
+      "id": "tmpl/call-block-macro-without-caller",
+      "surface": "macros",
+      "form": "template",
+      "source": "{% macro m() %}x{% endmacro %}{% call m() %}body{% endcall %}",
+      "expect": "error",
+      "notes": "A call block against a macro that never references caller(). Rust passes caller as a keyword argument, so the macro rejects it as an unknown keyword argument."
+    },
+    {
+      "id": "tmpl/macro-explicit-caller-kwarg",
+      "surface": "macros",
+      "form": "template",
+      "source": "{% macro m() %}[{{ caller() }}]{% endmacro %}{{ m(caller=1) }}",
+      "expect": "error",
+      "notes": "caller supplied by hand as a keyword argument: accepted as an argument because the macro references caller, then not callable."
+    },
+    {
+      "id": "tmpl/do-call-expression",
+      "surface": "control",
+      "form": "template",
+      "source": "[{% do range(3) %}]",
+      "notes": "The form of do that is actually valid: Rust requires a call expression (parser.rs parse_do)."
+    },
+    {
+      "id": "tmpl/loop-depth-recursive-inner-plain",
+      "surface": "control",
+      "form": "template",
+      "source": "{% for item in tree recursive %}{{ loop.depth }}{% for c in pair %}{{ loop.depth }}{% endfor %}{% if item.children %}{{ loop(item.children) }}{% endif %}{% endfor %}",
+      "inputs": [
+        {
+          "name": "pair",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              }
+            ]
+          }
+        },
+        {
+          "name": "tree",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "map",
+                "entries": [
+                  {
+                    "key": "children",
+                    "value": {
+                      "kind": "list",
+                      "items": [
+                        {
+                          "kind": "map",
+                          "entries": [
+                            {
+                              "key": "children",
+                              "value": {
+                                "kind": "list",
+                                "items": []
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "notes": "A plain loop nested inside a recursive one. Rust advances the depth counter whenever the ENCLOSING loop is recursive, regardless of whether the inner one is (vm/mod.rs push_loop)."
+    },
+    {
+      "id": "tmpl/loop-changed-nested-loops",
+      "surface": "control",
+      "form": "template",
+      "source": "{% for x in xs %}{% for y in ys %}{{ loop.changed(y) }},{% endfor %};{% endfor %}",
+      "inputs": [
+        {
+          "name": "xs",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              }
+            ]
+          }
+        },
+        {
+          "name": "ys",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 7
+              },
+              {
+                "kind": "int",
+                "value": 7
+              }
+            ]
+          }
+        }
+      ],
+      "notes": "changed() state belongs to one loop object: the inner loop starts fresh on each outer iteration."
+    },
+    {
+      "id": "tmpl/loop-cycle-across-iterations",
+      "surface": "control",
+      "form": "template",
+      "source": "{% for x in xs %}{{ loop.cycle('a','b','c') }}{% endfor %}",
+      "inputs": [
+        {
+          "name": "xs",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              },
+              {
+                "kind": "int",
+                "value": 3
+              },
+              {
+                "kind": "int",
+                "value": 4
+              },
+              {
+                "kind": "int",
+                "value": 5
+              }
+            ]
+          }
+        }
+      ],
+      "notes": "cycle indexes by the loop counter, so it wraps rather than tracking call count."
+    },
+    {
+      "id": "tmpl/loop-depth-in-macro-from-recursive",
+      "surface": "macros",
+      "form": "template",
+      "source": "{% macro inner(xs) %}{% for x in xs %}{{ loop.depth }}{{ loop.depth0 }}{% endfor %}{% endmacro %}{% for item in tree recursive %}{{ inner(pair) }}{% if item.children %}{{ loop(item.children) }}{% endif %}{% endfor %}",
+      "inputs": [
+        {
+          "name": "pair",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              }
+            ]
+          }
+        },
+        {
+          "name": "tree",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "map",
+                "entries": [
+                  {
+                    "key": "children",
+                    "value": {
+                      "kind": "list",
+                      "items": [
+                        {
+                          "kind": "map",
+                          "entries": [
+                            {
+                              "key": "children",
+                              "value": {
+                                "kind": "list",
+                                "items": []
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "notes": "A macro called from inside a recursive loop, containing a loop of its own. Rust evaluates a macro body in a fresh state whose context has no current loop, so the inner loop starts at depth 0 no matter how deep the caller is."
+    },
+    {
+      "id": "tmpl/loop-var-not-visible-in-macro",
+      "surface": "macros",
+      "form": "template",
+      "source": "{% macro peek() %}[{{ loop }}]{% endmacro %}{% for x in xs %}{{ peek() }}{% endfor %}",
+      "inputs": [
+        {
+          "name": "xs",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              }
+            ]
+          }
+        }
+      ],
+      "notes": "Whether the caller's loop variable leaks into a macro body."
+    },
+    {
+      "id": "tmpl/loop-changed-in-macro",
+      "surface": "macros",
+      "form": "template",
+      "source": "{% macro mark(v) %}{{ v }}{% endmacro %}{% for x in xs %}{{ mark(loop.changed(x)) }};{% endfor %}",
+      "inputs": [
+        {
+          "name": "xs",
+          "value": {
+            "kind": "list",
+            "items": [
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 1
+              },
+              {
+                "kind": "int",
+                "value": 2
+              }
+            ]
+          }
+        }
+      ],
+      "notes": "changed() evaluated in the caller and passed into a macro: the state belongs to the loop, not to the call."
+    }
+  ]
+}

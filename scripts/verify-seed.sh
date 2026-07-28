@@ -45,6 +45,31 @@ FORK_ADDED=(
   "scripts/"
   "oracle/"
   "${VENDOR_PREFIX}/"
+  # Slice 6 (template sweep): the engine feature set BAML builds with, and the
+  # tests that prove it.  PATCHES.md #2.
+  "internal/parser/features.go"
+  "internal/parser/features_test.go"
+  "feature_gate_test.go"
+  # Slice 6: the engine's one documented fault, pinned in the root module.
+  # PATCHES.md #9.
+  "engine_contract_test.go"
+)
+
+# Derived files this fork intentionally modifies, each with the PATCHES.md entry
+# that explains it.  A modified file that is NOT listed here fails the check,
+# and a listed file that is no longer modified fails it too, so the list can
+# neither hide a change nor rot.
+SEMANTIC_DELTA=(
+  "internal/parser/parser.go"       # #2 statement gate, #8 message wording
+  "internal/parser/parser_test.go"  # #2 gated corpus entries are asserted
+  "internal/lexer/lexer.go"         # #3 Unicode whitespace trimming
+  "internal/errors/error.go"        # #6 ErrCannotUnpack, #8 ErrUnknownMethod
+  "internal_helpers.go"             # #6, #8 re-exports of the new kinds
+  "state.go"                        # #2, #4, #5, #6, #7, #8
+  "minijinja_test.go"               # #2 tests of removed statements
+  "template_test.go"                # #2 inherited corpus asserts the gate
+  "template_state_test.go"          # #2 block-based state tests
+  "environment_api_test.go"         # #2 include-based tests
 )
 
 ALLOW_SEMANTIC_DELTA=0
@@ -133,6 +158,15 @@ while read -r rel; do
     continue
   fi
   if ! cmp -s "${EXPECTED}/${rel}" "${REPO_ROOT}/${rel}"; then
+    declared_delta=0
+    for allowed in "${SEMANTIC_DELTA[@]}"; do
+      [[ "$rel" == "$allowed" ]] && declared_delta=1 && break
+    done
+    if [[ $declared_delta -eq 1 ]]; then
+      echo "DECLARED DELTA: ${rel} (see PATCHES.md)"
+      echo "$rel" >> "${WORK}/seen-delta.list"
+      continue
+    fi
     echo "MODIFIED: ${rel}"
     # `|| true`: diff exits non-zero when files differ, and pipefail would
     # otherwise abort the run on the first modified file instead of reporting
@@ -141,6 +175,16 @@ while read -r rel; do
     status=1
   fi
 done < "${WORK}/expected.list"
+
+# A declared delta that is no longer a delta is a stale declaration: the patch
+# it names either landed upstream or was reverted, and PATCHES.md should say so.
+touch "${WORK}/seen-delta.list"
+for declared in "${SEMANTIC_DELTA[@]}"; do
+  if ! grep -qxF "$declared" "${WORK}/seen-delta.list"; then
+    echo "STALE DELTA DECLARATION: ${declared} is identical to upstream; remove it from SEMANTIC_DELTA"
+    status=1
+  fi
+done
 
 # 3b. every repo file must either be derived from upstream or be declared.
 (cd "$REPO_ROOT" && find . \
@@ -164,8 +208,9 @@ while read -r rel; do
 done < "${WORK}/actual.list"
 
 if [[ $status -eq 0 ]]; then
-  echo "OK: engine tree is a pure mechanical derivation of ${UPSTREAM_REPO}@${UPSTREAM_COMMIT} (${UPSTREAM_TAG})"
-  echo "    deltas: module path ${OLD_MODULE} -> ${NEW_MODULE}; vendored Rust corpora path constants"
+  echo "OK: engine tree matches ${UPSTREAM_REPO}@${UPSTREAM_COMMIT} (${UPSTREAM_TAG}) apart from declared deltas"
+  echo "    mechanical: module path ${OLD_MODULE} -> ${NEW_MODULE}; vendored Rust corpora path constants"
+  echo "    semantic:   ${#SEMANTIC_DELTA[@]} declared file(s), all logged in PATCHES.md"
   exit 0
 fi
 

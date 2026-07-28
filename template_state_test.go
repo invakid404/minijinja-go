@@ -10,9 +10,12 @@ import (
 func TestEvalToState(t *testing.T) {
 	env := NewEnvironment()
 
+	// No {% block %} here: blocks belong to multi_template, which BAML does
+	// not enable, so this build has no block statement at all (see
+	// internal/parser/features.go and PATCHES.md #2). The state API is still
+	// exercised for macros, sets, lookups and exports.
 	err := env.AddTemplate("test.html", `
 {% macro greet(name) %}Hello {{ name }}!{% endmacro %}
-{% block title %}Default Title{% endblock %}
 {% set version = "1.0" %}
 `)
 	if err != nil {
@@ -34,15 +37,6 @@ func TestEvalToState(t *testing.T) {
 	// Test Name (State returns the template name)
 	if state.Name() != "test.html" {
 		t.Errorf("expected name 'test.html', got %q", state.Name())
-	}
-
-	// Test RenderBlock
-	title, err := state.RenderBlock("title")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if title != "Default Title" {
-		t.Errorf("expected 'Default Title', got %q", title)
 	}
 
 	// Test CallMacro
@@ -74,22 +68,14 @@ func TestEvalToState(t *testing.T) {
 		t.Error("expected 'greet' macro in exports")
 	}
 
-	// Test BlockNames
-	blocks := state.BlockNames()
-	found := false
-	for _, b := range blocks {
-		if b == "title" {
-			found = true
-			break
-		}
-	}
-	if !found {
-		t.Errorf("expected 'title' in block names, got %v", blocks)
+	// Test BlockNames: no statement in this build can declare one.
+	if blocks := state.BlockNames(); len(blocks) != 0 {
+		t.Errorf("expected no blocks, got %v", blocks)
 	}
 
 	// Test MacroNames
 	macros := state.MacroNames()
-	found = false
+	found := false
 	for _, m := range macros {
 		if m == "greet" {
 			found = true
@@ -101,52 +87,12 @@ func TestEvalToState(t *testing.T) {
 	}
 }
 
+// TestEvalToStateInheritance: template inheritance does not exist in this
+// build. `extends` and `block` are multi_template statements, which BAML's
+// engine feature set omits, so the child template below does not compile --
+// see internal/parser/features.go, PATCHES.md #2 and feature_gate_test.go.
 func TestEvalToStateInheritance(t *testing.T) {
-	env := NewEnvironment()
-
-	err := env.AddTemplate("base.html", `
-<!doctype html>
-<title>{% block title %}Base{% endblock %}</title>
-<body>{% block body %}{% endblock %}</body>
-`)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	err = env.AddTemplate("child.html", `
-{% extends "base.html" %}
-{% block title %}Child Page{% endblock %}
-{% block body %}Content here{% endblock %}
-`)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	tmpl, err := env.GetTemplate("child.html")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	state, err := tmpl.EvalToState(nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	title, err := state.RenderBlock("title")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if title != "Child Page" {
-		t.Errorf("expected 'Child Page', got %q", title)
-	}
-
-	body, err := state.RenderBlock("body")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if body != "Content here" {
-		t.Errorf("expected 'Content here', got %q", body)
-	}
+	assertGatedStatement(t, "extends", `{% extends "base.html" %}{% block title %}Child Page{% endblock %}`)
 }
 
 func TestRenderToWrite(t *testing.T) {

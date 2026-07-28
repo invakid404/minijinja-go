@@ -10,10 +10,15 @@ import (
 
 // Default locations, relative to the oracle module root.
 const (
-	DefaultCorpusPath   = "corpus/seed.json"
-	DefaultLedgerPath   = "divergences.json"
-	DefaultRecordedPath = "recorded/rust-8cfc770.json"
-	DefaultHarnessBin   = "harness/target/release/mj-oracle-harness"
+	CorpusDir         = "corpus"
+	RecordedDir       = "recorded"
+	DefaultLedgerPath = "divergences.json"
+	DefaultHarnessBin = "harness/target/release/mj-oracle-harness"
+
+	// EngineRevShort names the pinned engine revision in recording filenames.
+	// It is short on purpose: the full revision, branch and feature set live
+	// inside every recording's provenance block.
+	EngineRevShort = "8cfc770"
 )
 
 // Source says where the Rust-side outcomes came from.
@@ -49,6 +54,8 @@ const (
 
 // RowResult is the differential outcome for one corpus row.
 type RowResult struct {
+	// Corpus is the name of the corpus file the row came from.
+	Corpus  string
 	Row     Row
 	Rust    Outcome
 	Go      Outcome
@@ -57,12 +64,26 @@ type RowResult struct {
 	Note    string
 }
 
-// Report is a full differential run.
-type Report struct {
+// CorpusRun records which engine outcomes one corpus file was compared against.
+type CorpusRun struct {
+	Corpus     *Corpus
 	Source     Source
 	Provenance Provenance
-	Corpus     *Corpus
-	Results    []RowResult
+}
+
+// Report is a full differential run over every corpus file.
+type Report struct {
+	Runs    []CorpusRun
+	Results []RowResult
+}
+
+// Rows is the total number of corpus rows the report covered.
+func (r *Report) Rows() int {
+	n := 0
+	for _, run := range r.Runs {
+		n += len(run.Corpus.Rows)
+	}
+	return n
 }
 
 // Counts summarizes a report by verdict.
@@ -93,7 +114,7 @@ func (r *Report) Failures() []RowResult {
 // Either way the corpus digest in the provenance must match the corpus that was
 // loaded, so a stale recording is an error rather than a silently weaker test.
 func LoadHarnessOutcomes(root string, corpus *Corpus) (*HarnessOutput, Source, error) {
-	corpusPath := filepath.Join(root, DefaultCorpusPath)
+	corpusPath := corpus.Path
 
 	// MJ_ORACLE_RECORDED_ONLY forces the replay path even when a harness is
 	// present. CI uses it in the no-Rust job to prove the differential still
@@ -120,7 +141,7 @@ func LoadHarnessOutcomes(root string, corpus *Corpus) (*HarnessOutput, Source, e
 		raw = out
 		source = SourceLive
 	} else {
-		out, err := os.ReadFile(filepath.Join(root, DefaultRecordedPath))
+		out, err := os.ReadFile(RecordingPath(root, corpus))
 		if err != nil {
 			return nil, "", fmt.Errorf("no harness binary and no recording: %w", err)
 		}
@@ -129,12 +150,12 @@ func LoadHarnessOutcomes(root string, corpus *Corpus) (*HarnessOutput, Source, e
 
 	parsed, err := ParseHarnessOutput(raw)
 	if err != nil {
-		return nil, "", fmt.Errorf("harness output (%s): %w", source, err)
+		return nil, "", fmt.Errorf("harness output (%s) for corpus %s: %w", source, corpus.Name, err)
 	}
 	if parsed.Provenance.CorpusSHA256 != corpus.SHA256 {
 		return nil, "", fmt.Errorf(
-			"harness output (%s) was produced from corpus sha256 %s but the loaded corpus is %s; re-record with oracle/record.sh",
-			source, parsed.Provenance.CorpusSHA256, corpus.SHA256)
+			"harness output (%s) was produced from corpus sha256 %s but %s is %s; re-record with oracle/record.sh",
+			source, parsed.Provenance.CorpusSHA256, corpus.Path, corpus.SHA256)
 	}
 	return parsed, source, nil
 }
@@ -142,7 +163,7 @@ func LoadHarnessOutcomes(root string, corpus *Corpus) (*HarnessOutput, Source, e
 // Run executes the whole differential: every corpus row through the fork,
 // compared against the Rust engine's outcome, classified against the ledger.
 func Run(root string) (*Report, error) {
-	corpus, err := LoadCorpus(filepath.Join(root, DefaultCorpusPath))
+	corpora, err := LoadCorpora(filepath.Join(root, CorpusDir))
 	if err != nil {
 		return nil, err
 	}
@@ -150,59 +171,64 @@ func Run(root string) (*Report, error) {
 	if err != nil {
 		return nil, err
 	}
-	harness, source, err := LoadHarnessOutcomes(root, corpus)
-	if err != nil {
-		return nil, err
-	}
 
-	report := &Report{
-		Source:     source,
-		Provenance: harness.Provenance,
-		Corpus:     corpus,
-	}
-
+	report := &Report{}
 	declared := make(map[string]bool)
-	for _, row := range corpus.Rows {
-		rust, ok := harness.Lookup(row.ID)
-		if !ok {
-			report.Results = append(report.Results, RowResult{
-				Row:     row,
-				Verdict: VerdictMissing,
-				Note:    "the Rust harness produced no result for this row",
-			})
-			continue
-		}
-		got := RunFork(row)
-		res := RowResult{Row: row, Rust: rust, Go: got}
-		entry, hasEntry := ledger.Lookup(row.ID)
-		if hasEntry {
-			declared[row.ID] = true
-		}
 
-		switch {
-		case rust.Equivalent(got):
-			res.Verdict = VerdictMatch
+	for _, corpus := range corpora {
+		harness, source, err := LoadHarnessOutcomes(root, corpus)
+		if err != nil {
+			return nil, err
+		}
+		report.Runs = append(report.Runs, CorpusRun{
+			Corpus:     corpus,
+			Source:     source,
+			Provenance: harness.Provenance,
+		})
+
+		for _, row := range corpus.Rows {
+			rust, ok := harness.Lookup(row.ID)
+			if !ok {
+				report.Results = append(report.Results, RowResult{
+					Corpus:  corpus.Name,
+					Row:     row,
+					Verdict: VerdictMissing,
+					Note:    "the Rust harness produced no result for this row",
+				})
+				continue
+			}
+			got := RunFork(row)
+			res := RowResult{Corpus: corpus.Name, Row: row, Rust: rust, Go: got}
+			entry, hasEntry := ledger.Lookup(row.ID)
 			if hasEntry {
+				declared[row.ID] = true
+			}
+
+			switch {
+			case rust.Equivalent(got):
+				res.Verdict = VerdictMatch
+				if hasEntry {
+					res.Verdict = VerdictLedgerStale
+					res.Class = entry.Class
+					res.Note = "declared as a divergence but the engines now agree; remove the ledger entry"
+				}
+			case !hasEntry:
+				res.Verdict = VerdictNewDivergence
+				res.Class = classify(rust, got)
+				res.Note = "undeclared divergence"
+			case !entry.Accepts(rust.Signature(), got.Signature()):
 				res.Verdict = VerdictLedgerStale
 				res.Class = entry.Class
-				res.Note = "declared as a divergence but the engines now agree; remove the ledger entry"
+				res.Note = fmt.Sprintf(
+					"divergence changed shape; ledger accepts rust=%v go=%v, run produced rust=%q go=%q",
+					entry.RustSignatures, entry.GoSignatures, rust.Signature(), got.Signature())
+			default:
+				res.Verdict = VerdictKnownDivergence
+				res.Class = entry.Class
+				res.Note = entry.Summary
 			}
-		case !hasEntry:
-			res.Verdict = VerdictNewDivergence
-			res.Class = classify(rust, got)
-			res.Note = "undeclared divergence"
-		case !entry.Accepts(rust.Signature(), got.Signature()):
-			res.Verdict = VerdictLedgerStale
-			res.Class = entry.Class
-			res.Note = fmt.Sprintf(
-				"divergence changed shape; ledger accepts rust=%v go=%v, run produced rust=%q go=%q",
-				entry.RustSignatures, entry.GoSignatures, rust.Signature(), got.Signature())
-		default:
-			res.Verdict = VerdictKnownDivergence
-			res.Class = entry.Class
-			res.Note = entry.Summary
+			report.Results = append(report.Results, res)
 		}
-		report.Results = append(report.Results, res)
 	}
 
 	// A ledger entry with no corresponding corpus row is also stale: the

@@ -652,26 +652,12 @@ func TestMacroWithDefault(t *testing.T) {
 	}
 }
 
+// TestInclude: this build has no `include` statement. The feature that carries it
+// (multi_template) is not in BAML's engine feature set, so the template does not
+// compile -- see internal/parser/features.go, PATCHES.md #2 and the
+// exhaustive gate coverage in feature_gate_test.go.
 func TestInclude(t *testing.T) {
-	env := NewEnvironment()
-	err := env.AddTemplate("header.html", "Header: {{ title }}")
-	if err != nil {
-		t.Fatalf("add template error: %v", err)
-	}
-
-	tmpl, err := env.TemplateFromString(`{% include "header.html" %}`)
-	if err != nil {
-		t.Fatalf("parse error: %v", err)
-	}
-
-	result, err := tmpl.Render(map[string]any{"title": "Welcome"})
-	if err != nil {
-		t.Fatalf("render error: %v", err)
-	}
-
-	if result != "Header: Welcome" {
-		t.Errorf("expected 'Header: Welcome', got %q", result)
-	}
+	assertGatedStatement(t, "include", `{% include "header.html" %}`)
 }
 
 func TestSlicing(t *testing.T) {
@@ -759,164 +745,62 @@ func TestForLoopFilter(t *testing.T) {
 
 // --- Template Inheritance Tests ---
 
+// TestTemplateExtends: this build has no `extends` statement. The feature that carries it
+// (multi_template) is not in BAML's engine feature set, so the template does not
+// compile -- see internal/parser/features.go, PATCHES.md #2 and the
+// exhaustive gate coverage in feature_gate_test.go.
 func TestTemplateExtends(t *testing.T) {
-	env := NewEnvironment()
-	err := env.AddTemplate("base.html", `<html>{% block content %}default{% endblock %}</html>`)
-	if err != nil {
-		t.Fatalf("add template error: %v", err)
-	}
-
-	tmpl, err := env.TemplateFromString(`{% extends "base.html" %}{% block content %}Hello World{% endblock %}`)
-	if err != nil {
-		t.Fatalf("parse error: %v", err)
-	}
-
-	result, err := tmpl.Render(nil)
-	if err != nil {
-		t.Fatalf("render error: %v", err)
-	}
-
-	if result != "<html>Hello World</html>" {
-		t.Errorf("expected '<html>Hello World</html>', got %q", result)
-	}
+	assertGatedStatement(t, "extends", `{% extends "base.html" %}{% block content %}Hello World{% endblock %}`)
 }
 
+// TestTemplateExtendsWithSuper: this build has no `extends` statement. The feature that carries it
+// (multi_template) is not in BAML's engine feature set, so the template does not
+// compile -- see internal/parser/features.go, PATCHES.md #2 and the
+// exhaustive gate coverage in feature_gate_test.go.
 func TestTemplateExtendsWithSuper(t *testing.T) {
-	env := NewEnvironment()
-	err := env.AddTemplate("base.html", `{% block content %}BASE{% endblock %}`)
-	if err != nil {
-		t.Fatalf("add template error: %v", err)
-	}
-
-	tmpl, err := env.TemplateFromString(`{% extends "base.html" %}{% block content %}{{ super() }}:CHILD{% endblock %}`)
-	if err != nil {
-		t.Fatalf("parse error: %v", err)
-	}
-
-	result, err := tmpl.Render(nil)
-	if err != nil {
-		t.Fatalf("render error: %v", err)
-	}
-
-	if result != "BASE:CHILD" {
-		t.Errorf("expected 'BASE:CHILD', got %q", result)
-	}
+	assertGatedStatement(t, "extends", `{% extends "base.html" %}{% block content %}{{ super() }}:CHILD{% endblock %}`)
 }
 
+// TestTemplateExtendsMultipleLevels: this build has no `extends` statement. The feature that carries it
+// (multi_template) is not in BAML's engine feature set, so the template does not
+// compile -- see internal/parser/features.go, PATCHES.md #2 and the
+// exhaustive gate coverage in feature_gate_test.go.
 func TestTemplateExtendsMultipleLevels(t *testing.T) {
-	env := NewEnvironment()
-	err := env.AddTemplate("base.html", `[{% block content %}BASE{% endblock %}]`)
-	if err != nil {
-		t.Fatalf("add template error: %v", err)
-	}
-	err = env.AddTemplate("middle.html", `{% extends "base.html" %}{% block content %}MIDDLE{% endblock %}`)
-	if err != nil {
-		t.Fatalf("add template error: %v", err)
-	}
-
-	tmpl, err := env.TemplateFromString(`{% extends "middle.html" %}{% block content %}CHILD{% endblock %}`)
-	if err != nil {
-		t.Fatalf("parse error: %v", err)
-	}
-
-	result, err := tmpl.Render(nil)
-	if err != nil {
-		t.Fatalf("render error: %v", err)
-	}
-
-	if result != "[CHILD]" {
-		t.Errorf("expected '[CHILD]', got %q", result)
-	}
+	assertGatedStatement(t, "extends", `{% extends "middle.html" %}{% block content %}CHILD{% endblock %}`)
 }
 
+// TestTemplateExtendsWithVariable: this build has no `extends` statement. The feature that carries it
+// (multi_template) is not in BAML's engine feature set, so the template does not
+// compile -- see internal/parser/features.go, PATCHES.md #2 and the
+// exhaustive gate coverage in feature_gate_test.go.
 func TestTemplateExtendsWithVariable(t *testing.T) {
-	env := NewEnvironment()
-	err := env.AddTemplate("base.html", `Hello {% block name %}World{% endblock %}!`)
-	if err != nil {
-		t.Fatalf("add template error: %v", err)
-	}
-
-	tmpl, err := env.TemplateFromString(`{% extends "base.html" %}{% block name %}{{ name }}{% endblock %}`)
-	if err != nil {
-		t.Fatalf("parse error: %v", err)
-	}
-
-	result, err := tmpl.Render(map[string]any{"name": "Alice"})
-	if err != nil {
-		t.Fatalf("render error: %v", err)
-	}
-
-	if result != "Hello Alice!" {
-		t.Errorf("expected 'Hello Alice!', got %q", result)
-	}
+	assertGatedStatement(t, "extends", `{% extends "base.html" %}{% block name %}{{ name }}{% endblock %}`)
 }
 
 // --- Import Tests ---
 
+// TestImport: this build has no `import` statement. The feature that carries it
+// (multi_template) is not in BAML's engine feature set, so the template does not
+// compile -- see internal/parser/features.go, PATCHES.md #2 and the
+// exhaustive gate coverage in feature_gate_test.go.
 func TestImport(t *testing.T) {
-	env := NewEnvironment()
-	err := env.AddTemplate("forms.html", `{% macro input(name) %}<input name="{{ name }}">{% endmacro %}`)
-	if err != nil {
-		t.Fatalf("add template error: %v", err)
-	}
-
-	tmpl, err := env.TemplateFromString(`{% import "forms.html" as forms %}{{ forms.input("test") }}`)
-	if err != nil {
-		t.Fatalf("parse error: %v", err)
-	}
-
-	result, err := tmpl.Render(nil)
-	if err != nil {
-		t.Fatalf("render error: %v", err)
-	}
-
-	if result != `<input name="test">` {
-		t.Errorf("expected '<input name=\"test\">', got %q", result)
-	}
+	assertGatedStatement(t, "import", `{% import "forms.html" as forms %}{{ forms.input("test") }}`)
 }
 
+// TestFromImport: this build has no `from` statement. The feature that carries it
+// (multi_template) is not in BAML's engine feature set, so the template does not
+// compile -- see internal/parser/features.go, PATCHES.md #2 and the
+// exhaustive gate coverage in feature_gate_test.go.
 func TestFromImport(t *testing.T) {
-	env := NewEnvironment()
-	err := env.AddTemplate("forms.html", `{% macro input(name) %}<input name="{{ name }}">{% endmacro %}{% macro button(text) %}<button>{{ text }}</button>{% endmacro %}`)
-	if err != nil {
-		t.Fatalf("add template error: %v", err)
-	}
-
-	tmpl, err := env.TemplateFromString(`{% from "forms.html" import input, button %}{{ input("test") }}{{ button("Click") }}`)
-	if err != nil {
-		t.Fatalf("parse error: %v", err)
-	}
-
-	result, err := tmpl.Render(nil)
-	if err != nil {
-		t.Fatalf("render error: %v", err)
-	}
-
-	if result != `<input name="test"><button>Click</button>` {
-		t.Errorf("expected '<input name=\"test\"><button>Click</button>', got %q", result)
-	}
+	assertGatedStatement(t, "from", `{% from "forms.html" import input, button %}{{ input("test") }}`)
 }
 
+// TestFromImportWithAlias: this build has no `from` statement. The feature that carries it
+// (multi_template) is not in BAML's engine feature set, so the template does not
+// compile -- see internal/parser/features.go, PATCHES.md #2 and the
+// exhaustive gate coverage in feature_gate_test.go.
 func TestFromImportWithAlias(t *testing.T) {
-	env := NewEnvironment()
-	err := env.AddTemplate("forms.html", `{% macro input(name) %}<input name="{{ name }}">{% endmacro %}`)
-	if err != nil {
-		t.Fatalf("add template error: %v", err)
-	}
-
-	tmpl, err := env.TemplateFromString(`{% from "forms.html" import input as inp %}{{ inp("test") }}`)
-	if err != nil {
-		t.Fatalf("parse error: %v", err)
-	}
-
-	result, err := tmpl.Render(nil)
-	if err != nil {
-		t.Fatalf("render error: %v", err)
-	}
-
-	if result != `<input name="test">` {
-		t.Errorf("expected '<input name=\"test\">', got %q", result)
-	}
+	assertGatedStatement(t, "from", `{% from "forms.html" import input as inp %}{{ inp("test") }}`)
 }
 
 // --- Loop Recursion Tests ---
@@ -1210,25 +1094,28 @@ func TestOneShotIterator(t *testing.T) {
 	}
 }
 
+// TestOneShotIteratorPartialConsumption: partial consumption used to be driven
+// by {% break %}. loop_controls is not in BAML's engine feature set, so there is
+// no break statement in this build and a loop always drains its iterator. The
+// test keeps both halves of the original claim: break does not compile, and a
+// one-shot iterator that a loop ran to completion yields nothing afterwards.
+//
+// See internal/parser/features.go, PATCHES.md #2, feature_gate_test.go.
 func TestOneShotIteratorPartialConsumption(t *testing.T) {
+	assertGatedStatement(t, "break",
+		`{% for item in one_shot %}{{ item }}{% if item == 1 %}{% break %}{% endif %}{% endfor %}`)
+
 	env := NewEnvironment()
-
-	// Create a one-shot iterator - must create fresh for each test
-	makeIter := func() value.Value {
-		return value.MakeOneShotIterator(func(yield func(value.Value) bool) {
-			for i := 0; i < 5; i++ {
-				if !yield(value.FromInt(int64(i))) {
-					return
-				}
+	env.AddGlobal("one_shot", value.MakeOneShotIterator(func(yield func(value.Value) bool) {
+		for i := 0; i < 5; i++ {
+			if !yield(value.FromInt(int64(i))) {
+				return
 			}
-		})
-	}
-
-	// Test partial consumption with break, then continue
-	env.AddGlobal("one_shot", makeIter())
+		}
+	}))
 
 	tmpl, err := env.TemplateFromString(
-		`{% for item in one_shot %}{{ item }}{% if item == 1 %}{% break %}{% endif %}{% endfor %}` +
+		`{% for item in one_shot %}{{ item }}{% endfor %}` +
 			`|{% for item in one_shot %}{{ item }}{% endfor %}`)
 	if err != nil {
 		t.Fatalf("parse error: %v", err)
@@ -1239,10 +1126,7 @@ func TestOneShotIteratorPartialConsumption(t *testing.T) {
 		t.Fatalf("render error: %v", err)
 	}
 
-	// First loop: 0, 1 (then break)
-	// Second loop: 2, 3, 4 (remaining items)
-	expected := "01|234"
-	if result != expected {
+	if expected := "01234|"; result != expected {
 		t.Errorf("expected %q, got %q", expected, result)
 	}
 }

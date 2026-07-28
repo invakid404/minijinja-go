@@ -5,9 +5,22 @@ import (
 	"math/big"
 	"strconv"
 	"strings"
+	"unicode"
+	"unicode/utf8"
 
 	"github.com/invakid404/minijinja-go/v2/syntax"
 )
+
+// asciiWhitespace is Rust's char::is_ascii_whitespace set, which the raw-tag
+// scanner uses. It includes the form feed, unlike the four characters the port
+// used to trim.
+const asciiWhitespace = " \t\n\r\f"
+
+// isNewline is Rust's is_nl: only these two characters end a line for the
+// purposes of whitespace control.
+func isNewline(r rune) bool {
+	return r == '\n' || r == '\r'
+}
 
 // Lexer tokenizes Jinja2 template source code.
 type Lexer struct {
@@ -238,9 +251,11 @@ func (l *Lexer) tokenizeRoot() (*Token, bool, error) {
 		lead = l.advance(offset)
 		span = l.span()
 	case wsRemove:
-		// Trim trailing whitespace before the marker
+		// Trim trailing whitespace before the marker. Rust uses str::trim_end,
+		// which is the Unicode White_Space property, not an ASCII subset
+		// (compiler/lexer.rs). See PATCHES.md #3.
 		peeked := l.rest()[:offset]
-		trimmed := strings.TrimRight(peeked, " \t\n\r")
+		trimmed := strings.TrimRightFunc(peeked, unicode.IsSpace)
 		lead = l.advance(len(trimmed))
 		span = l.span() // Span ends here, before the stripped whitespace
 		l.advance(len(peeked) - len(trimmed))
@@ -597,7 +612,8 @@ func (l *Lexer) handleRawTag(wsStart whitespaceMode) (*Token, bool, error) {
 					result = strings.TrimPrefix(result, "\n")
 				}
 			case wsRemove:
-				result = strings.TrimLeft(result, " \t\n\r")
+				// Rust: result.trim_start(), Unicode-aware.
+				result = strings.TrimLeftFunc(result, unicode.IsSpace)
 			}
 
 			// Apply ws trimming (before endraw tag)
@@ -607,7 +623,8 @@ func (l *Lexer) handleRawTag(wsStart whitespaceMode) (*Token, bool, error) {
 					result = lstripBlock(result)
 				}
 			case wsRemove:
-				result = strings.TrimRight(result, " \t\n\r")
+				// Rust: result.trim_end(), Unicode-aware.
+				result = strings.TrimRightFunc(result, unicode.IsSpace)
 			}
 
 			l.advance(end)
@@ -637,8 +654,9 @@ func (l *Lexer) skipBasicTag(s string, name string) (int, whitespaceMode) {
 		ptr = ptr[1:]
 	}
 
-	// Skip whitespace
-	ptr = strings.TrimLeft(ptr, " \t\n\r")
+	// Skip whitespace. Rust matches char::is_ascii_whitespace here, which
+	// includes the form feed (compiler/lexer.rs skip_basic_tag).
+	ptr = strings.TrimLeft(ptr, asciiWhitespace)
 
 	// Check for name
 	if !strings.HasPrefix(ptr, name) {
@@ -652,7 +670,7 @@ func (l *Lexer) skipBasicTag(s string, name string) (int, whitespaceMode) {
 	}
 
 	// Skip whitespace
-	ptr = strings.TrimLeft(ptr, " \t\n\r")
+	ptr = strings.TrimLeft(ptr, asciiWhitespace)
 
 	// Check for whitespace control before end
 	ws := wsDefault
@@ -701,12 +719,18 @@ func (l *Lexer) shouldLstripBlock(marker startMarker, prefix string) bool {
 	}
 
 	if l.whitespace.LstripBlocks && marker != markerVariable {
-		// Only strip if we're at the start of a line
-		for i := len(prefix) - 1; i >= 0; i-- {
-			c := prefix[i]
-			if c == '\n' || c == '\r' {
+		// Only strip if we're at the start of a line. Rust scans the prefix
+		// backwards by char, treating any Unicode whitespace as indentation
+		// (compiler/lexer.rs should_lstrip_block). See PATCHES.md #3.
+		for len(prefix) > 0 {
+			r, size := utf8.DecodeLastRuneInString(prefix)
+			if size == 0 {
+				return false
+			}
+			prefix = prefix[:len(prefix)-size]
+			if isNewline(r) {
 				return true
-			} else if c != ' ' && c != '\t' {
+			} else if !unicode.IsSpace(r) {
 				return false
 			}
 		}
@@ -1300,36 +1324,52 @@ func (l *Lexer) makeToken(typ TokenType, value string) Token {
 	}
 }
 
+// skipWhitespace consumes the whitespace a `-%}` marker trims.
+//
+// Rust walks chars with char::is_whitespace (compiler/lexer.rs
+// skip_whitespace), so this matches on runes rather than ASCII bytes.
+// See PATCHES.md #3.
 func (l *Lexer) skipWhitespace() {
 	for !l.atEnd() {
-		c := l.rest()[0]
-		if c == ' ' || c == '\t' || c == '\n' || c == '\r' {
-			l.advance(1)
-		} else {
+		r, size := utf8.DecodeRuneInString(l.rest())
+		if size == 0 || !unicode.IsSpace(r) {
 			break
 		}
+		l.advance(size)
 	}
 }
 
 func (l *Lexer) skipWhitespaceChars() {
-	for !l.atEnd() {
-		c := l.rest()[0]
-		if c == ' ' || c == '\t' || c == '\n' || c == '\r' {
-			l.advance(1)
-		} else {
-			break
-		}
-	}
+	l.skipWhitespace()
+}
+
+// Error is a tokenizer-level syntax error.
+//
+// It carries the position separately from the text so the engine can report a
+// lexer failure as a located *errors.Error rather than as an opaque string an
+// external consumer cannot classify.
+type Error struct {
+	Message string
+	Line    uint16
+	Col     uint16
+}
+
+func (e *Error) Error() string {
+	return fmt.Sprintf("syntax error at line %d, col %d: %s", e.Line, e.Col, e.Message)
 }
 
 func (l *Lexer) syntaxError(msg string) error {
-	return fmt.Errorf("syntax error at line %d, col %d: %s", l.line, l.col, msg)
+	return &Error{Message: msg, Line: l.line, Col: l.col}
 }
 
 func lstripBlock(s string) string {
-	// Trim trailing whitespace (but not newlines) from the end
+	// Trim trailing whitespace (but not newlines) from the end.
+	//
+	// Rust trims char::is_whitespace minus the newline characters
+	// (compiler/lexer.rs lstrip_block), so indentation made of any Unicode
+	// space is stripped, not only spaces and tabs. See PATCHES.md #3.
 	trimmed := strings.TrimRightFunc(s, func(r rune) bool {
-		return r == ' ' || r == '\t'
+		return unicode.IsSpace(r) && !isNewline(r)
 	})
 	// Only strip if what remains ends with a newline or is empty
 	if trimmed == "" || strings.HasSuffix(trimmed, "\n") {

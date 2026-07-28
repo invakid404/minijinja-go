@@ -86,44 +86,30 @@ func TestTemplateManagementAPIs(t *testing.T) {
 	}
 }
 
+// TestPathJoinCallback: the path-join callback exists to resolve a relative
+// template name for `include`/`extends`. Neither statement exists in this build
+// (multi_template is not in BAML's engine feature set), so nothing in template
+// syntax can reach the callback. The test now proves exactly that: the include
+// fails to compile and the callback is never consulted.
+//
+// See internal/parser/features.go, PATCHES.md #2, feature_gate_test.go.
 func TestPathJoinCallback(t *testing.T) {
 	env := NewEnvironment()
 	if err := env.AddTemplate("partials/header.html", "Header"); err != nil {
 		t.Fatalf("add template error: %v", err)
 	}
 
+	joins := 0
 	env.SetPathJoinCallback(func(name, parent string) string {
-		parts := strings.Split(parent, "/")
-		if len(parts) > 0 {
-			parts = parts[:len(parts)-1]
-		}
-		for _, segment := range strings.Split(name, "/") {
-			switch segment {
-			case ".":
-				continue
-			case "..":
-				if len(parts) > 0 {
-					parts = parts[:len(parts)-1]
-				}
-			default:
-				parts = append(parts, segment)
-			}
-		}
-		return strings.Join(parts, "/")
+		joins++
+		return strings.TrimPrefix(name, "../")
 	})
 
-	tmpl, err := env.TemplateFromNamedString("pages/home.html", `{% include "../partials/header.html" %}`)
-	if err != nil {
-		t.Fatalf("parse error: %v", err)
+	if _, err := env.TemplateFromNamedString("pages/home.html", `{% include "../partials/header.html" %}`); err == nil {
+		t.Fatal("the include compiled")
 	}
-
-	result, err := tmpl.Render(nil)
-	if err != nil {
-		t.Fatalf("render error: %v", err)
-	}
-
-	if result != "Header" {
-		t.Errorf("expected 'Header', got %q", result)
+	if joins != 0 {
+		t.Fatalf("the path-join callback was consulted %d times", joins)
 	}
 }
 
@@ -256,24 +242,25 @@ func TestOutOfFuel(t *testing.T) {
 	}
 }
 
+// TestRecursionLimit: the recursion limit used to be exercised through a
+// self-including template. `include` does not exist in this build, so the limit
+// is exercised through the recursion that does: a macro calling itself.
+//
+// See internal/parser/features.go, PATCHES.md #2.
 func TestRecursionLimit(t *testing.T) {
 	env := NewEnvironment()
-	env.SetRecursionLimit(1)
-	if err := env.AddTemplate("self.html", `{% include "self.html" %}`); err != nil {
-		t.Fatalf("add template error: %v", err)
-	}
-
-	tmpl, err := env.GetTemplate("self.html")
+	env.SetRecursionLimit(4)
+	tmpl, err := env.TemplateFromNamedString("self.html",
+		`{% macro down(n) %}{{ down(n - 1) }}{% endmacro %}{{ down(100) }}`)
 	if err != nil {
-		t.Fatalf("get template error: %v", err)
+		t.Fatalf("parse error: %v", err)
 	}
 
-	_, err = tmpl.Render(nil)
-	if err == nil {
+	if _, err = tmpl.Render(nil); err == nil {
 		t.Fatal("expected recursion error")
 	}
-	if tmplErr, ok := err.(*Error); !ok || tmplErr.Kind != ErrBadInclude {
-		t.Fatalf("expected bad include error, got %v", err)
+	if tmplErr, ok := err.(*Error); !ok || tmplErr.Kind != ErrInvalidOperation {
+		t.Fatalf("expected invalid operation error, got %v", err)
 	}
 }
 

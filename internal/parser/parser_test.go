@@ -41,6 +41,16 @@ func TestParser(t *testing.T) {
 			// Parse
 			result := ParseDefault(template, inputName)
 
+			// A corpus entry that uses a statement this build does not have
+			// (features.go) cannot parse into the upstream AST the snapshot
+			// records. It is asserted to fail with the engine's own "unknown
+			// statement" error instead, which is what BAML's build reports.
+			if keyword, gated := gatedParserInputs[inputName]; gated {
+				assertGatedParse(t, inputName, keyword, result)
+				return
+			}
+			assertNotAnUnlistedGate(t, inputName, result)
+
 			// Format output
 			actual := FormatResult(result)
 

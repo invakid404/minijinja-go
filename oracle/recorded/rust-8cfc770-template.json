@@ -1,0 +1,1623 @@
+{
+  "schema_version": 1,
+  "provenance": {
+    "engine_repo": "https://github.com/boundaryml/minijinja",
+    "engine_branch": "value-cmp",
+    "engine_rev": "8cfc770a5dffeda2de5b910d2b9f870d7edeff7c",
+    "engine_features": [
+      "macros",
+      "builtins",
+      "debug",
+      "preserve_order",
+      "adjacent_loop_items",
+      "unicode",
+      "json",
+      "unstable_machinery",
+      "custom_syntax",
+      "deserialization",
+      "serde"
+    ],
+    "harness_version": "1",
+    "os": "macos",
+    "arch": "aarch64",
+    "corpus_sha256": "dd7145005c23e43d107bb06c4d356dc9553ba5b1e7d778f2b4936d748c3eb625"
+  },
+  "results": [
+    {
+      "id": "tmpl/if-true-branch",
+      "outcome": {
+        "status": "ok",
+        "render": "yes",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/if-false-branch",
+      "outcome": {
+        "status": "ok",
+        "render": "no",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/if-no-else-false",
+      "outcome": {
+        "status": "ok",
+        "render": "[]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/if-elif-second",
+      "outcome": {
+        "status": "ok",
+        "render": "two",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/if-elif-last",
+      "outcome": {
+        "status": "ok",
+        "render": "three",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/if-elif-fallthrough",
+      "outcome": {
+        "status": "ok",
+        "render": "many",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/if-nested",
+      "outcome": {
+        "status": "ok",
+        "render": "Ab",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/if-truthy-empty-string",
+      "outcome": {
+        "status": "ok",
+        "render": "f",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/if-truthy-zero",
+      "outcome": {
+        "status": "ok",
+        "render": "f",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/if-truthy-empty-list",
+      "outcome": {
+        "status": "ok",
+        "render": "f",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/if-truthy-empty-map",
+      "outcome": {
+        "status": "ok",
+        "render": "f",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/if-truthy-none",
+      "outcome": {
+        "status": "ok",
+        "render": "f",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/if-truthy-undefined",
+      "outcome": {
+        "status": "ok",
+        "render": "f",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/if-condition-error",
+      "outcome": {
+        "status": "error",
+        "category": "undefined",
+        "kind": "UndefinedError",
+        "message": "undefined value (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "tmpl/if-inline-ternary",
+      "outcome": {
+        "status": "ok",
+        "render": "b",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/for-basic",
+      "outcome": {
+        "status": "ok",
+        "render": "1;2;3;",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/for-empty-no-else",
+      "outcome": {
+        "status": "ok",
+        "render": "[]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/for-else-taken",
+      "outcome": {
+        "status": "ok",
+        "render": "empty",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/for-else-not-taken",
+      "outcome": {
+        "status": "ok",
+        "render": "7",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/for-filtered",
+      "outcome": {
+        "status": "ok",
+        "render": "2;3;",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/for-filtered-else",
+      "outcome": {
+        "status": "ok",
+        "render": "none",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/for-unpack-pairs",
+      "outcome": {
+        "status": "ok",
+        "render": "1-2;3-4;",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/for-unpack-arity-mismatch",
+      "outcome": {
+        "status": "error",
+        "category": "cannot_unpack",
+        "kind": "CannotUnpack",
+        "message": "cannot unpack: sequence of wrong length (expected 2, got 3) (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "tmpl/for-over-string",
+      "outcome": {
+        "status": "ok",
+        "render": "a.b.c.",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/for-over-map-keys",
+      "outcome": {
+        "status": "ok",
+        "render": "a;b;",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/for-over-map-items",
+      "outcome": {
+        "status": "ok",
+        "render": "a=1;b=2;",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/for-over-range",
+      "outcome": {
+        "status": "ok",
+        "render": "0;1;2;",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/for-over-int",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: number is not iterable (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "tmpl/for-over-undefined",
+      "outcome": {
+        "status": "ok",
+        "render": "[]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/for-over-none",
+      "outcome": {
+        "status": "ok",
+        "render": "[]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/for-nested",
+      "outcome": {
+        "status": "ok",
+        "render": "11 12 21 22 ",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/for-target-scope-after-loop",
+      "outcome": {
+        "status": "ok",
+        "render": "[]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/loop-index",
+      "outcome": {
+        "status": "ok",
+        "render": "1/0;2/1;3/2;",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/loop-revindex",
+      "outcome": {
+        "status": "ok",
+        "render": "3/2;2/1;1/0;",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/loop-first-last-length",
+      "outcome": {
+        "status": "ok",
+        "render": "true,false,2;false,true,2;",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/loop-single-item-first-and-last",
+      "outcome": {
+        "status": "ok",
+        "render": "truetrue",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/loop-length-lazy-iterator",
+      "outcome": {
+        "status": "ok",
+        "render": "[3,3,false][3,2,false][3,1,true]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/loop-length-filtered",
+      "outcome": {
+        "status": "ok",
+        "render": "2;2;",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/loop-depth-nested",
+      "outcome": {
+        "status": "ok",
+        "render": "10;10;10;10;",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/loop-adjacent-items",
+      "outcome": {
+        "status": "ok",
+        "render": "[|1|2][1|2|3][2|3|]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/loop-nextitem-then-iterate",
+      "outcome": {
+        "status": "ok",
+        "render": "2:1;:2;",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/loop-adjacent-items-lazy",
+      "outcome": {
+        "status": "ok",
+        "render": "[|0|1][0|1|2][1|2|]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/loop-cycle",
+      "outcome": {
+        "status": "ok",
+        "render": "abab",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/loop-cycle-no-args",
+      "outcome": {
+        "status": "panic",
+        "message": "attempt to calculate the remainder with a divisor of zero"
+      }
+    },
+    {
+      "id": "tmpl/loop-changed",
+      "outcome": {
+        "status": "ok",
+        "render": "true;false;true;false;",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/loop-changed-multi-arg",
+      "outcome": {
+        "status": "ok",
+        "render": "true;false;true;",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/loop-unknown-method",
+      "outcome": {
+        "status": "error",
+        "category": "unknown_method",
+        "kind": "UnknownMethod",
+        "message": "unknown method: map has no method named nope (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "tmpl/loop-object-render",
+      "outcome": {
+        "status": "ok",
+        "render": "<loop 0/2>;<loop 1/2>;",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/loop-outside-loop",
+      "outcome": {
+        "status": "ok",
+        "render": "[]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/loop-inner-shadows-outer",
+      "outcome": {
+        "status": "ok",
+        "render": "121;122;",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/loop-recursive",
+      "outcome": {
+        "status": "ok",
+        "render": "a(1)[a1(2);];b(1);",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/loop-call-outside-recursive",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot recurse outside of recursive loop (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "tmpl/set-basic",
+      "outcome": {
+        "status": "ok",
+        "render": "1",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/set-reassign",
+      "outcome": {
+        "status": "ok",
+        "render": "2",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/set-tuple-unpack",
+      "outcome": {
+        "status": "ok",
+        "render": "12",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/set-block",
+      "outcome": {
+        "status": "ok",
+        "render": "[hello world]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/set-block-with-filter",
+      "outcome": {
+        "status": "ok",
+        "render": "[padded]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/set-inside-if",
+      "outcome": {
+        "status": "ok",
+        "render": "2",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/set-inside-for-does-not-escape",
+      "outcome": {
+        "status": "ok",
+        "render": "0",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/set-namespace-accumulator",
+      "outcome": {
+        "status": "ok",
+        "render": "6",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/set-dotted-on-plain-map",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: can only assign to namespaces, not map (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "tmpl/set-reserved-name",
+      "outcome": {
+        "status": "error",
+        "category": "syntax",
+        "kind": "SyntaxError",
+        "message": "syntax error: cannot assign to reserved variable name loop (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "tmpl/with-block",
+      "outcome": {
+        "status": "ok",
+        "render": "1[]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/with-shadowing",
+      "outcome": {
+        "status": "ok",
+        "render": "21",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/filter-block",
+      "outcome": {
+        "status": "ok",
+        "render": "[spaced]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/filter-block-with-args",
+      "outcome": {
+        "status": "ok",
+        "render": "bbnbnb",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/filter-block-unknown-filter",
+      "outcome": {
+        "status": "error",
+        "category": "unknown_filter",
+        "kind": "UnknownFilter",
+        "message": "unknown filter: filter no_such_filter is unknown (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "tmpl/autoescape-block-true",
+      "outcome": {
+        "status": "ok",
+        "render": "&lt;b&gt;&amp;&lt;&#x2f;b&gt;",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/autoescape-block-false",
+      "outcome": {
+        "status": "ok",
+        "render": "<b>&</b><b>&</b>",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/autoescape-block-restores",
+      "outcome": {
+        "status": "ok",
+        "render": "&lt;b&gt;|<b>",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/do-statement",
+      "outcome": {
+        "status": "error",
+        "category": "syntax",
+        "kind": "SyntaxError",
+        "message": "syntax error: expected call expression in call block, got expression (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "tmpl/do-statement-side-effect",
+      "outcome": {
+        "status": "error",
+        "category": "syntax",
+        "kind": "SyntaxError",
+        "message": "syntax error: expected call expression in call block, got variable (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "tmpl/comment-basic",
+      "outcome": {
+        "status": "ok",
+        "render": "ab",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/comment-keeps-surrounding-space",
+      "outcome": {
+        "status": "ok",
+        "render": "a    b",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/comment-trim-markers",
+      "outcome": {
+        "status": "ok",
+        "render": "ab",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/comment-multiline",
+      "outcome": {
+        "status": "ok",
+        "render": "a\n\nb",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/comment-contains-tags",
+      "outcome": {
+        "status": "ok",
+        "render": "ab",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/comment-unterminated",
+      "outcome": {
+        "status": "error",
+        "category": "syntax",
+        "kind": "SyntaxError",
+        "message": "syntax error: unexpected end of comment (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "tmpl/raw-basic",
+      "outcome": {
+        "status": "ok",
+        "render": "{{ x }}{% if y %}",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/raw-preserves-whitespace",
+      "outcome": {
+        "status": "ok",
+        "render": "a\n  spaced  \nb",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/raw-trim-markers",
+      "outcome": {
+        "status": "ok",
+        "render": "abodyb",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/raw-unterminated",
+      "outcome": {
+        "status": "error",
+        "category": "syntax",
+        "kind": "SyntaxError",
+        "message": "syntax error: unexpected end of raw block (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "tmpl/raw-endraw-lookalike",
+      "outcome": {
+        "status": "ok",
+        "render": "{% endrawx %}",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/macro-basic",
+      "outcome": {
+        "status": "ok",
+        "render": "Hello world!",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/macro-default-arg",
+      "outcome": {
+        "status": "ok",
+        "render": "a!b?",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/macro-keyword-args",
+      "outcome": {
+        "status": "ok",
+        "render": "1-2",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/macro-missing-arg",
+      "outcome": {
+        "status": "ok",
+        "render": "[1][]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/macro-too-many-args",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "tmpl/macro-unknown-kwarg",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments: unknown keyword argument `nope` (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "tmpl/macro-duplicate-arg",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments: duplicate argument `a` (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "tmpl/macro-object-render",
+      "outcome": {
+        "status": "ok",
+        "render": "<macro m>",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/macro-attr-name",
+      "outcome": {
+        "status": "ok",
+        "render": "m",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/macro-attr-arguments",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"a\", \"b\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/macro-attr-caller-false",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/macro-attr-caller-true",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/macro-closure-capture",
+      "outcome": {
+        "status": "ok",
+        "render": "O",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/macro-closure-not-later-rebinding",
+      "outcome": {
+        "status": "ok",
+        "render": "second",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/macro-recursive",
+      "outcome": {
+        "status": "ok",
+        "render": "321",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/macro-called-in-loop",
+      "outcome": {
+        "status": "ok",
+        "render": "1:a;2:b;",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/macro-nested-invocation",
+      "outcome": {
+        "status": "ok",
+        "render": "[<v>]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/macro-forward-reference",
+      "outcome": {
+        "status": "ok",
+        "render": "[<v>]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/macro-defined-in-if",
+      "outcome": {
+        "status": "ok",
+        "render": "in-if",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/macro-body-whitespace",
+      "outcome": {
+        "status": "ok",
+        "render": "[\n  body\n]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/call-block-basic",
+      "outcome": {
+        "status": "ok",
+        "render": "[inner]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/call-block-with-params",
+      "outcome": {
+        "status": "ok",
+        "render": "1=a;2=b;",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/call-block-macro-args",
+      "outcome": {
+        "status": "ok",
+        "render": "<b>x</b>",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/call-block-nested",
+      "outcome": {
+        "status": "ok",
+        "render": "(outer:(inner:x))",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/caller-without-call-block",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: value of type undefined is not callable (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "tmpl/caller-outside-macro",
+      "outcome": {
+        "status": "error",
+        "category": "unknown_function",
+        "kind": "UnknownFunction",
+        "message": "unknown function: caller is unknown (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "tmpl/macro-library-prompt-shape",
+      "outcome": {
+        "status": "ok",
+        "render": "[system]\nbe helpful\n[user]\nhi\n",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/negative-include",
+      "outcome": {
+        "status": "error",
+        "category": "syntax",
+        "kind": "SyntaxError",
+        "message": "syntax error: unknown statement include (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "tmpl/negative-include-ignore-missing",
+      "outcome": {
+        "status": "error",
+        "category": "syntax",
+        "kind": "SyntaxError",
+        "message": "syntax error: unknown statement include (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "tmpl/negative-extends",
+      "outcome": {
+        "status": "error",
+        "category": "syntax",
+        "kind": "SyntaxError",
+        "message": "syntax error: unknown statement extends (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "tmpl/negative-import",
+      "outcome": {
+        "status": "error",
+        "category": "syntax",
+        "kind": "SyntaxError",
+        "message": "syntax error: unknown statement import (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "tmpl/negative-from-import",
+      "outcome": {
+        "status": "error",
+        "category": "syntax",
+        "kind": "SyntaxError",
+        "message": "syntax error: unknown statement from (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "tmpl/negative-block",
+      "outcome": {
+        "status": "error",
+        "category": "syntax",
+        "kind": "SyntaxError",
+        "message": "syntax error: unknown statement block (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "tmpl/negative-block-super",
+      "outcome": {
+        "status": "error",
+        "category": "syntax",
+        "kind": "SyntaxError",
+        "message": "syntax error: unknown statement block (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "tmpl/negative-super-outside-block",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot super outside of block (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "tmpl/negative-self-block-call",
+      "outcome": {
+        "status": "error",
+        "category": "unknown_method",
+        "kind": "UnknownMethod",
+        "message": "unknown method: undefined has no method named body (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "tmpl/negative-break",
+      "outcome": {
+        "status": "error",
+        "category": "syntax",
+        "kind": "SyntaxError",
+        "message": "syntax error: unknown statement break (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "tmpl/negative-continue",
+      "outcome": {
+        "status": "error",
+        "category": "syntax",
+        "kind": "SyntaxError",
+        "message": "syntax error: unknown statement continue (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "tmpl/negative-stray-endblock",
+      "outcome": {
+        "status": "error",
+        "category": "syntax",
+        "kind": "SyntaxError",
+        "message": "syntax error: unknown statement endblock (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "tmpl/err-unclosed-if",
+      "outcome": {
+        "status": "error",
+        "category": "syntax",
+        "kind": "SyntaxError",
+        "message": "syntax error: unexpected end of input, expected end of block (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "tmpl/err-unclosed-for",
+      "outcome": {
+        "status": "error",
+        "category": "syntax",
+        "kind": "SyntaxError",
+        "message": "syntax error: unexpected end of input, expected end of block (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "tmpl/err-unclosed-macro",
+      "outcome": {
+        "status": "error",
+        "category": "syntax",
+        "kind": "SyntaxError",
+        "message": "syntax error: unexpected end of input, expected end of block (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "tmpl/err-endfor-without-for",
+      "outcome": {
+        "status": "error",
+        "category": "syntax",
+        "kind": "SyntaxError",
+        "message": "syntax error: unknown statement endfor (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "tmpl/err-mismatched-end-tag",
+      "outcome": {
+        "status": "error",
+        "category": "syntax",
+        "kind": "SyntaxError",
+        "message": "syntax error: unknown statement endfor (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "tmpl/err-elif-after-else",
+      "outcome": {
+        "status": "error",
+        "category": "syntax",
+        "kind": "SyntaxError",
+        "message": "syntax error: unknown statement elif (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "tmpl/err-double-else",
+      "outcome": {
+        "status": "error",
+        "category": "syntax",
+        "kind": "SyntaxError",
+        "message": "syntax error: unknown statement else (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "tmpl/err-unknown-statement",
+      "outcome": {
+        "status": "error",
+        "category": "syntax",
+        "kind": "SyntaxError",
+        "message": "syntax error: unknown statement frobnicate (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "tmpl/err-empty-statement",
+      "outcome": {
+        "status": "error",
+        "category": "syntax",
+        "kind": "SyntaxError",
+        "message": "syntax error: unknown end of block, expected statement (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "tmpl/err-statement-not-ident",
+      "outcome": {
+        "status": "error",
+        "category": "syntax",
+        "kind": "SyntaxError",
+        "message": "syntax error: unknown integer, expected statement (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "tmpl/err-unclosed-variable",
+      "outcome": {
+        "status": "error",
+        "category": "syntax",
+        "kind": "SyntaxError",
+        "message": "syntax error: unexpected end of input, expected end of variable block (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "tmpl/err-unclosed-block-tag",
+      "outcome": {
+        "status": "error",
+        "category": "syntax",
+        "kind": "SyntaxError",
+        "message": "syntax error: unexpected end of input, expected end of block (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "tmpl/err-empty-interpolation",
+      "outcome": {
+        "status": "error",
+        "category": "syntax",
+        "kind": "SyntaxError",
+        "message": "syntax error: unexpected end of variable block (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "tmpl/err-unclosed-string",
+      "outcome": {
+        "status": "error",
+        "category": "syntax",
+        "kind": "SyntaxError",
+        "message": "syntax error: unexpected end of string (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "tmpl/err-for-missing-target",
+      "outcome": {
+        "status": "error",
+        "category": "syntax",
+        "kind": "SyntaxError",
+        "message": "syntax error: unexpected end of block, expected in (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "tmpl/err-for-missing-in",
+      "outcome": {
+        "status": "error",
+        "category": "syntax",
+        "kind": "SyntaxError",
+        "message": "syntax error: unexpected identifier, expected in (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "tmpl/err-set-missing-value",
+      "outcome": {
+        "status": "error",
+        "category": "syntax",
+        "kind": "SyntaxError",
+        "message": "syntax error: unexpected end of block (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "tmpl/err-endset-without-set",
+      "outcome": {
+        "status": "error",
+        "category": "syntax",
+        "kind": "SyntaxError",
+        "message": "syntax error: unknown statement endset (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "tmpl/err-endcall-without-call",
+      "outcome": {
+        "status": "error",
+        "category": "syntax",
+        "kind": "SyntaxError",
+        "message": "syntax error: unknown statement endcall (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "tmpl/err-call-without-macro",
+      "outcome": {
+        "status": "error",
+        "category": "unknown_function",
+        "kind": "UnknownFunction",
+        "message": "unknown function: nope is unknown (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "tmpl/err-unknown-function",
+      "outcome": {
+        "status": "error",
+        "category": "unknown_function",
+        "kind": "UnknownFunction",
+        "message": "unknown function: no_such_function is unknown (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "tmpl/err-filter-block-unclosed",
+      "outcome": {
+        "status": "error",
+        "category": "syntax",
+        "kind": "SyntaxError",
+        "message": "syntax error: unexpected end of input, expected end of block (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "tmpl/err-with-unclosed",
+      "outcome": {
+        "status": "error",
+        "category": "syntax",
+        "kind": "SyntaxError",
+        "message": "syntax error: unexpected end of input, expected end of block (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "tmpl/err-autoescape-unclosed",
+      "outcome": {
+        "status": "error",
+        "category": "syntax",
+        "kind": "SyntaxError",
+        "message": "syntax error: unexpected end of input, expected end of block (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "tmpl/ws-default-block-lines",
+      "outcome": {
+        "status": "ok",
+        "render": "a\n\nb\n\nc",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/ws-trim-blocks-block-lines",
+      "outcome": {
+        "status": "ok",
+        "render": "a\nb\nc",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/ws-lstrip-blocks-block-lines",
+      "outcome": {
+        "status": "ok",
+        "render": "a\n\nb\n\nc",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/ws-trim-lstrip-block-lines",
+      "outcome": {
+        "status": "ok",
+        "render": "a\nb\nc",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/ws-lstrip-not-applied-to-variable",
+      "outcome": {
+        "status": "ok",
+        "render": "a\n   1\nb",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/ws-lstrip-only-at-line-start",
+      "outcome": {
+        "status": "ok",
+        "render": "x  y  z",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/ws-lstrip-at-file-start",
+      "outcome": {
+        "status": "ok",
+        "render": "x",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/ws-trim-blocks-crlf",
+      "outcome": {
+        "status": "ok",
+        "render": "a\r\nb\r\nc",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/ws-default-crlf",
+      "outcome": {
+        "status": "ok",
+        "render": "a\r\n\r\nb\r\n\r\nc",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/ws-minus-left",
+      "outcome": {
+        "status": "ok",
+        "render": "ab",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/ws-minus-right",
+      "outcome": {
+        "status": "ok",
+        "render": "b",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/ws-minus-both",
+      "outcome": {
+        "status": "ok",
+        "render": "abc",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/ws-minus-on-interpolation",
+      "outcome": {
+        "status": "ok",
+        "render": "a1b",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/ws-plus-overrides-trim-blocks",
+      "outcome": {
+        "status": "ok",
+        "render": "\nx",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/ws-plus-overrides-lstrip-blocks",
+      "outcome": {
+        "status": "ok",
+        "render": "a\n   x",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/ws-minus-beats-trim-blocks",
+      "outcome": {
+        "status": "ok",
+        "render": "x",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/ws-trailing-newline-stripped",
+      "outcome": {
+        "status": "ok",
+        "render": "x",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/ws-trailing-newline-kept",
+      "outcome": {
+        "status": "ok",
+        "render": "x\n",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/ws-trailing-crlf-stripped",
+      "outcome": {
+        "status": "ok",
+        "render": "x",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/ws-trailing-double-newline",
+      "outcome": {
+        "status": "ok",
+        "render": "x\n",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/ws-comment-lstrip",
+      "outcome": {
+        "status": "ok",
+        "render": "a\nb",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/ws-raw-trim-blocks",
+      "outcome": {
+        "status": "ok",
+        "render": "body\ntail",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/ws-raw-lstrip-blocks",
+      "outcome": {
+        "status": "ok",
+        "render": "\nbody\ntail",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/ws-nbsp-before-minus-marker",
+      "outcome": {
+        "status": "ok",
+        "render": "ab",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/ws-nbsp-after-minus-marker",
+      "outcome": {
+        "status": "ok",
+        "render": "b",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/ws-vertical-tab-before-minus-marker",
+      "outcome": {
+        "status": "ok",
+        "render": "ab",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/ws-form-feed-after-minus-marker",
+      "outcome": {
+        "status": "ok",
+        "render": "b",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/ws-nbsp-indent-lstrip",
+      "outcome": {
+        "status": "ok",
+        "render": "a\nx",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/ws-nbsp-raw-minus",
+      "outcome": {
+        "status": "ok",
+        "render": "body",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/ws-prompt-shaped",
+      "outcome": {
+        "status": "ok",
+        "render": "System:\nUser: hi\nBot: hello\nEnd",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/ws-macro-indentation",
+      "outcome": {
+        "status": "ok",
+        "render": "  - a\n\n  - b\n\n",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/set-unpack-arity-mismatch",
+      "outcome": {
+        "status": "error",
+        "category": "cannot_unpack",
+        "kind": "CannotUnpack",
+        "message": "cannot unpack: sequence of wrong length (expected 2, got 3) (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "tmpl/set-unpack-non-iterable",
+      "outcome": {
+        "status": "error",
+        "category": "cannot_unpack",
+        "kind": "CannotUnpack",
+        "message": "cannot unpack: value is not iterable (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "tmpl/set-attr-on-undefined",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: can only assign to namespaces, not undefined (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "tmpl/with-unpack-pairs",
+      "outcome": {
+        "status": "error",
+        "category": "syntax",
+        "kind": "SyntaxError",
+        "message": "syntax error: unexpected `,`, expected assignment operator (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "tmpl/call-non-callable-string",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: value of type string is not callable (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "tmpl/call-undefined-binding",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: value of type undefined is not callable (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "tmpl/call-block-macro-without-caller",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments: unknown keyword argument `caller` (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "tmpl/macro-explicit-caller-kwarg",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: value of type number is not callable (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "tmpl/do-call-expression",
+      "outcome": {
+        "status": "ok",
+        "render": "[]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/loop-depth-recursive-inner-plain",
+      "outcome": {
+        "status": "ok",
+        "render": "1223",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/loop-changed-nested-loops",
+      "outcome": {
+        "status": "ok",
+        "render": "true,false,;true,false,;",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/loop-cycle-across-iterations",
+      "outcome": {
+        "status": "ok",
+        "render": "abcab",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/loop-depth-in-macro-from-recursive",
+      "outcome": {
+        "status": "ok",
+        "render": "1010",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/loop-var-not-visible-in-macro",
+      "outcome": {
+        "status": "ok",
+        "render": "[]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "tmpl/loop-changed-in-macro",
+      "outcome": {
+        "status": "ok",
+        "render": "true;false;true;",
+        "boolean": null
+      }
+    }
+  ]
+}
