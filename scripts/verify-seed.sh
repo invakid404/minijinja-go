@@ -87,7 +87,7 @@ cp -R "${SRC}/${UPSTREAM_SUBDIR}" "$EXPECTED"
 echo "==> replaying mechanical transform"
 
 # 2a. module path rewrite: every reference to the upstream module path.
-grep -rl -- "$OLD_MODULE" "$EXPECTED" 2>/dev/null | while read -r f; do
+{ grep -rl -- "$OLD_MODULE" "$EXPECTED" 2>/dev/null || true; } | while read -r f; do
   LC_ALL=C sed -i.bak "s|${OLD_MODULE//./\\.}|${NEW_MODULE}|g" "$f" && rm -f "${f}.bak"
 done
 
@@ -119,17 +119,33 @@ while read -r rel; do
   if [[ ! -f "${REPO_ROOT}/${rel}" ]]; then
     echo "MISSING: ${rel}"
     status=1
-  elif ! cmp -s "${EXPECTED}/${rel}" "${REPO_ROOT}/${rel}"; then
+    continue
+  fi
+  if [[ "$rel" == "README.md" ]]; then
+    # README.md is allowed exactly one delta: a fork banner prepended ahead of
+    # the derived upstream text. The upstream part must still be byte-identical,
+    # so this is checked as a strict suffix rather than waved through.
+    want_bytes="$(wc -c < "${EXPECTED}/README.md" | tr -d ' ')"
+    if ! tail -c "$want_bytes" "${REPO_ROOT}/README.md" | cmp -s - "${EXPECTED}/README.md"; then
+      echo "MODIFIED: README.md (the derived upstream text is not preserved verbatim as a suffix)"
+      status=1
+    fi
+    continue
+  fi
+  if ! cmp -s "${EXPECTED}/${rel}" "${REPO_ROOT}/${rel}"; then
     echo "MODIFIED: ${rel}"
-    diff -u "${EXPECTED}/${rel}" "${REPO_ROOT}/${rel}" | sed 's/^/    /' | head -40
+    # `|| true`: diff exits non-zero when files differ, and pipefail would
+    # otherwise abort the run on the first modified file instead of reporting
+    # every delta.
+    { diff -u "${EXPECTED}/${rel}" "${REPO_ROOT}/${rel}" | sed 's/^/    /' | head -40; } || true
     status=1
   fi
 done < "${WORK}/expected.list"
 
 # 3b. every repo file must either be derived from upstream or be declared.
-(cd "$REPO_ROOT" && find . -type f \
-  -not -path './.git/*' -not -path './.jj/*' \
-  -not -path './target/*' -not -name '.DS_Store' -print) \
+(cd "$REPO_ROOT" && find . \
+  \( -name .git -o -name .jj -o -name target -o -name node_modules \) -prune -o \
+  -type f -not -name '.DS_Store' -print) \
   | sed 's|^\./||' | LC_ALL=C sort > "${WORK}/actual.list"
 while read -r rel; do
   grep -qxF "$rel" "${WORK}/expected.list" && continue

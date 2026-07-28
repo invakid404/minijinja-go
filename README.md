@@ -1,3 +1,23 @@
+> **This is a fork.** `github.com/invakid404/minijinja-go/v2` is an owned,
+> pure-Go fork of [`mitsuhiko/minijinja`](https://github.com/mitsuhiko/minijinja)'s
+> Go port, maintained to reproduce the observable behaviour of BAML v0.223's
+> minijinja stack: rendered bytes, boolean results, value coercion, and
+> success/error behaviour.
+>
+> The baseline tag `v2.16.0-baml.0` is upstream `minijinja-go/v2.16.0`
+> (commit `b9afca42`) with **no semantic changes at all** — only a module-path
+> rewrite and vendored test corpora, proven mechanically by
+> [`scripts/verify-seed.sh`](scripts/verify-seed.sh).
+>
+> - [UPSTREAM.md](UPSTREAM.md) — pins, ownership boundary, upstream merge procedure
+> - [PATCHES.md](PATCHES.md) — every intentional semantic delta (currently none)
+> - [oracle/](oracle/) — the differential oracle against BAML's Rust engine
+>
+> If you are not targeting BAML, use upstream. The README below is upstream's,
+> with the module path rewritten.
+
+---
+
 <div align="center">
   <img src="https://github.com/mitsuhiko/minijinja/raw/main/artwork/logo.png" alt="" width=320>
   <p><strong>MiniJinja for Go: a powerful template engine for Go</strong></p>
