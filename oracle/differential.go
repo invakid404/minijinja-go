@@ -191,12 +191,12 @@ func Run(root string) (*Report, error) {
 			res.Verdict = VerdictNewDivergence
 			res.Class = classify(rust, got)
 			res.Note = "undeclared divergence"
-		case entry.Rust != rust.Signature() || entry.Go != got.Signature():
+		case !entry.Accepts(rust.Signature(), got.Signature()):
 			res.Verdict = VerdictLedgerStale
 			res.Class = entry.Class
 			res.Note = fmt.Sprintf(
-				"divergence changed shape; ledger has rust=%q go=%q, run produced rust=%q go=%q",
-				entry.Rust, entry.Go, rust.Signature(), got.Signature())
+				"divergence changed shape; ledger accepts rust=%v go=%v, run produced rust=%q go=%q",
+				entry.RustSignatures, entry.GoSignatures, rust.Signature(), got.Signature())
 		default:
 			res.Verdict = VerdictKnownDivergence
 			res.Class = entry.Class

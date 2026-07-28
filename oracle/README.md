@@ -107,6 +107,12 @@ comparison identity (`RED`) and a different display (`Red`). Its display row
 agrees on both engines, which is what isolates the remaining four rows to
 comparison dispatch rather than to the fixture.
 
+One of the fifteen, `arith/int-mul-i64-edge`, is **architecture-dependent**: the
+fork renders `9223372036854775807` on darwin/arm64 and `-9223372036854775808`
+on linux/amd64 for the same input. The first cross-platform CI run found it,
+because the ledger refuses a divergence that changed shape. That is why the
+differential runs on both architectures.
+
 ## Rust is test-only
 
 The harness is a separate Cargo project and the runner is a separate Go module

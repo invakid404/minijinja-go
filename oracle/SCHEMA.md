@@ -127,8 +127,8 @@ external consumer cannot classify at all.
       "id": "valuecmp/object-eq-string",
       "class": "engine",
       "summary": "one line stating the difference",
-      "rust_signature": "ok|true|true",
-      "go_signature": "ok|false|false",
+      "rust_signatures": ["ok|true|true"],
+      "go_signatures": ["ok|false|false"],
       "slice": "2 BAML profile / value-model foundation"
     }
   ]
@@ -136,8 +136,29 @@ external consumer cannot classify at all.
 ```
 
 A *signature* is the compared part of an outcome: `ok|<boolean>|<render>` or
-`error|<category>`. Both signatures are recorded so a divergence that changes
-shape fails instead of being absorbed.
+`error|<category>`. Both sides are recorded so a divergence that changes shape
+fails instead of being absorbed.
 
 `class` is one of `engine`, `profile`, `host`, `harness-incomplete` — see
 `README.md` for how the three-way result assigns them.
+
+### Architecture-dependent divergences
+
+A side may list more than one accepted signature **only** when the entry also
+sets `"architecture_dependent": true`. Loading the ledger fails otherwise, so a
+signature list can never be used to quietly widen an entry until it stops
+failing.
+
+`arith/int-mul-i64-edge` is the current example, and it is why the field exists:
+
+```json
+"go_signatures": ["ok|-|9223372036854775807", "ok|-|-9223372036854775808"],
+"architecture_dependent": true
+```
+
+The same Go source on the same input renders `9223372036854775807` on
+darwin/arm64 and `-9223372036854775808` on linux/amd64 — saturation versus
+wraparound in `int64(float64)`. The scope predicted exactly this class of
+platform dependence, and the first cross-platform CI run surfaced it: the row
+passed on macOS and failed on Linux as "divergence changed shape". That is the
+reason the differential runs on both architectures rather than one.

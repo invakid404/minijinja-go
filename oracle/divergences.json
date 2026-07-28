@@ -5,120 +5,182 @@
       "id": "arith/int-add-above-2pow53",
       "class": "engine",
       "summary": "Integer addition is laundered through float64 (value/ops.go:37-72), so operands above 2^53 lose precision; Rust does checked i128 arithmetic.",
-      "rust_signature": "ok|-|9007199254740994",
-      "go_signature": "ok|-|9007199254740992",
+      "rust_signatures": [
+        "ok|-|9007199254740994"
+      ],
+      "go_signatures": [
+        "ok|-|9007199254740992"
+      ],
       "slice": "3 numeric core"
     },
     {
       "id": "arith/int-mul-i64-edge",
       "class": "engine",
-      "summary": "At the i64 edge Rust promotes past i64::MAX (i128) while the Go port saturates at math.MaxInt64.",
-      "rust_signature": "ok|-|9223372036854775808",
-      "go_signature": "ok|-|9223372036854775807",
+      "summary": "At the i64 edge Rust promotes past i64::MAX (i128) while the Go port's float64 round-trip lands on an i64 boundary value. The Go result is architecture-dependent: darwin/arm64 saturates to math.MaxInt64, linux/amd64 wraps to math.MinInt64 -- the platform-dependent int64(float64) conversion the scope predicted.",
+      "rust_signatures": [
+        "ok|-|9223372036854775808"
+      ],
+      "go_signatures": [
+        "ok|-|9223372036854775807",
+        "ok|-|-9223372036854775808"
+      ],
+      "architecture_dependent": true,
       "slice": "3 numeric core"
     },
     {
       "id": "arith/rem-negative",
       "class": "engine",
       "summary": "Remainder sign: Rust minijinja returns the Euclidean remainder 1 for -7 % 2; Go's math.Mod returns -1.",
-      "rust_signature": "ok|-|1",
-      "go_signature": "ok|-|-1",
+      "rust_signatures": [
+        "ok|-|1"
+      ],
+      "go_signatures": [
+        "ok|-|-1"
+      ],
       "slice": "3 numeric core"
     },
     {
       "id": "arith/div-by-zero",
       "class": "engine",
       "summary": "Rust divides as float and renders inf for 1/0; the Go port raises an invalid-operation error. The whole outcome category differs, not just the bytes.",
-      "rust_signature": "ok|-|inf",
-      "go_signature": "error|invalid_operation",
+      "rust_signatures": [
+        "ok|-|inf"
+      ],
+      "go_signatures": [
+        "error|invalid_operation"
+      ],
       "slice": "3 numeric core"
     },
     {
       "id": "cmp/int-in-string",
       "class": "engine",
       "summary": "Containment coercion: Rust stringifies the left operand for a string container, so 1 in '1' is true; the Go port only matches string operands.",
-      "rust_signature": "ok|true|true",
-      "go_signature": "ok|false|false",
+      "rust_signatures": [
+        "ok|true|true"
+      ],
+      "go_signatures": [
+        "ok|false|false"
+      ],
       "slice": "4 coercion, containers, VM operations"
     },
     {
       "id": "str/lower-dotted-capital-i",
       "class": "engine",
       "summary": "Rust str::to_lowercase applies full Unicode case mapping, lowering U+0130 to i + U+0307; Go's strings.ToLower applies simple per-rune mapping and drops the combining dot.",
-      "rust_signature": "ok|-|i̇",
-      "go_signature": "ok|-|i",
+      "rust_signatures": [
+        "ok|-|i̇"
+      ],
+      "go_signatures": [
+        "ok|-|i"
+      ],
       "slice": "5 builtins and pycompat"
     },
     {
       "id": "str/upper-sharp-s",
       "class": "engine",
       "summary": "Rust str::to_uppercase expands U+00DF to SS; Go's per-rune uppercase leaves it unchanged.",
-      "rust_signature": "ok|-|STRASSE",
-      "go_signature": "ok|-|STRAßE",
+      "rust_signatures": [
+        "ok|-|STRASSE"
+      ],
+      "go_signatures": [
+        "ok|-|STRAßE"
+      ],
       "slice": "5 builtins and pycompat"
     },
     {
       "id": "container/map-render-insertion-order",
       "class": "engine",
       "summary": "BAML builds the engine with preserve_order so maps display in insertion order; the Go port's map value sorts keys (value/value.go:936-946).",
-      "rust_signature": "ok|-|{\"b\": 1, \"a\": 2}",
-      "go_signature": "ok|-|{\"a\": 2, \"b\": 1}",
+      "rust_signatures": [
+        "ok|-|{\"b\": 1, \"a\": 2}"
+      ],
+      "go_signatures": [
+        "ok|-|{\"a\": 2, \"b\": 1}"
+      ],
       "slice": "4 coercion, containers, VM operations"
     },
     {
       "id": "container/map-loop-insertion-order",
       "class": "engine",
       "summary": "The same ordering difference observed through iteration: rendered prompt bytes depend on map order, so this is not display-only.",
-      "rust_signature": "ok|-|b=1;a=2;",
-      "go_signature": "ok|-|a=2;b=1;",
+      "rust_signatures": [
+        "ok|-|b=1;a=2;"
+      ],
+      "go_signatures": [
+        "ok|-|a=2;b=1;"
+      ],
       "slice": "4 coercion, containers, VM operations"
     },
     {
       "id": "valuecmp/object-eq-string",
       "class": "engine",
       "summary": "The #597 enum fence in generic form. BoundaryML's engine delta asks an object's value_cmp before ordinary equality; the fork has no such hook, only object-to-object ObjectCmp.",
-      "rust_signature": "ok|true|true",
-      "go_signature": "ok|false|false",
+      "rust_signatures": [
+        "ok|true|true"
+      ],
+      "go_signatures": [
+        "ok|false|false"
+      ],
       "slice": "2 BAML profile / value-model foundation (generic value_cmp API)"
     },
     {
       "id": "valuecmp/string-eq-object",
       "class": "engine",
       "summary": "Reverse operand order of the same fence: Rust retries value_cmp from the right-hand operand for commutativity.",
-      "rust_signature": "ok|true|true",
-      "go_signature": "ok|false|false",
+      "rust_signatures": [
+        "ok|true|true"
+      ],
+      "go_signatures": [
+        "ok|false|false"
+      ],
       "slice": "2 BAML profile / value-model foundation (generic value_cmp API)"
     },
     {
       "id": "valuecmp/string-in-object-list",
       "class": "engine",
       "summary": "Containment reaches the same equality dispatch, so 'RED' in [Color.RED] is false on the fork.",
-      "rust_signature": "ok|true|true",
-      "go_signature": "ok|false|false",
+      "rust_signatures": [
+        "ok|true|true"
+      ],
+      "go_signatures": [
+        "ok|false|false"
+      ],
       "slice": "2 BAML profile / value-model foundation (generic value_cmp API)"
     },
     {
       "id": "valuecmp/object-eq-object",
       "class": "engine",
       "summary": "Even object-to-object equality fails: the fork dispatches ObjectCmp from Value.Compare (value/ops.go:420-425) but Value.Equal never reaches it, so two objects with the same canonical value compare unequal.",
-      "rust_signature": "ok|true|true",
-      "go_signature": "ok|false|false",
+      "rust_signatures": [
+        "ok|true|true"
+      ],
+      "go_signatures": [
+        "ok|false|false"
+      ],
       "slice": "2 BAML profile / value-model foundation (generic value_cmp API)"
     },
     {
       "id": "err/go-only-urlencode-filter",
       "class": "engine",
       "summary": "urlencode is a Go-port default (defaults.go:13-130) but BAML does not enable the urlencode feature, so the engine rejects it. A Go-only extra must not become a supported BAML behaviour.",
-      "rust_signature": "error|unknown_filter",
-      "go_signature": "ok|-|a%20b",
+      "rust_signatures": [
+        "error|unknown_filter"
+      ],
+      "go_signatures": [
+        "ok|-|a%20b"
+      ],
       "slice": "5 builtins and pycompat"
     },
     {
       "id": "err/syntax-incomplete-if",
       "class": "engine",
       "summary": "Both engines reject the template, but the fork returns an unexported *parser.Error rather than *minijinja.Error, so an external consumer cannot classify a compile error at all.",
-      "rust_signature": "error|syntax",
-      "go_signature": "error|unclassifiable",
+      "rust_signatures": [
+        "error|syntax"
+      ],
+      "go_signatures": [
+        "error|unclassifiable"
+      ],
       "slice": "6 full template sweep (error surface)"
     }
   ]

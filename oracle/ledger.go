@@ -58,14 +58,38 @@ type LedgerEntry struct {
 	Class Class  `json:"class"`
 	// Summary states the difference in one line.
 	Summary string `json:"summary"`
-	// Rust and Go are the outcome signatures observed when the entry was
-	// recorded. If either side moves, the entry no longer matches and the
-	// differential fails.
-	Rust string `json:"rust_signature"`
-	Go   string `json:"go_signature"`
+	// RustSignatures and GoSignatures are every outcome signature accepted for
+	// this divergence. A run must produce one of them on each side; anything
+	// else means the divergence changed shape and must be re-examined.
+	//
+	// More than one signature on a side is only legal for an
+	// architecture-dependent divergence, so the list cannot be used to
+	// quietly widen an entry until it stops failing.
+	RustSignatures []string `json:"rust_signatures"`
+	GoSignatures   []string `json:"go_signatures"`
+	// ArchitectureDependent marks a divergence whose result differs across
+	// architectures. That is a finding in its own right — the parked evaluator
+	// work identified Go's int64(float64) conversion as a source of
+	// platform-dependent behaviour — so it is declared explicitly rather than
+	// inferred from a longer list.
+	ArchitectureDependent bool `json:"architecture_dependent,omitempty"`
 	// Slice names where this is expected to be resolved, per the scope's slice
 	// plan. Empty means not yet scheduled.
 	Slice string `json:"slice,omitempty"`
+}
+
+// Accepts reports whether a run's signatures match this entry.
+func (e *LedgerEntry) Accepts(rust, got string) bool {
+	return contains(e.RustSignatures, rust) && contains(e.GoSignatures, got)
+}
+
+func contains(haystack []string, needle string) bool {
+	for _, s := range haystack {
+		if s == needle {
+			return true
+		}
+	}
+	return false
 }
 
 // LoadLedger reads and validates the divergence ledger.
@@ -95,6 +119,15 @@ func LoadLedger(path string) (*Ledger, error) {
 		}
 		if e.Summary == "" {
 			return nil, fmt.Errorf("%s: entry %q has no summary", path, e.ID)
+		}
+		if len(e.RustSignatures) == 0 || len(e.GoSignatures) == 0 {
+			return nil, fmt.Errorf("%s: entry %q must record at least one signature per side", path, e.ID)
+		}
+		if !e.ArchitectureDependent && (len(e.RustSignatures) > 1 || len(e.GoSignatures) > 1) {
+			return nil, fmt.Errorf(
+				"%s: entry %q lists several signatures but is not marked architecture_dependent; "+
+					"a signature list must never be used to widen an entry until it stops failing",
+				path, e.ID)
 		}
 		l.byID[e.ID] = e
 	}

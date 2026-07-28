@@ -43,7 +43,7 @@ func TestDifferential(t *testing.T) {
 				t.Errorf("UNDECLARED DIVERGENCE (provisional class %s)\n"+
 					"  source: %s\n  rust: %s\n  go:   %s\n"+
 					"  If real, add it to oracle/divergences.json with\n"+
-					"    rust_signature: %q\n    go_signature:   %q",
+					"    rust_signatures: [%q]\n    go_signatures:   [%q]",
 					res.Class, res.Row.TemplateSource(),
 					res.Rust.Describe(), res.Go.Describe(),
 					res.Rust.Signature(), res.Go.Signature())
