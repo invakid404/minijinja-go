@@ -2,42 +2,6 @@
   "schema_version": 1,
   "entries": [
     {
-      "id": "str/lower-dotted-capital-i",
-      "class": "engine",
-      "summary": "Rust str::to_lowercase applies full Unicode case mapping, lowering U+0130 to i + U+0307; Go's strings.ToLower applies simple per-rune mapping and drops the combining dot.",
-      "rust_signatures": [
-        "ok|-|i̇"
-      ],
-      "go_signatures": [
-        "ok|-|i"
-      ],
-      "slice": "5 builtins and pycompat"
-    },
-    {
-      "id": "str/upper-sharp-s",
-      "class": "engine",
-      "summary": "Rust str::to_uppercase expands U+00DF to SS; Go's per-rune uppercase leaves it unchanged.",
-      "rust_signatures": [
-        "ok|-|STRASSE"
-      ],
-      "go_signatures": [
-        "ok|-|STRAßE"
-      ],
-      "slice": "5 builtins and pycompat"
-    },
-    {
-      "id": "err/go-only-urlencode-filter",
-      "class": "engine",
-      "summary": "urlencode is a Go-port default (defaults.go:13-130) but BAML does not enable the urlencode feature, so the engine rejects it. A Go-only extra must not become a supported BAML behaviour.",
-      "rust_signatures": [
-        "error|unknown_filter"
-      ],
-      "go_signatures": [
-        "ok|-|a%20b"
-      ],
-      "slice": "5 builtins and pycompat"
-    },
-    {
       "id": "container/dict-function-kwargs-order",
       "class": "engine",
       "summary": "dict() builds a mapping from keyword arguments, and Rust keeps the order they were written in. This fork passes keyword arguments to functions and filters as a Go map (value.Callable, filters.Filter), so the order is lost at the call boundary, before the function can preserve it. Ordered map values fixed every other mapping surface; this one needs the callable signature to carry an ordered mapping.",
@@ -48,6 +12,42 @@
         "ok|-|{\"a\": 2, \"b\": 1}"
       ],
       "slice": "5 builtins and pycompat (keyword-argument plumbing)"
+    },
+    {
+      "id": "test/divisibleby-zero",
+      "class": "engine",
+      "summary": "The engine computes `a % b` on integers and PANICS on a zero divisor (tests.rs:153-159). The fork refuses with an invalid operation instead: a panic is not a behaviour worth reproducing, and answering `false` where the reference implementation aborts is the dangerous direction. Deliberate and permanent; see PATCHES.md.",
+      "rust_signatures": [
+        "panic"
+      ],
+      "go_signatures": [
+        "error|invalid_operation"
+      ],
+      "slice": "5 builtins and pycompat (deliberate, permanent)"
+    },
+    {
+      "id": "syntax/bad-escape-capital-u",
+      "class": "engine",
+      "summary": "minijinja's lexer has no `\\U` string escape and rejects the literal with BadEscape; the Go port's lexer accepts Go-style escapes and renders the character. A lexer difference on the way to the builtin, not a builtin difference.",
+      "rust_signatures": [
+        "error|bad_escape"
+      ],
+      "go_signatures": [
+        "ok|-|1"
+      ],
+      "slice": "6 template and error surface"
+    },
+    {
+      "id": "syntax/bad-escape-rust-unicode",
+      "class": "engine",
+      "summary": "Nor does it have Rust's `\\u{...}` form. Both engines reject the literal, but under different kinds: minijinja's lexer reports BadEscape, while the fork's lexer reads `\\u` as Go's four-hex-digit escape and reports a located syntax error. A lexer difference, owned by the template and error surface.",
+      "rust_signatures": [
+        "error|bad_escape"
+      ],
+      "go_signatures": [
+        "error|syntax"
+      ],
+      "slice": "6 template and error surface"
     }
   ]
 }

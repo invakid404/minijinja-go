@@ -8,11 +8,11 @@ oracle/corpus/*.json ──┬──> oracle/harness (Rust)  ─> boundaryml/min
                        └──> oracle (Go)            ─> this fork                     ─┘
 ```
 
-The corpus is split by lane — `seed.json`, `template.json`, `numeric.json` — and each file is
-recorded independently as `recorded/rust-8cfc770-<lane>.json`. Adding rows to
-one lane therefore never invalidates another lane's recording. Row ids are
-unique across the whole set, because the ledger and `PATCHES.md` are keyed by
-them.
+The corpus is split by lane — `seed.json`, `template.json`, `numeric.json`,
+`builtins.json`, `argcontract.json` — and each file is recorded independently as
+`recorded/rust-8cfc770-<lane>.json`. Adding rows to one lane therefore never
+invalidates another lane's recording. Row ids are unique across the whole set,
+because the ledger and `PATCHES.md` are keyed by them.
 
 The Rust harness links **the exact engine revision BAML v0.223 builds against**
 (`boundaryml/minijinja`, branch `value-cmp`, rev `8cfc770a5dffeda2de5b910d2b9f870d7edeff7c`)
@@ -40,9 +40,14 @@ lane lands, a three-way result becomes diagnostic:
 | no | no | this fork's engine (`class: engine`) |
 | all three differ | | the harness is incomplete or the fixture is wrong (`class: harness-incomplete`) |
 
-That is why corpus rows carry a `profile` field even though `stock` is the only
-value today: the BAML profile arrives as a second profile on both sides without
-a schema change.
+That is why corpus rows carry a `profile` field. Two exist today:
+
+| profile | environment |
+| --- | --- |
+| `stock` | stock engine defaults |
+| `pycompat` | stock defaults plus the Python-compatible unknown-method callback — `minijinja-contrib::pycompat` on the Rust side, this fork's `pycompat` package on the Go side. It is a *generic* engine capability driven by an installable module, which is why it is not the BAML profile: no `regex_match`, no `sum`, no none-formatter. |
+
+The BAML v0.223 profile arrives as a third value without a schema change.
 
 ## Running it
 
@@ -60,6 +65,11 @@ go test ./...
 
 # Refresh the recording after changing the corpus or the harness.
 ./record.sh
+
+# Regenerate internal/unicodecase from the Rust toolchain's Unicode tables.
+(cd harness && cargo build --release --bin mj-casegen)
+./harness/target/release/mj-casegen > ../internal/unicodecase/testdata/rust-unicode.json
+go run ./cmd/gentables
 ```
 
 Each `recorded/rust-8cfc770-<lane>.json` is a committed run of the harness. It
@@ -173,15 +183,33 @@ float boundary); `range`; and the display form of every container shape. The row
 the fork agrees on are as load-bearing as the red ones: they are what makes a
 regression in this class fail.
 
+**`builtins.json`** — 395 rows: every filter, test and function BAML's engine
+build enables, each with valid input, bad input and the exact error; the whole
+`minijinja-contrib::pycompat` dispatch table, run on the `pycompat` profile;
+printf and `str.format` specs; Unicode casing, whitespace and digit edges; JSON
+and float formatting; and the five Go-only names (`urlencode`, `containing`,
+`cycler`, `joiner`, `lipsum`) that must be *rejected* with the engine's own
+unknown-filter/test/function error.
+
+**`argcontract.json`** — 440 rows: the engine's `from_args` contract itself.
+Arity and keyword handling for all 94 registered names, the invalid-value
+boundary (`ValueRepr::Invalid` and the engine's four validation points), call
+dispatch (`unknown_function` for an unresolved name versus `invalid_operation`
+for a resolved non-callable), bare-call evaluation order, and macro lifetime
+and `{% call %}` semantics.
+
 ### Engine profiles
 
 `trim_blocks`, `lstrip_blocks` and `keep_trailing_newline` cannot be reached
 from template source — they are environment settings — so a row can name one of
-five profiles, and both sides configure the environment identically:
+six profiles, and both sides configure the environment identically:
 `stock`, `trim_blocks`, `lstrip_blocks`, `trim_lstrip` (the pair BAML's own
-environment sets) and `keep_trailing_newline`. Every profile is *engine
-configuration only*; BAML's environment (globals, filters, pycompat) is not
-here and arrives as its own profile in a later slice.
+environment sets), `keep_trailing_newline`, and `pycompat`, which installs the
+Python-compatible unknown-method module BAML installs on its own environment
+(`minijinja-contrib::pycompat` on the Rust side, this fork's `pycompat` package
+on the Go side). Every profile is *engine configuration only*; BAML's
+environment (globals, `regex_match`/`sum`, the none-formatter, prompt lowering)
+is not here and arrives as its own profile in a later slice.
 
 ### Where the corpus stands
 

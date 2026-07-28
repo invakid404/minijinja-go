@@ -1,0 +1,2724 @@
+{
+  "schema_version": 1,
+  "rows": [
+    {
+      "id": "err/go-only-containing-test",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'foobar' is containing('oob')",
+      "expect": "error",
+      "notes": "`containing` is not a minijinja 2.16.0 test at all; the Go port shipped it. The engine must reject it rather than the fork answering true."
+    },
+    {
+      "id": "err/go-only-cycler-function",
+      "surface": "environment",
+      "form": "expression",
+      "source": "cycler('a', 'b')",
+      "expect": "error",
+      "notes": "`cycler` is a Go-port global the engine does not have."
+    },
+    {
+      "id": "err/go-only-joiner-function",
+      "surface": "environment",
+      "form": "expression",
+      "source": "joiner(', ')",
+      "expect": "error",
+      "notes": "`joiner` is a Go-port global the engine does not have."
+    },
+    {
+      "id": "err/go-only-lipsum-function",
+      "surface": "environment",
+      "form": "expression",
+      "source": "lipsum(1)",
+      "expect": "error",
+      "notes": "`lipsum` is a Go-port global the engine does not have."
+    },
+    {
+      "id": "err/go-only-urlencode-kv",
+      "surface": "environment",
+      "form": "expression",
+      "source": "dict(a='x y')|urlencode",
+      "expect": "error",
+      "notes": "The map form of the withdrawn urlencode filter, which the upstream Go corpus also exercised. Both spellings must be rejected."
+    },
+    {
+      "id": "filter/safe-ok",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'<b>'|safe"
+    },
+    {
+      "id": "filter/escape-ok",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'<b>&\"'|escape"
+    },
+    {
+      "id": "filter/escape-alias-e",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'<b>'|e"
+    },
+    {
+      "id": "filter/escape-int",
+      "surface": "environment",
+      "form": "expression",
+      "source": "42|escape"
+    },
+    {
+      "id": "filter/escape-none",
+      "surface": "environment",
+      "form": "expression",
+      "source": "none|escape"
+    },
+    {
+      "id": "filter/lower-ascii",
+      "surface": "string",
+      "form": "expression",
+      "source": "'HeLLo'|lower"
+    },
+    {
+      "id": "filter/upper-ascii",
+      "surface": "string",
+      "form": "expression",
+      "source": "'HeLLo'|upper"
+    },
+    {
+      "id": "filter/title-ascii",
+      "surface": "string",
+      "form": "expression",
+      "source": "'hello world'|title"
+    },
+    {
+      "id": "filter/capitalize-ascii",
+      "surface": "string",
+      "form": "expression",
+      "source": "'hello WORLD'|capitalize"
+    },
+    {
+      "id": "filter/upper-int",
+      "surface": "string",
+      "form": "expression",
+      "source": "42|upper",
+      "notes": "The engine's Cow<str> argument stringifies a non-string, so this is not a type error."
+    },
+    {
+      "id": "filter/upper-none",
+      "surface": "string",
+      "form": "expression",
+      "source": "none|upper",
+      "notes": "none stringifies to `none`, so this renders NONE rather than an empty string."
+    },
+    {
+      "id": "filter/upper-bool",
+      "surface": "string",
+      "form": "expression",
+      "source": "true|upper"
+    },
+    {
+      "id": "filter/upper-seq",
+      "surface": "string",
+      "form": "expression",
+      "source": "[1, 2]|upper"
+    },
+    {
+      "id": "filter/lower-none",
+      "surface": "string",
+      "form": "expression",
+      "source": "none|lower"
+    },
+    {
+      "id": "filter/capitalize-empty",
+      "surface": "string",
+      "form": "expression",
+      "source": "''|capitalize"
+    },
+    {
+      "id": "filter/replace-ok",
+      "surface": "string",
+      "form": "expression",
+      "source": "'Hello World'|replace('Hello', 'Goodbye')"
+    },
+    {
+      "id": "filter/replace-empty-pattern",
+      "surface": "string",
+      "form": "expression",
+      "source": "'ab'|replace('', '-')",
+      "notes": "An empty pattern matches at every character boundary in both engines."
+    },
+    {
+      "id": "filter/replace-missing-arg",
+      "surface": "string",
+      "form": "expression",
+      "source": "'ab'|replace('a')",
+      "expect": "error"
+    },
+    {
+      "id": "filter/replace-count-arg",
+      "surface": "string",
+      "form": "expression",
+      "source": "'aaa'|replace('a', 'b', 2)",
+      "expect": "error",
+      "notes": "minijinja's replace takes exactly two arguments. Jinja2's optional count is not part of it, and the Go port accepted it; a third argument must be an error."
+    },
+    {
+      "id": "filter/replace-nonstring-subject",
+      "surface": "string",
+      "form": "expression",
+      "source": "42|replace('4', 'x')"
+    },
+    {
+      "id": "filter/length-string",
+      "surface": "container",
+      "form": "expression",
+      "source": "'hello'|length"
+    },
+    {
+      "id": "filter/length-unicode",
+      "surface": "container",
+      "form": "expression",
+      "source": "'héllo'|length"
+    },
+    {
+      "id": "filter/length-seq",
+      "surface": "container",
+      "form": "expression",
+      "source": "[1, 2, 3]|length"
+    },
+    {
+      "id": "filter/count-alias",
+      "surface": "container",
+      "form": "expression",
+      "source": "'hello'|count"
+    },
+    {
+      "id": "filter/length-int",
+      "surface": "container",
+      "form": "expression",
+      "source": "42|length",
+      "expect": "error"
+    },
+    {
+      "id": "filter/items-single",
+      "surface": "container",
+      "form": "expression",
+      "source": "dict(a=1)|items"
+    },
+    {
+      "id": "filter/dictsort-single",
+      "surface": "container",
+      "form": "expression",
+      "source": "dict(a=1)|dictsort"
+    },
+    {
+      "id": "filter/items-int",
+      "surface": "container",
+      "form": "expression",
+      "source": "42|items",
+      "expect": "error"
+    },
+    {
+      "id": "filter/reverse-seq",
+      "surface": "container",
+      "form": "expression",
+      "source": "[1, 2, 3]|reverse"
+    },
+    {
+      "id": "filter/reverse-string",
+      "surface": "string",
+      "form": "expression",
+      "source": "'abc'|reverse"
+    },
+    {
+      "id": "filter/reverse-int",
+      "surface": "container",
+      "form": "expression",
+      "source": "42|reverse",
+      "expect": "error"
+    },
+    {
+      "id": "filter/trim-ascii",
+      "surface": "string",
+      "form": "expression",
+      "source": "'  hi  '|trim"
+    },
+    {
+      "id": "filter/trim-chars",
+      "surface": "string",
+      "form": "expression",
+      "source": "'1212foo12bar1212'|trim('12')"
+    },
+    {
+      "id": "filter/trim-nbsp",
+      "surface": "string",
+      "form": "expression",
+      "source": "'\\u00a0hi\\u00a0'|trim",
+      "notes": "Rust's str::trim is Unicode-aware; a Go cutset of four ASCII bytes is not."
+    },
+    {
+      "id": "filter/trim-int",
+      "surface": "string",
+      "form": "expression",
+      "source": "42|trim"
+    },
+    {
+      "id": "filter/join-default",
+      "surface": "container",
+      "form": "expression",
+      "source": "[1, 2, 3]|join"
+    },
+    {
+      "id": "filter/join-sep",
+      "surface": "container",
+      "form": "expression",
+      "source": "[1, 2, 3]|join('|')"
+    },
+    {
+      "id": "filter/join-string-subject",
+      "surface": "container",
+      "form": "expression",
+      "source": "'abc'|join('-')"
+    },
+    {
+      "id": "filter/join-int",
+      "surface": "container",
+      "form": "expression",
+      "source": "42|join",
+      "expect": "error"
+    },
+    {
+      "id": "filter/join-none",
+      "surface": "container",
+      "form": "expression",
+      "source": "none|join"
+    },
+    {
+      "id": "filter/split-ws",
+      "surface": "string",
+      "form": "expression",
+      "source": "'a b  c'|split|list"
+    },
+    {
+      "id": "filter/split-sep",
+      "surface": "string",
+      "form": "expression",
+      "source": "'a,b,c'|split(',')|list"
+    },
+    {
+      "id": "filter/split-maxsplits",
+      "surface": "string",
+      "form": "expression",
+      "source": "'a,b,c,d'|split(',', 2)|list"
+    },
+    {
+      "id": "filter/split-ws-maxsplits",
+      "surface": "string",
+      "form": "expression",
+      "source": "'  foo    bar baz  '|split(none, 1)|list"
+    },
+    {
+      "id": "filter/split-empty-sep",
+      "surface": "string",
+      "form": "expression",
+      "source": "'ab'|split('')|list",
+      "notes": "Rust's str::split with an empty pattern yields leading and trailing empty pieces; Go's strings.Split does not."
+    },
+    {
+      "id": "filter/split-negative-maxsplits",
+      "surface": "string",
+      "form": "expression",
+      "source": "'a,b,c'|split(',', -1)|list"
+    },
+    {
+      "id": "filter/split-int",
+      "surface": "string",
+      "form": "expression",
+      "source": "42|split|list",
+      "expect": "error",
+      "notes": "split takes Arc<str>, which requires a real string, unlike the casing filters."
+    },
+    {
+      "id": "filter/lines-crlf",
+      "surface": "string",
+      "form": "expression",
+      "source": "'foo\\nbar\\r\\nbaz'|lines"
+    },
+    {
+      "id": "filter/lines-trailing-newline",
+      "surface": "string",
+      "form": "expression",
+      "source": "'a\\n'|lines",
+      "notes": "str::lines produces no empty final line for a trailing newline."
+    },
+    {
+      "id": "filter/lines-lone-cr",
+      "surface": "string",
+      "form": "expression",
+      "source": "'a\\rb'|lines",
+      "notes": "A lone carriage return is not a line break for str::lines."
+    },
+    {
+      "id": "filter/lines-empty",
+      "surface": "string",
+      "form": "expression",
+      "source": "''|lines"
+    },
+    {
+      "id": "filter/lines-int",
+      "surface": "string",
+      "form": "expression",
+      "source": "42|lines",
+      "expect": "error"
+    },
+    {
+      "id": "filter/default-undefined",
+      "surface": "environment",
+      "form": "expression",
+      "source": "undefined_thing|default(42)"
+    },
+    {
+      "id": "filter/default-empty",
+      "surface": "environment",
+      "form": "expression",
+      "source": "''|default('x', true)"
+    },
+    {
+      "id": "filter/default-alias-d",
+      "surface": "environment",
+      "form": "expression",
+      "source": "undefined_thing|d"
+    },
+    {
+      "id": "filter/default-defined",
+      "surface": "environment",
+      "form": "expression",
+      "source": "0|default(42)"
+    },
+    {
+      "id": "filter/round-float",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "42.55|round"
+    },
+    {
+      "id": "filter/round-precision",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "42.512345|round(2)"
+    },
+    {
+      "id": "filter/round-int",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "42|round"
+    },
+    {
+      "id": "filter/round-string",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "'x'|round",
+      "expect": "error"
+    },
+    {
+      "id": "filter/abs-negative-int",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "-42|abs"
+    },
+    {
+      "id": "filter/abs-negative-float",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "-42.5|abs"
+    },
+    {
+      "id": "filter/abs-string",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "'x'|abs",
+      "expect": "error"
+    },
+    {
+      "id": "filter/int-string",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "'42'|int"
+    },
+    {
+      "id": "filter/int-float-string",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "'42.42'|int"
+    },
+    {
+      "id": "filter/int-bool",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "true|int"
+    },
+    {
+      "id": "filter/int-none",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "none|int"
+    },
+    {
+      "id": "filter/int-leading-space",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "' 42'|int",
+      "expect": "error",
+      "notes": "Rust's parse::<i128> rejects a leading space; a lenient Go parser would not."
+    },
+    {
+      "id": "filter/int-bad",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "'abc'|int",
+      "expect": "error"
+    },
+    {
+      "id": "filter/int-seq",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "[1]|int",
+      "expect": "error"
+    },
+    {
+      "id": "filter/float-string",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "'42.5'|float"
+    },
+    {
+      "id": "filter/float-bad",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "'abc'|float",
+      "expect": "error"
+    },
+    {
+      "id": "filter/float-bool",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "true|float"
+    },
+    {
+      "id": "filter/float-inf-string",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "'inf'|float",
+      "notes": "Rust's f64 parser accepts inf/nan spellings."
+    },
+    {
+      "id": "filter/attr-ok",
+      "surface": "container",
+      "form": "expression",
+      "source": "m|attr('a')",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "filter/attr-missing",
+      "surface": "container",
+      "form": "expression",
+      "source": "m|attr('zz')",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "a",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "filter/first-seq",
+      "surface": "container",
+      "form": "expression",
+      "source": "[1, 2]|first"
+    },
+    {
+      "id": "filter/first-string",
+      "surface": "container",
+      "form": "expression",
+      "source": "'abc'|first"
+    },
+    {
+      "id": "filter/first-empty",
+      "surface": "container",
+      "form": "expression",
+      "source": "[]|first is undefined",
+      "expect": "boolean"
+    },
+    {
+      "id": "filter/first-int",
+      "surface": "container",
+      "form": "expression",
+      "source": "42|first",
+      "expect": "error"
+    },
+    {
+      "id": "filter/last-seq",
+      "surface": "container",
+      "form": "expression",
+      "source": "[1, 2]|last"
+    },
+    {
+      "id": "filter/last-string",
+      "surface": "container",
+      "form": "expression",
+      "source": "'abc'|last"
+    },
+    {
+      "id": "filter/min-ints",
+      "surface": "container",
+      "form": "expression",
+      "source": "[3, 1, 2]|min"
+    },
+    {
+      "id": "filter/max-ints",
+      "surface": "container",
+      "form": "expression",
+      "source": "[3, 1, 2]|max"
+    },
+    {
+      "id": "filter/min-empty",
+      "surface": "container",
+      "form": "expression",
+      "source": "[]|min"
+    },
+    {
+      "id": "filter/min-strings-case",
+      "surface": "container",
+      "form": "expression",
+      "source": "['b', 'A']|min",
+      "notes": "minijinja compares strings case-insensitively via unicase unless told otherwise."
+    },
+    {
+      "id": "filter/sort-ints",
+      "surface": "container",
+      "form": "expression",
+      "source": "[3, 1, 2]|sort"
+    },
+    {
+      "id": "filter/sort-strings",
+      "surface": "container",
+      "form": "expression",
+      "source": "['B', 'a', 'C']|sort"
+    },
+    {
+      "id": "filter/sort-case-sensitive",
+      "surface": "container",
+      "form": "expression",
+      "source": "['B', 'a', 'C']|sort(case_sensitive=true)"
+    },
+    {
+      "id": "filter/sort-reverse",
+      "surface": "container",
+      "form": "expression",
+      "source": "[1, 3, 2]|sort(reverse=true)"
+    },
+    {
+      "id": "filter/list-string",
+      "surface": "container",
+      "form": "expression",
+      "source": "'abc'|list"
+    },
+    {
+      "id": "filter/list-int",
+      "surface": "container",
+      "form": "expression",
+      "source": "42|list",
+      "expect": "error"
+    },
+    {
+      "id": "filter/string-int",
+      "surface": "string",
+      "form": "expression",
+      "source": "42|string"
+    },
+    {
+      "id": "filter/string-float",
+      "surface": "string",
+      "form": "expression",
+      "source": "42.5|string"
+    },
+    {
+      "id": "filter/string-seq",
+      "surface": "string",
+      "form": "expression",
+      "source": "[1, 2]|string"
+    },
+    {
+      "id": "filter/bool-empty-string",
+      "surface": "environment",
+      "form": "expression",
+      "source": "''|bool"
+    },
+    {
+      "id": "filter/bool-string",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'x'|bool"
+    },
+    {
+      "id": "filter/bool-int",
+      "surface": "environment",
+      "form": "expression",
+      "source": "0|bool"
+    },
+    {
+      "id": "filter/batch",
+      "surface": "container",
+      "form": "expression",
+      "source": "range(5)|batch(2)"
+    },
+    {
+      "id": "filter/batch-fill",
+      "surface": "container",
+      "form": "expression",
+      "source": "range(5)|batch(2, '-')"
+    },
+    {
+      "id": "filter/slice",
+      "surface": "container",
+      "form": "expression",
+      "source": "range(5)|slice(2)"
+    },
+    {
+      "id": "filter/slice-fill",
+      "surface": "container",
+      "form": "expression",
+      "source": "range(5)|slice(2, '-')"
+    },
+    {
+      "id": "filter/batch-zero",
+      "surface": "container",
+      "form": "expression",
+      "source": "range(3)|batch(0)",
+      "expect": "error"
+    },
+    {
+      "id": "filter/sum-ints",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "range(5)|sum"
+    },
+    {
+      "id": "filter/sum-empty",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "[]|sum"
+    },
+    {
+      "id": "filter/sum-floats",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "[0.5, 1.0]|sum"
+    },
+    {
+      "id": "filter/sum-strings",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "['a']|sum",
+      "expect": "error",
+      "notes": "The stock engine's sum rejects a non-number. BAML replaces this filter in its own environment; that is the deferred profile, not this one."
+    },
+    {
+      "id": "filter/sum-string-subject",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "'abc'|sum",
+      "expect": "error"
+    },
+    {
+      "id": "filter/indent",
+      "surface": "string",
+      "form": "expression",
+      "source": "'foo\\nbar\\nbaz'|indent(2)|tojson"
+    },
+    {
+      "id": "filter/indent-first-line",
+      "surface": "string",
+      "form": "expression",
+      "source": "'foo\\nbar'|indent(2, true)|tojson"
+    },
+    {
+      "id": "filter/indent-blank-lines",
+      "surface": "string",
+      "form": "expression",
+      "source": "'foo\\n\\nbar'|indent(2, true, true)|tojson"
+    },
+    {
+      "id": "filter/indent-int",
+      "surface": "string",
+      "form": "expression",
+      "source": "42|indent(2)"
+    },
+    {
+      "id": "filter/select-odd",
+      "surface": "container",
+      "form": "expression",
+      "source": "[1, 2, 3]|select('odd')"
+    },
+    {
+      "id": "filter/select-truthy",
+      "surface": "container",
+      "form": "expression",
+      "source": "[0, 1, '', 'a']|select"
+    },
+    {
+      "id": "filter/reject-odd",
+      "surface": "container",
+      "form": "expression",
+      "source": "[1, 2, 3]|reject('odd')"
+    },
+    {
+      "id": "filter/select-unknown-test",
+      "surface": "container",
+      "form": "expression",
+      "source": "[1]|select('nope')",
+      "expect": "error"
+    },
+    {
+      "id": "filter/selectattr",
+      "surface": "container",
+      "form": "expression",
+      "source": "[dict(a=true, k=1), dict(a=false, k=2)]|selectattr('a')"
+    },
+    {
+      "id": "filter/rejectattr",
+      "surface": "container",
+      "form": "expression",
+      "source": "[dict(a=true, k=1), dict(a=false, k=2)]|rejectattr('a')"
+    },
+    {
+      "id": "filter/map-filter",
+      "surface": "container",
+      "form": "expression",
+      "source": "[-1, 2]|map('abs')"
+    },
+    {
+      "id": "filter/map-attribute",
+      "surface": "container",
+      "form": "expression",
+      "source": "[dict(a=1), dict(a=2)]|map(attribute='a')"
+    },
+    {
+      "id": "filter/map-unknown-filter",
+      "surface": "container",
+      "form": "expression",
+      "source": "[1]|map('nope')",
+      "expect": "error"
+    },
+    {
+      "id": "filter/groupby",
+      "surface": "container",
+      "form": "expression",
+      "source": "[dict(a=1, b=2), dict(a=1, b=3)]|groupby('a')"
+    },
+    {
+      "id": "filter/unique-ints",
+      "surface": "container",
+      "form": "expression",
+      "source": "[1, 1, 2]|unique"
+    },
+    {
+      "id": "filter/unique-case",
+      "surface": "container",
+      "form": "expression",
+      "source": "['a', 'A', 'b']|unique"
+    },
+    {
+      "id": "filter/unique-case-sensitive",
+      "surface": "container",
+      "form": "expression",
+      "source": "['a', 'A', 'b']|unique(case_sensitive=true)"
+    },
+    {
+      "id": "filter/chain",
+      "surface": "container",
+      "form": "expression",
+      "source": "[1, 2]|chain([3])|list"
+    },
+    {
+      "id": "filter/zip",
+      "surface": "container",
+      "form": "expression",
+      "source": "[1, 2]|zip([3, 4])|list"
+    },
+    {
+      "id": "filter/zip-uneven",
+      "surface": "container",
+      "form": "expression",
+      "source": "[1, 2, 3]|zip([4])|list"
+    },
+    {
+      "id": "filter/pprint-seq",
+      "surface": "string",
+      "form": "expression",
+      "source": "[1, 2]|pprint"
+    },
+    {
+      "id": "filter/pprint-map",
+      "surface": "string",
+      "form": "expression",
+      "source": "dict(a=1)|pprint"
+    },
+    {
+      "id": "filter/tojson-string",
+      "surface": "string",
+      "form": "expression",
+      "source": "'hello'|tojson"
+    },
+    {
+      "id": "filter/tojson-scary-html",
+      "surface": "string",
+      "form": "expression",
+      "source": "'<>&\\''|tojson",
+      "notes": "serde_json escapes < > & as \\u003c and friends here; Go's encoding/json has its own HTML-escaping rules."
+    },
+    {
+      "id": "filter/tojson-unicode",
+      "surface": "string",
+      "form": "expression",
+      "source": "'héllo\\u2028'|tojson"
+    },
+    {
+      "id": "filter/tojson-float",
+      "surface": "string",
+      "form": "expression",
+      "source": "1.5|tojson"
+    },
+    {
+      "id": "filter/tojson-int",
+      "surface": "string",
+      "form": "expression",
+      "source": "42|tojson"
+    },
+    {
+      "id": "filter/tojson-none",
+      "surface": "string",
+      "form": "expression",
+      "source": "none|tojson"
+    },
+    {
+      "id": "filter/tojson-pretty",
+      "surface": "string",
+      "form": "expression",
+      "source": "dict(a=1)|tojson(true)"
+    },
+    {
+      "id": "filter/tojson-nested",
+      "surface": "string",
+      "form": "expression",
+      "source": "[dict(a=[1, 2])]|tojson"
+    },
+    {
+      "id": "arity/upper-extra",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'x'|upper(1)",
+      "expect": "error"
+    },
+    {
+      "id": "arity/trim-extra",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'x'|trim('a', 'b')",
+      "expect": "error"
+    },
+    {
+      "id": "arity/split-extra",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'a,b'|split(',', 1, 2)",
+      "expect": "error"
+    },
+    {
+      "id": "arity/sum-start-arg",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[1]|sum(10)",
+      "expect": "error"
+    },
+    {
+      "id": "arity/tojson-both-forms",
+      "surface": "environment",
+      "form": "expression",
+      "source": "dict(a=1)|tojson(2, indent=2)",
+      "expect": "error"
+    },
+    {
+      "id": "arity/tojson-unknown-kwarg",
+      "surface": "environment",
+      "form": "expression",
+      "source": "dict(a=1)|tojson(nope=1)",
+      "expect": "error"
+    },
+    {
+      "id": "arity/length-extra",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'x'|length(1)",
+      "expect": "error"
+    },
+    {
+      "id": "arity/first-extra",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[1]|first(1)",
+      "expect": "error"
+    },
+    {
+      "id": "arity/join-extra",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[1]|join('-', '+')",
+      "expect": "error"
+    },
+    {
+      "id": "arity/replace-kwarg",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'x'|replace('a', 'b', count=1)",
+      "expect": "error"
+    },
+    {
+      "id": "arity/batch-negative",
+      "surface": "environment",
+      "form": "expression",
+      "source": "range(3)|batch(-1)",
+      "expect": "error"
+    },
+    {
+      "id": "arity/batch-missing",
+      "surface": "environment",
+      "form": "expression",
+      "source": "range(3)|batch",
+      "expect": "error"
+    },
+    {
+      "id": "arity/attr-extra",
+      "surface": "environment",
+      "form": "expression",
+      "source": "dict(a=1)|attr('a', 'b')",
+      "expect": "error"
+    },
+    {
+      "id": "arity/tojson-kwarg-indent",
+      "surface": "environment",
+      "form": "expression",
+      "source": "dict(a=1)|tojson(indent=2)"
+    },
+    {
+      "id": "arity/title-empty-call",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'abc'|title()",
+      "notes": "An empty argument list is not an argument."
+    },
+    {
+      "id": "test/defined",
+      "surface": "environment",
+      "form": "expression",
+      "source": "42 is defined",
+      "expect": "boolean"
+    },
+    {
+      "id": "test/undefined",
+      "surface": "environment",
+      "form": "expression",
+      "source": "nope is undefined",
+      "expect": "boolean"
+    },
+    {
+      "id": "test/none",
+      "surface": "environment",
+      "form": "expression",
+      "source": "none is none",
+      "expect": "boolean"
+    },
+    {
+      "id": "test/safe",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'<'|safe is safe",
+      "expect": "boolean"
+    },
+    {
+      "id": "test/escaped",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'<'|safe is escaped",
+      "expect": "boolean"
+    },
+    {
+      "id": "test/boolean",
+      "surface": "environment",
+      "form": "expression",
+      "source": "true is boolean",
+      "expect": "boolean"
+    },
+    {
+      "id": "test/odd",
+      "surface": "environment",
+      "form": "expression",
+      "source": "3 is odd",
+      "expect": "boolean"
+    },
+    {
+      "id": "test/even",
+      "surface": "environment",
+      "form": "expression",
+      "source": "3 is even",
+      "expect": "boolean"
+    },
+    {
+      "id": "test/divisibleby",
+      "surface": "environment",
+      "form": "expression",
+      "source": "6 is divisibleby(3)",
+      "expect": "boolean"
+    },
+    {
+      "id": "test/number",
+      "surface": "environment",
+      "form": "expression",
+      "source": "3 is number",
+      "expect": "boolean"
+    },
+    {
+      "id": "test/integer",
+      "surface": "environment",
+      "form": "expression",
+      "source": "3 is integer",
+      "expect": "boolean"
+    },
+    {
+      "id": "test/int-alias",
+      "surface": "environment",
+      "form": "expression",
+      "source": "3 is int",
+      "expect": "boolean"
+    },
+    {
+      "id": "test/float",
+      "surface": "environment",
+      "form": "expression",
+      "source": "3.5 is float",
+      "expect": "boolean"
+    },
+    {
+      "id": "test/string",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'x' is string",
+      "expect": "boolean"
+    },
+    {
+      "id": "test/sequence",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[1] is sequence",
+      "expect": "boolean"
+    },
+    {
+      "id": "test/iterable",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[1] is iterable",
+      "expect": "boolean"
+    },
+    {
+      "id": "test/mapping",
+      "surface": "environment",
+      "form": "expression",
+      "source": "dict(a=1) is mapping",
+      "expect": "boolean"
+    },
+    {
+      "id": "test/startingwith",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'foobar' is startingwith('foo')",
+      "expect": "boolean"
+    },
+    {
+      "id": "test/endingwith",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'foobar' is endingwith('bar')",
+      "expect": "boolean"
+    },
+    {
+      "id": "test/lower",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'abc' is lower",
+      "expect": "boolean"
+    },
+    {
+      "id": "test/upper",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'ABC' is upper",
+      "expect": "boolean"
+    },
+    {
+      "id": "test/sameas",
+      "surface": "environment",
+      "form": "expression",
+      "source": "none is sameas(none)",
+      "expect": "boolean"
+    },
+    {
+      "id": "test/eq",
+      "surface": "environment",
+      "form": "expression",
+      "source": "1 is eq(1)",
+      "expect": "boolean"
+    },
+    {
+      "id": "test/equalto",
+      "surface": "environment",
+      "form": "expression",
+      "source": "1 is equalto(1)",
+      "expect": "boolean"
+    },
+    {
+      "id": "test/ne",
+      "surface": "environment",
+      "form": "expression",
+      "source": "1 is ne(2)",
+      "expect": "boolean"
+    },
+    {
+      "id": "test/lt",
+      "surface": "environment",
+      "form": "expression",
+      "source": "1 is lt(2)",
+      "expect": "boolean"
+    },
+    {
+      "id": "test/lessthan",
+      "surface": "environment",
+      "form": "expression",
+      "source": "1 is lessthan(2)",
+      "expect": "boolean"
+    },
+    {
+      "id": "test/le",
+      "surface": "environment",
+      "form": "expression",
+      "source": "1 is le(1)",
+      "expect": "boolean"
+    },
+    {
+      "id": "test/gt",
+      "surface": "environment",
+      "form": "expression",
+      "source": "2 is gt(1)",
+      "expect": "boolean"
+    },
+    {
+      "id": "test/greaterthan",
+      "surface": "environment",
+      "form": "expression",
+      "source": "2 is greaterthan(1)",
+      "expect": "boolean"
+    },
+    {
+      "id": "test/ge",
+      "surface": "environment",
+      "form": "expression",
+      "source": "2 is ge(2)",
+      "expect": "boolean"
+    },
+    {
+      "id": "test/in",
+      "surface": "environment",
+      "form": "expression",
+      "source": "1 is in([1, 2])",
+      "expect": "boolean"
+    },
+    {
+      "id": "test/true",
+      "surface": "environment",
+      "form": "expression",
+      "source": "true is true",
+      "expect": "boolean"
+    },
+    {
+      "id": "test/false",
+      "surface": "environment",
+      "form": "expression",
+      "source": "false is false",
+      "expect": "boolean"
+    },
+    {
+      "id": "test/filter",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'upper' is filter",
+      "expect": "boolean"
+    },
+    {
+      "id": "test/test",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'odd' is test",
+      "expect": "boolean"
+    },
+    {
+      "id": "test/divisibleby-zero",
+      "surface": "environment",
+      "form": "expression",
+      "source": "6 is divisibleby(0)",
+      "expect": "error",
+      "notes": "A division by zero inside a test; the parked work recorded a hang in this area."
+    },
+    {
+      "id": "test/odd-string",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'x' is odd",
+      "expect": "error"
+    },
+    {
+      "id": "test/iterable-none",
+      "surface": "environment",
+      "form": "expression",
+      "source": "none is iterable",
+      "expect": "boolean"
+    },
+    {
+      "id": "test/lower-unicode",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'\\u00e9' is lower",
+      "expect": "boolean"
+    },
+    {
+      "id": "test/upper-sharp-s",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'\\u00df' is upper",
+      "expect": "boolean"
+    },
+    {
+      "id": "test/lower-roman-numeral",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'\\u2170' is lower",
+      "expect": "boolean",
+      "notes": "U+2170 has the Lowercase property but is not category Ll, so Go's unicode.IsLower and Rust's char::is_lowercase disagree about it."
+    },
+    {
+      "id": "test/upper-roman-numeral",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'\\u2160' is upper",
+      "expect": "boolean"
+    },
+    {
+      "id": "test/unknown",
+      "surface": "environment",
+      "form": "expression",
+      "source": "1 is nope",
+      "expect": "error"
+    },
+    {
+      "id": "test/startingwith-unicode",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'\\u00e9x' is startingwith('\\u00e9')",
+      "expect": "boolean"
+    },
+    {
+      "id": "fn/range-one",
+      "surface": "environment",
+      "form": "expression",
+      "source": "range(3)|list"
+    },
+    {
+      "id": "fn/range-two",
+      "surface": "environment",
+      "form": "expression",
+      "source": "range(1, 4)|list"
+    },
+    {
+      "id": "fn/range-three",
+      "surface": "environment",
+      "form": "expression",
+      "source": "range(0, 6, 2)|list"
+    },
+    {
+      "id": "fn/range-zero-step",
+      "surface": "environment",
+      "form": "expression",
+      "source": "range(0, 3, 0)|list",
+      "expect": "error"
+    },
+    {
+      "id": "fn/range-string",
+      "surface": "environment",
+      "form": "expression",
+      "source": "range('x')|list",
+      "expect": "error"
+    },
+    {
+      "id": "fn/dict-kwargs",
+      "surface": "environment",
+      "form": "expression",
+      "source": "dict(a=1)|items"
+    },
+    {
+      "id": "fn/dict-empty",
+      "surface": "environment",
+      "form": "expression",
+      "source": "dict()|items"
+    },
+    {
+      "id": "fn/namespace",
+      "surface": "environment",
+      "form": "template",
+      "source": "{% set ns = namespace(count=0) %}{% for i in range(3) %}{% set ns.count = ns.count + 1 %}{% endfor %}{{ ns.count }}"
+    },
+    {
+      "id": "fn/debug-value",
+      "surface": "environment",
+      "form": "expression",
+      "source": "debug(42)",
+      "notes": "debug() with an argument renders the value's repr, which is comparable. The no-argument form dumps the whole environment in Rust's Debug format, type paths and all, and is deliberately not pinned byte for byte."
+    },
+    {
+      "id": "fn/debug-state-nonempty",
+      "surface": "environment",
+      "form": "expression",
+      "source": "debug()|length > 0",
+      "expect": "boolean",
+      "notes": "The state dump is not byte-comparable, but its presence is."
+    },
+    {
+      "id": "fn/unknown-function",
+      "surface": "environment",
+      "form": "expression",
+      "source": "nope_function()",
+      "expect": "error"
+    },
+    {
+      "id": "str/upper-sharp-s-word",
+      "surface": "string",
+      "form": "expression",
+      "source": "'gru\\u00dfe'|upper",
+      "notes": "The sharp s in the middle of a word, so the expansion is not at a boundary."
+    },
+    {
+      "id": "str/lower-dotted-capital-i-word",
+      "surface": "string",
+      "form": "expression",
+      "source": "'\\u0130stanbul'|lower",
+      "notes": "Full case mapping: lowercases to i plus a combining dot above."
+    },
+    {
+      "id": "str/upper-ligature-ffi",
+      "surface": "string",
+      "form": "expression",
+      "source": "'\\ufb03'|upper"
+    },
+    {
+      "id": "str/upper-armenian-ligature",
+      "surface": "string",
+      "form": "expression",
+      "source": "'\\u0587'|upper"
+    },
+    {
+      "id": "str/upper-greek-ypogegrammeni",
+      "surface": "string",
+      "form": "expression",
+      "source": "'\\u1f80'|upper"
+    },
+    {
+      "id": "str/upper-n-preceded-by-apostrophe",
+      "surface": "string",
+      "form": "expression",
+      "source": "'\\u0149'|upper"
+    },
+    {
+      "id": "str/lower-final-sigma",
+      "surface": "string",
+      "form": "expression",
+      "source": "'\\u0391\\u03a3'|lower",
+      "notes": "A capital sigma at the end of a word lowercases to the final form."
+    },
+    {
+      "id": "str/lower-medial-sigma",
+      "surface": "string",
+      "form": "expression",
+      "source": "'\\u0391\\u03a3\\u0391'|lower"
+    },
+    {
+      "id": "str/lower-sigma-then-ignorable",
+      "surface": "string",
+      "form": "expression",
+      "source": "'\\u0391\\u03a3\\u0301'|lower",
+      "notes": "A combining acute is case-ignorable, so the sigma is still word final."
+    },
+    {
+      "id": "str/lower-lone-sigma",
+      "surface": "string",
+      "form": "expression",
+      "source": "'\\u03a3'|lower"
+    },
+    {
+      "id": "str/title-punctuation",
+      "surface": "string",
+      "form": "expression",
+      "source": "'a!b'|title",
+      "notes": "Every ASCII punctuation starts a new word in the engine."
+    },
+    {
+      "id": "str/title-sentence",
+      "surface": "string",
+      "form": "expression",
+      "source": "'the bIrd, is The:word'|title"
+    },
+    {
+      "id": "str/title-nbsp",
+      "surface": "string",
+      "form": "expression",
+      "source": "'a\\u00a0b'|title"
+    },
+    {
+      "id": "str/title-sharp-s",
+      "surface": "string",
+      "form": "expression",
+      "source": "'\\u00dfx'|title"
+    },
+    {
+      "id": "str/capitalize-accented",
+      "surface": "string",
+      "form": "expression",
+      "source": "'\\u00e9cole'|capitalize"
+    },
+    {
+      "id": "str/capitalize-sharp-s",
+      "surface": "string",
+      "form": "expression",
+      "source": "'\\u00dfx'|capitalize"
+    },
+    {
+      "id": "str/capitalize-sigma-rest",
+      "surface": "string",
+      "form": "expression",
+      "source": "'a\\u03a3'|capitalize"
+    },
+    {
+      "id": "str/length-astral",
+      "surface": "string",
+      "form": "expression",
+      "source": "'😀'|length",
+      "notes": "Length counts characters, and an astral character is one."
+    },
+    {
+      "id": "syntax/bad-escape-capital-u",
+      "surface": "control",
+      "form": "expression",
+      "source": "'\\U0001f600'|length",
+      "expect": "error",
+      "notes": "minijinja's lexer has no \\U escape and rejects the literal outright; the Go port's lexer accepts Go-style escapes. A lexer difference, not a builtin one."
+    },
+    {
+      "id": "syntax/bad-escape-rust-unicode",
+      "surface": "control",
+      "form": "expression",
+      "source": "'\\u{1f600}'|length",
+      "expect": "error",
+      "notes": "Nor does it have Rust's \\u{...} form."
+    },
+    {
+      "id": "syntax/escape-hex",
+      "surface": "control",
+      "form": "expression",
+      "source": "'\\x41'",
+      "notes": "It does have \\x, and the Go port agrees."
+    },
+    {
+      "id": "str/reverse-combining",
+      "surface": "string",
+      "form": "expression",
+      "source": "'e\\u0301'|reverse"
+    },
+    {
+      "id": "format/printf-plain",
+      "surface": "string",
+      "form": "expression",
+      "source": "'%s!'|format('hi')"
+    },
+    {
+      "id": "format/printf-two",
+      "surface": "string",
+      "form": "expression",
+      "source": "'%s %s'|format('a', 'b')"
+    },
+    {
+      "id": "format/printf-escape",
+      "surface": "string",
+      "form": "expression",
+      "source": "'100%%'|format()"
+    },
+    {
+      "id": "format/printf-int-d",
+      "surface": "string",
+      "form": "expression",
+      "source": "'%d'|format(42)"
+    },
+    {
+      "id": "format/printf-int-width",
+      "surface": "string",
+      "form": "expression",
+      "source": "'%5d'|format(42)"
+    },
+    {
+      "id": "format/printf-int-zero-pad",
+      "surface": "string",
+      "form": "expression",
+      "source": "'%05d'|format(42)"
+    },
+    {
+      "id": "format/printf-int-left",
+      "surface": "string",
+      "form": "expression",
+      "source": "'%-5d|'|format(42)"
+    },
+    {
+      "id": "format/printf-int-plus",
+      "surface": "string",
+      "form": "expression",
+      "source": "'%+d'|format(42)"
+    },
+    {
+      "id": "format/printf-int-space",
+      "surface": "string",
+      "form": "expression",
+      "source": "'% d'|format(42)"
+    },
+    {
+      "id": "format/printf-int-neg",
+      "surface": "string",
+      "form": "expression",
+      "source": "'%05d'|format(-42)"
+    },
+    {
+      "id": "format/printf-hex",
+      "surface": "string",
+      "form": "expression",
+      "source": "'%x'|format(255)"
+    },
+    {
+      "id": "format/printf-hex-alt",
+      "surface": "string",
+      "form": "expression",
+      "source": "'%#x'|format(255)"
+    },
+    {
+      "id": "format/printf-hex-upper",
+      "surface": "string",
+      "form": "expression",
+      "source": "'%X'|format(255)"
+    },
+    {
+      "id": "format/printf-octal",
+      "surface": "string",
+      "form": "expression",
+      "source": "'%o'|format(8)"
+    },
+    {
+      "id": "format/printf-float-f",
+      "surface": "string",
+      "form": "expression",
+      "source": "'%f'|format(1.5)"
+    },
+    {
+      "id": "format/printf-float-prec",
+      "surface": "string",
+      "form": "expression",
+      "source": "'%.2f'|format(1.005)"
+    },
+    {
+      "id": "format/printf-float-e",
+      "surface": "string",
+      "form": "expression",
+      "source": "'%e'|format(1234.5)"
+    },
+    {
+      "id": "format/printf-float-E",
+      "surface": "string",
+      "form": "expression",
+      "source": "'%E'|format(1234.5)"
+    },
+    {
+      "id": "format/printf-float-g",
+      "surface": "string",
+      "form": "expression",
+      "source": "'%g'|format(1234.5)"
+    },
+    {
+      "id": "format/printf-float-g-small",
+      "surface": "string",
+      "form": "expression",
+      "source": "'%g'|format(0.00001234)"
+    },
+    {
+      "id": "format/printf-float-default-int",
+      "surface": "string",
+      "form": "expression",
+      "source": "'%s'|format(1.0)"
+    },
+    {
+      "id": "format/printf-string-prec",
+      "surface": "string",
+      "form": "expression",
+      "source": "'%.2s'|format('abcdef')"
+    },
+    {
+      "id": "format/printf-string-width",
+      "surface": "string",
+      "form": "expression",
+      "source": "'%6s|'|format('ab')"
+    },
+    {
+      "id": "format/printf-string-bool",
+      "surface": "string",
+      "form": "expression",
+      "source": "'%s'|format(true)"
+    },
+    {
+      "id": "format/printf-bool-d",
+      "surface": "string",
+      "form": "expression",
+      "source": "'%d'|format(true)"
+    },
+    {
+      "id": "format/printf-mapping",
+      "surface": "string",
+      "form": "expression",
+      "source": "'%(a)s'|format(dict(a=1))"
+    },
+    {
+      "id": "format/printf-mapping-missing",
+      "surface": "string",
+      "form": "expression",
+      "source": "'%(zz)s'|format(dict(a=1))"
+    },
+    {
+      "id": "format/printf-len-modifier",
+      "surface": "string",
+      "form": "expression",
+      "source": "'%ld'|format(42)"
+    },
+    {
+      "id": "format/printf-nan",
+      "surface": "string",
+      "form": "expression",
+      "source": "'%f'|format('nan'|float)"
+    },
+    {
+      "id": "format/printf-inf",
+      "surface": "string",
+      "form": "expression",
+      "source": "'%f'|format('inf'|float)"
+    },
+    {
+      "id": "format/printf-neg-inf",
+      "surface": "string",
+      "form": "expression",
+      "source": "'%f'|format('-inf'|float)"
+    },
+    {
+      "id": "format/printf-nan-default",
+      "surface": "string",
+      "form": "expression",
+      "source": "'%s'|format('nan'|float)"
+    },
+    {
+      "id": "format/printf-inf-e",
+      "surface": "string",
+      "form": "expression",
+      "source": "'%e'|format('inf'|float)"
+    },
+    {
+      "id": "format/printf-nan-E",
+      "surface": "string",
+      "form": "expression",
+      "source": "'%E'|format('nan'|float)"
+    },
+    {
+      "id": "format/printf-err-missing-arg",
+      "surface": "string",
+      "form": "expression",
+      "source": "'%s %s'|format('a')",
+      "expect": "error"
+    },
+    {
+      "id": "format/printf-err-bad-verb",
+      "surface": "string",
+      "form": "expression",
+      "source": "'%q'|format('a')",
+      "expect": "error"
+    },
+    {
+      "id": "format/printf-err-incomplete",
+      "surface": "string",
+      "form": "expression",
+      "source": "'%'|format('a')",
+      "expect": "error"
+    },
+    {
+      "id": "format/printf-err-string-to-int",
+      "surface": "string",
+      "form": "expression",
+      "source": "'%d'|format('a')",
+      "expect": "error"
+    },
+    {
+      "id": "format/printf-err-float-to-hex",
+      "surface": "string",
+      "form": "expression",
+      "source": "'%x'|format(1.5)",
+      "expect": "error"
+    },
+    {
+      "id": "format/printf-err-mapping-not-map",
+      "surface": "string",
+      "form": "expression",
+      "source": "'%(a)s'|format(42)",
+      "expect": "error"
+    },
+    {
+      "id": "format/printf-err-incomplete-key",
+      "surface": "string",
+      "form": "expression",
+      "source": "'%(a'|format(dict(a=1))",
+      "expect": "error"
+    },
+    {
+      "id": "format/printf-err-nonstring-format",
+      "surface": "string",
+      "form": "expression",
+      "source": "42|format('a')",
+      "expect": "error"
+    },
+    {
+      "id": "pycompat/upper",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'hello'.upper()",
+      "profile": "pycompat"
+    },
+    {
+      "id": "pycompat/upper-sharp-s",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'\\u00df'.upper()",
+      "profile": "pycompat"
+    },
+    {
+      "id": "pycompat/lower",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'HELLO'.lower()",
+      "profile": "pycompat"
+    },
+    {
+      "id": "pycompat/lower-final-sigma",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'\\u0391\\u03a3'.lower()",
+      "profile": "pycompat"
+    },
+    {
+      "id": "pycompat/islower-true",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'abc'.islower()",
+      "profile": "pycompat",
+      "expect": "boolean"
+    },
+    {
+      "id": "pycompat/islower-false",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'Abc'.islower()",
+      "profile": "pycompat",
+      "expect": "boolean"
+    },
+    {
+      "id": "pycompat/islower-empty",
+      "surface": "environment",
+      "form": "expression",
+      "source": "''.islower()",
+      "profile": "pycompat",
+      "expect": "boolean"
+    },
+    {
+      "id": "pycompat/islower-modifier-letter",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'\\u02b0'.islower()",
+      "profile": "pycompat",
+      "expect": "boolean",
+      "notes": "A modifier letter has the Lowercase property but is category Lm."
+    },
+    {
+      "id": "pycompat/isupper-true",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'ABC'.isupper()",
+      "profile": "pycompat",
+      "expect": "boolean"
+    },
+    {
+      "id": "pycompat/isupper-roman",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'\\u2160'.isupper()",
+      "profile": "pycompat",
+      "expect": "boolean"
+    },
+    {
+      "id": "pycompat/isspace-true",
+      "surface": "environment",
+      "form": "expression",
+      "source": "' \\t'.isspace()",
+      "profile": "pycompat",
+      "expect": "boolean"
+    },
+    {
+      "id": "pycompat/isspace-nbsp",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'\\u00a0'.isspace()",
+      "profile": "pycompat",
+      "expect": "boolean"
+    },
+    {
+      "id": "pycompat/isspace-false",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'a'.isspace()",
+      "profile": "pycompat",
+      "expect": "boolean"
+    },
+    {
+      "id": "pycompat/isdigit-true",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'123'.isdigit()",
+      "profile": "pycompat",
+      "expect": "boolean"
+    },
+    {
+      "id": "pycompat/isdigit-superscript",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'\\u00b2'.isdigit()",
+      "profile": "pycompat",
+      "expect": "boolean",
+      "notes": "A superscript two is Unicode-numeric but not a decimal digit."
+    },
+    {
+      "id": "pycompat/isnumeric-roman",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'\\u2160'.isnumeric()",
+      "profile": "pycompat",
+      "expect": "boolean"
+    },
+    {
+      "id": "pycompat/isalnum-true",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'a1'.isalnum()",
+      "profile": "pycompat",
+      "expect": "boolean"
+    },
+    {
+      "id": "pycompat/isalpha-true",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'abc'.isalpha()",
+      "profile": "pycompat",
+      "expect": "boolean"
+    },
+    {
+      "id": "pycompat/isalpha-combining",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'\\u0345'.isalpha()",
+      "profile": "pycompat",
+      "expect": "boolean",
+      "notes": "A combining Greek ypogegrammeni is Other_Alphabetic: Rust says alphabetic, Go's unicode.IsLetter does not."
+    },
+    {
+      "id": "pycompat/isascii-true",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'abc'.isascii()",
+      "profile": "pycompat",
+      "expect": "boolean"
+    },
+    {
+      "id": "pycompat/isascii-false",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'\\u00e9'.isascii()",
+      "profile": "pycompat",
+      "expect": "boolean"
+    },
+    {
+      "id": "pycompat/strip-default",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'  hi  '.strip()",
+      "profile": "pycompat"
+    },
+    {
+      "id": "pycompat/strip-nbsp",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'\\u00a0hi\\u00a0'.strip()",
+      "profile": "pycompat"
+    },
+    {
+      "id": "pycompat/strip-chars",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'xxhixx'.strip('x')",
+      "profile": "pycompat"
+    },
+    {
+      "id": "pycompat/lstrip-default",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'  hi  '.lstrip()",
+      "profile": "pycompat"
+    },
+    {
+      "id": "pycompat/lstrip-chars",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'xxhixx'.lstrip('x')",
+      "profile": "pycompat"
+    },
+    {
+      "id": "pycompat/rstrip-default",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'  hi  '.rstrip()",
+      "profile": "pycompat"
+    },
+    {
+      "id": "pycompat/rstrip-chars",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'xxhixx'.rstrip('x')",
+      "profile": "pycompat"
+    },
+    {
+      "id": "pycompat/replace",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'aaa'.replace('a', 'b')",
+      "profile": "pycompat"
+    },
+    {
+      "id": "pycompat/replace-count",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'aaa'.replace('a', 'b', 2)",
+      "profile": "pycompat",
+      "notes": "Unlike the `replace` filter, the Python method does take a count."
+    },
+    {
+      "id": "pycompat/replace-count-zero",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'aaa'.replace('a', 'b', 0)",
+      "profile": "pycompat"
+    },
+    {
+      "id": "pycompat/replace-count-negative",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'aaa'.replace('a', 'b', -1)",
+      "profile": "pycompat"
+    },
+    {
+      "id": "pycompat/title",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'hello world'.title()",
+      "profile": "pycompat"
+    },
+    {
+      "id": "pycompat/title-punctuation",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'a!b'.title()",
+      "profile": "pycompat"
+    },
+    {
+      "id": "pycompat/capitalize",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'hello WORLD'.capitalize()",
+      "profile": "pycompat"
+    },
+    {
+      "id": "pycompat/split-ws",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'a b  c'.split()",
+      "profile": "pycompat"
+    },
+    {
+      "id": "pycompat/split-sep",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'a,b,c'.split(',')",
+      "profile": "pycompat"
+    },
+    {
+      "id": "pycompat/split-maxsplits",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'a,b,c'.split(',', 1)",
+      "profile": "pycompat"
+    },
+    {
+      "id": "pycompat/split-none-maxsplits",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'a b c'.split(none, 1)",
+      "profile": "pycompat"
+    },
+    {
+      "id": "pycompat/splitlines",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'a\\nb\\r\\nc'.splitlines()",
+      "profile": "pycompat"
+    },
+    {
+      "id": "pycompat/splitlines-keepends",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'a\\nb\\n'.splitlines(true)",
+      "profile": "pycompat"
+    },
+    {
+      "id": "pycompat/splitlines-empty",
+      "surface": "environment",
+      "form": "expression",
+      "source": "''.splitlines()",
+      "profile": "pycompat"
+    },
+    {
+      "id": "pycompat/count",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'banana'.count('an')",
+      "profile": "pycompat"
+    },
+    {
+      "id": "pycompat/count-missing",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'banana'.count('z')",
+      "profile": "pycompat"
+    },
+    {
+      "id": "pycompat/find",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'banana'.find('an')",
+      "profile": "pycompat"
+    },
+    {
+      "id": "pycompat/find-missing",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'banana'.find('z')",
+      "profile": "pycompat"
+    },
+    {
+      "id": "pycompat/find-unicode-offset",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'\\u00e9x'.find('x')",
+      "profile": "pycompat",
+      "notes": "find returns a BYTE offset in the engine, so a two-byte first character shifts it."
+    },
+    {
+      "id": "pycompat/rfind",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'banana'.rfind('an')",
+      "profile": "pycompat"
+    },
+    {
+      "id": "pycompat/rfind-missing",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'banana'.rfind('z')",
+      "profile": "pycompat"
+    },
+    {
+      "id": "pycompat/startswith-string",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'foobar'.startswith('foo')",
+      "profile": "pycompat",
+      "expect": "boolean"
+    },
+    {
+      "id": "pycompat/startswith-tuple",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'foobar'.startswith(['x', 'foo'])",
+      "profile": "pycompat",
+      "expect": "boolean"
+    },
+    {
+      "id": "pycompat/startswith-false",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'foobar'.startswith('bar')",
+      "profile": "pycompat",
+      "expect": "boolean"
+    },
+    {
+      "id": "pycompat/endswith-string",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'foobar'.endswith('bar')",
+      "profile": "pycompat",
+      "expect": "boolean"
+    },
+    {
+      "id": "pycompat/endswith-tuple",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'foobar'.endswith(['x', 'bar'])",
+      "profile": "pycompat",
+      "expect": "boolean"
+    },
+    {
+      "id": "pycompat/join",
+      "surface": "environment",
+      "form": "expression",
+      "source": "', '.join(['a', 'b'])",
+      "profile": "pycompat"
+    },
+    {
+      "id": "pycompat/join-ints",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'-'.join([1, 2])",
+      "profile": "pycompat"
+    },
+    {
+      "id": "pycompat/join-empty",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'-'.join([])",
+      "profile": "pycompat"
+    },
+    {
+      "id": "pycompat/format-positional",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'{} {}'.format('a', 'b')",
+      "profile": "pycompat"
+    },
+    {
+      "id": "pycompat/format-indexed",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'{1} {0}'.format('a', 'b')",
+      "profile": "pycompat"
+    },
+    {
+      "id": "pycompat/format-kwarg",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'{x}!'.format(x='a')",
+      "profile": "pycompat"
+    },
+    {
+      "id": "pycompat/format-spec-width",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'{:>5}|'.format('ab')",
+      "profile": "pycompat"
+    },
+    {
+      "id": "pycompat/format-spec-fill",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'{:*^6}|'.format('ab')",
+      "profile": "pycompat"
+    },
+    {
+      "id": "pycompat/format-spec-int",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'{:05d}'.format(42)",
+      "profile": "pycompat"
+    },
+    {
+      "id": "pycompat/format-spec-grouping",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'{:,}'.format(1234567)",
+      "profile": "pycompat"
+    },
+    {
+      "id": "pycompat/format-spec-underscore",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'{:_}'.format(1234567)",
+      "profile": "pycompat"
+    },
+    {
+      "id": "pycompat/format-spec-binary",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'{:b}'.format(5)",
+      "profile": "pycompat"
+    },
+    {
+      "id": "pycompat/format-spec-binary-alt",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'{:#b}'.format(5)",
+      "profile": "pycompat"
+    },
+    {
+      "id": "pycompat/format-spec-hex-group",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'{:_x}'.format(255255)",
+      "profile": "pycompat"
+    },
+    {
+      "id": "pycompat/format-spec-float",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'{:.2f}'.format(1.005)",
+      "profile": "pycompat"
+    },
+    {
+      "id": "pycompat/format-spec-general",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'{:g}'.format(1234.5)",
+      "profile": "pycompat"
+    },
+    {
+      "id": "pycompat/format-spec-exp",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'{:e}'.format(1234.5)",
+      "profile": "pycompat"
+    },
+    {
+      "id": "pycompat/format-spec-percent-like",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'{:+.2f}'.format(1.5)",
+      "profile": "pycompat"
+    },
+    {
+      "id": "pycompat/format-spec-zero-group",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'{:012,}'.format(1234567)",
+      "profile": "pycompat"
+    },
+    {
+      "id": "pycompat/format-escape",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'{{}}'.format()",
+      "profile": "pycompat"
+    },
+    {
+      "id": "pycompat/format-nested-attr",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'{0[0]}'.format([['x']])",
+      "profile": "pycompat"
+    },
+    {
+      "id": "pycompat/format-default-float",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'{}'.format(1.0)",
+      "profile": "pycompat"
+    },
+    {
+      "id": "pycompat/format-default-bool",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'{}'.format(true)",
+      "profile": "pycompat"
+    },
+    {
+      "id": "pycompat/format-default-none",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'{}'.format(none)",
+      "profile": "pycompat"
+    },
+    {
+      "id": "pycompat/map-keys",
+      "surface": "environment",
+      "form": "expression",
+      "source": "dict(a=1).keys()",
+      "profile": "pycompat"
+    },
+    {
+      "id": "pycompat/map-values",
+      "surface": "environment",
+      "form": "expression",
+      "source": "dict(a=1).values()",
+      "profile": "pycompat"
+    },
+    {
+      "id": "pycompat/map-items",
+      "surface": "environment",
+      "form": "expression",
+      "source": "dict(a=1).items()",
+      "profile": "pycompat"
+    },
+    {
+      "id": "pycompat/map-get",
+      "surface": "environment",
+      "form": "expression",
+      "source": "dict(a=1).get('a')",
+      "profile": "pycompat"
+    },
+    {
+      "id": "pycompat/map-get-missing",
+      "surface": "environment",
+      "form": "expression",
+      "source": "dict(a=1).get('zz')",
+      "profile": "pycompat"
+    },
+    {
+      "id": "pycompat/map-get-default",
+      "surface": "environment",
+      "form": "expression",
+      "source": "dict(a=1).get('zz', 5)",
+      "profile": "pycompat"
+    },
+    {
+      "id": "pycompat/seq-count",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[1, 2, 1].count(1)",
+      "profile": "pycompat"
+    },
+    {
+      "id": "pycompat/seq-count-missing",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[1, 2].count(9)",
+      "profile": "pycompat"
+    },
+    {
+      "id": "pycompat/err-unknown-string-method",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'x'.nope()",
+      "profile": "pycompat",
+      "expect": "error"
+    },
+    {
+      "id": "pycompat/err-unknown-map-method",
+      "surface": "environment",
+      "form": "expression",
+      "source": "dict(a=1).nope()",
+      "profile": "pycompat",
+      "expect": "error"
+    },
+    {
+      "id": "pycompat/err-unknown-seq-method",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[1].nope()",
+      "profile": "pycompat",
+      "expect": "error"
+    },
+    {
+      "id": "pycompat/err-int-method",
+      "surface": "environment",
+      "form": "expression",
+      "source": "(42).upper()",
+      "profile": "pycompat",
+      "expect": "error"
+    },
+    {
+      "id": "pycompat/err-none-method",
+      "surface": "environment",
+      "form": "expression",
+      "source": "none.upper()",
+      "profile": "pycompat",
+      "expect": "error"
+    },
+    {
+      "id": "pycompat/err-upper-extra-arg",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'x'.upper('y')",
+      "profile": "pycompat",
+      "expect": "error"
+    },
+    {
+      "id": "pycompat/err-upper-kwarg",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'x'.upper(a=1)",
+      "profile": "pycompat",
+      "expect": "error"
+    },
+    {
+      "id": "pycompat/err-find-missing-arg",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'x'.find()",
+      "profile": "pycompat",
+      "expect": "error"
+    },
+    {
+      "id": "pycompat/err-find-nonstring",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'x'.find(1)",
+      "profile": "pycompat",
+      "expect": "error"
+    },
+    {
+      "id": "pycompat/err-replace-missing-arg",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'x'.replace('a')",
+      "profile": "pycompat",
+      "expect": "error"
+    },
+    {
+      "id": "pycompat/err-startswith-int",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'x'.startswith(1)",
+      "profile": "pycompat",
+      "expect": "error"
+    },
+    {
+      "id": "pycompat/err-startswith-tuple-int",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'x'.startswith([1])",
+      "profile": "pycompat",
+      "expect": "error"
+    },
+    {
+      "id": "pycompat/err-count-nonstring",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'x'.count(1)",
+      "profile": "pycompat",
+      "expect": "error"
+    },
+    {
+      "id": "pycompat/err-join-missing",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'-'.join()",
+      "profile": "pycompat",
+      "expect": "error"
+    },
+    {
+      "id": "pycompat/err-map-get-missing-arg",
+      "surface": "environment",
+      "form": "expression",
+      "source": "dict(a=1).get()",
+      "profile": "pycompat",
+      "expect": "error"
+    },
+    {
+      "id": "pycompat/err-seq-count-missing-arg",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[1].count()",
+      "profile": "pycompat",
+      "expect": "error"
+    },
+    {
+      "id": "pycompat/err-format-missing-arg",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'{} {}'.format('a')",
+      "profile": "pycompat",
+      "expect": "error"
+    },
+    {
+      "id": "pycompat/err-format-switch-numbering",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'{0} {}'.format('a', 'b')",
+      "profile": "pycompat",
+      "expect": "error"
+    },
+    {
+      "id": "pycompat/err-format-bad-type",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'{:z}'.format(1)",
+      "profile": "pycompat",
+      "expect": "error"
+    },
+    {
+      "id": "pycompat/err-format-lone-brace",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'}'.format()",
+      "profile": "pycompat",
+      "expect": "error"
+    },
+    {
+      "id": "pycompat/err-format-unclosed",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'{'.format()",
+      "profile": "pycompat",
+      "expect": "error"
+    },
+    {
+      "id": "pycompat/err-format-string-to-int",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'{:d}'.format('a')",
+      "profile": "pycompat",
+      "expect": "error"
+    },
+    {
+      "id": "pycompat/err-format-bool-s",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'{:s}'.format(true)",
+      "profile": "pycompat",
+      "expect": "error"
+    },
+    {
+      "id": "pycompat/err-format-comma-hex",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'{:,x}'.format(255)",
+      "profile": "pycompat",
+      "expect": "error"
+    },
+    {
+      "id": "method/no-callback-string",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'x'.upper()",
+      "expect": "error",
+      "notes": "Without an unknown-method callback the engine reports an unknown method. The fork must produce the same category rather than an unknown-function error."
+    },
+    {
+      "id": "method/no-callback-map",
+      "surface": "environment",
+      "form": "expression",
+      "source": "dict(a=1).items()",
+      "expect": "error"
+    },
+    {
+      "id": "method/map-key-not-callable",
+      "surface": "environment",
+      "form": "expression",
+      "source": "m.x()",
+      "inputs": [
+        {
+          "name": "m",
+          "value": {
+            "kind": "map",
+            "entries": [
+              {
+                "key": "x",
+                "value": {
+                  "kind": "int",
+                  "value": 1
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "expect": "error",
+      "notes": "An existing non-callable attribute is an invalid operation, not an unknown method."
+    },
+    {
+      "id": "str/escape-quote",
+      "surface": "string",
+      "form": "expression",
+      "source": "'\\''|escape"
+    },
+    {
+      "id": "str/escape-unicode",
+      "surface": "string",
+      "form": "expression",
+      "source": "'\\u00e9<'|escape"
+    },
+    {
+      "id": "str/string-none",
+      "surface": "string",
+      "form": "expression",
+      "source": "none|string"
+    },
+    {
+      "id": "str/string-bool",
+      "surface": "string",
+      "form": "expression",
+      "source": "true|string"
+    }
+  ]
+}

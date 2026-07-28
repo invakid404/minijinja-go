@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	minijinja "github.com/invakid404/minijinja-go/v2"
+	"github.com/invakid404/minijinja-go/v2/pycompat"
 	"github.com/invakid404/minijinja-go/v2/syntax"
 	"github.com/invakid404/minijinja-go/v2/value"
 )
@@ -119,8 +120,8 @@ func BuildValue(tv TypedValue) (value.Value, error) {
 // The fork still has no counterpart for several Rust kinds (non_primitive,
 // non_key, bad_serialization, write_failure). That asymmetry is real and shows
 // up as a category divergence rather than being smoothed over here.
-// cannot_unpack and unknown_method were two of them until the template slice
-// added them (PATCHES.md #6, #8).
+// cannot_unpack and unknown_method were two of them until the template and
+// builtins slices added them (PATCHES.md #6, #8).
 func errorCategory(kind minijinja.ErrorKind) string {
 	switch kind {
 	case minijinja.ErrSyntax:
@@ -189,11 +190,13 @@ func forkError(err error) Outcome {
 	}
 }
 
-// environmentFor builds the environment a row's profile names. Every profile
-// is engine configuration only, set exactly as the Rust harness sets it; no
-// filter, function or global is registered on either side.
+// environmentFor builds the environment a row's profile names. Every profile is
+// engine configuration only, set exactly as the Rust harness sets it, plus the
+// generic unknown-method module for the pycompat profile; no filter, function
+// or global is registered on either side.
 func environmentFor(profile Profile) (*minijinja.Environment, bool) {
 	ws := syntax.DefaultWhitespace()
+	pycompatMethods := false
 	switch profile {
 	case ProfileStock:
 	case ProfileTrimBlocks:
@@ -205,11 +208,19 @@ func environmentFor(profile Profile) (*minijinja.Environment, bool) {
 		ws.LstripBlocks = true
 	case ProfileKeepTrailingNewline:
 		ws.KeepTrailingNewline = true
+	case ProfilePycompat:
+		// The generic capability the fork exposes, driven by the installable
+		// module BAML installs on its own environment. Nothing else of BAML's
+		// environment is set up here.
+		pycompatMethods = true
 	default:
 		return nil, false
 	}
 	env := minijinja.NewEnvironment()
 	env.SetWhitespace(ws)
+	if pycompatMethods {
+		env.SetUnknownMethodCallback(pycompat.UnknownMethodCallback)
+	}
 	return env, true
 }
 

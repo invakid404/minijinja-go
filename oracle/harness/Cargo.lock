@@ -116,10 +116,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "minijinja-contrib"
+version = "2.16.0"
+source = "git+https://github.com/boundaryml/minijinja.git?rev=8cfc770a5dffeda2de5b910d2b9f870d7edeff7c#8cfc770a5dffeda2de5b910d2b9f870d7edeff7c"
+dependencies = [
+ "minijinja",
+ "serde",
+]
+
+[[package]]
 name = "mj-oracle-harness"
 version = "0.1.0"
 dependencies = [
  "minijinja",
+ "minijinja-contrib",
  "serde",
  "serde_json",
  "sha2",

@@ -9,11 +9,13 @@
 //! oracle. It links the exact engine revision BAML builds against with BAML's
 //! exact cargo feature set, but it deliberately does NOT reconstruct BAML's
 //! environment (get_env, pycompat, regex_match/sum, prompt lowering). Corpus
-//! rows therefore declare an engine profile, and today the only profile is
-//! `stock` — stock engine defaults. When the BAML profile lands, it becomes a
-//! second profile here and in the Go runner, and the schema does not change.
+//! rows therefore declare an engine profile: `stock` is stock engine defaults,
+//! and `pycompat` adds the generic unknown-method callback from
+//! minijinja-contrib — an installable module, not BAML's environment. When the
+//! BAML profile lands it becomes a third profile here and in the Go runner,
+//! and the schema does not change.
 //!
-//! Usage:  mj-oracle-harness <corpus.json>   # JSON document on stdout
+//! Usage:  mj-oracle-harness <corpus-dir>   # JSON document on stdout
 
 use std::cmp::Ordering;
 use std::fmt;
@@ -86,15 +88,16 @@ enum Form {
 /// Engine configuration a row is evaluated under.
 ///
 /// Every variant is *engine configuration only* — the same knobs the Go runner
-/// sets on its side. BAML's environment (get_env, pycompat, regex_match/sum,
-/// prompt lowering, ctx/_/enum globals) is deliberately not here; it arrives as
-/// its own profile in a later slice.
+/// sets on its side, plus the generic unknown-method module BAML installs.
+/// BAML's own environment (get_env, regex_match/sum, prompt lowering,
+/// ctx/_/enum globals) is deliberately not here; it arrives as its own profile
+/// in a later slice.
 ///
 /// The whitespace variants exist because trim_blocks/lstrip_blocks/
 /// keep_trailing_newline cannot be reached from template source. BAML's own
 /// environment sets trim_blocks and lstrip_blocks (jinja_helpers.rs:7-35), so
 /// the machinery they drive has to be compared under them too.
-#[derive(Deserialize, Default, PartialEq)]
+#[derive(Deserialize, Default, Clone, Copy, PartialEq)]
 #[serde(rename_all = "snake_case")]
 enum Profile {
     /// Stock engine defaults. No BAML environment setup.
@@ -108,6 +111,12 @@ enum Profile {
     TrimLstrip,
     /// set_keep_trailing_newline(true)
     KeepTrailingNewline,
+    /// Stock engine defaults plus the Python-compatible unknown-method
+    /// callback from `minijinja-contrib` — the one BAML installs
+    /// (jinja_helpers.rs:34). It is a *generic* engine capability driven by an
+    /// installable module, not BAML's environment: no regex_match, no sum, no
+    /// none-formatter. Those belong to the BAML profile, a later slice.
+    Pycompat,
 }
 
 impl Profile {
@@ -121,6 +130,9 @@ impl Profile {
                 env.set_lstrip_blocks(true);
             }
             Profile::KeepTrailingNewline => env.set_keep_trailing_newline(true),
+            Profile::Pycompat => {
+                env.set_unknown_method_callback(minijinja_contrib::pycompat::unknown_method_callback)
+            }
         }
     }
 }
@@ -382,35 +394,73 @@ fn evaluate(row: &Row) -> Outcome {
     }
 }
 
+/// Reads the corpus as an ordered list of (name, bytes) plus the concatenation
+/// the digest is taken over. A single file is still accepted so the harness can
+/// be pointed at one fixture by hand.
+fn read_corpus_bytes(path: &str) -> Result<(Vec<u8>, Vec<(String, Vec<u8>)>), std::io::Error> {
+    let meta = std::fs::metadata(path)?;
+    if !meta.is_dir() {
+        let bytes = std::fs::read(path)?;
+        return Ok((bytes.clone(), vec![(path.to_string(), bytes)]));
+    }
+    let mut names: Vec<_> = std::fs::read_dir(path)?
+        .collect::<Result<Vec<_>, _>>()?
+        .into_iter()
+        .map(|e| e.path())
+        .filter(|p| p.extension().map(|e| e == "json").unwrap_or(false))
+        .collect();
+    names.sort();
+    let mut all = Vec::new();
+    let mut files = Vec::new();
+    for p in names {
+        let bytes = std::fs::read(&p)?;
+        all.extend_from_slice(&bytes);
+        files.push((p.display().to_string(), bytes));
+    }
+    Ok((all, files))
+}
+
 fn main() {
     let path = match std::env::args().nth(1) {
         Some(p) => p,
         None => {
-            eprintln!("usage: mj-oracle-harness <corpus.json>");
+            eprintln!("usage: mj-oracle-harness <corpus-dir-or-file>");
             std::process::exit(2);
         }
     };
-    let raw = match std::fs::read(&path) {
-        Ok(r) => r,
+    // The corpus is a directory of files, read in sorted order, so that
+    // parallel workstreams add rows without contending for one file. The
+    // digest is taken over the concatenated bytes in that same order, which is
+    // what ties a recording to the exact corpus it was produced from.
+    let (raw, files) = match read_corpus_bytes(&path) {
+        Ok(rv) => rv,
         Err(err) => {
-            eprintln!("cannot read {path}: {err}");
+            eprintln!("cannot read corpus {path}: {err}");
             std::process::exit(2);
         }
     };
-    let corpus: Corpus = match serde_json::from_slice(&raw) {
-        Ok(c) => c,
-        Err(err) => {
-            eprintln!("cannot parse {path}: {err}");
+    let mut rows: Vec<Row> = Vec::new();
+    for (name, bytes) in &files {
+        let corpus: Corpus = match serde_json::from_slice(bytes) {
+            Ok(c) => c,
+            Err(err) => {
+                eprintln!("cannot parse {name}: {err}");
+                std::process::exit(2);
+            }
+        };
+        if corpus.schema_version != SCHEMA_VERSION {
+            eprintln!(
+                "{name}: corpus schema_version {} != harness schema_version {}",
+                corpus.schema_version, SCHEMA_VERSION
+            );
             std::process::exit(2);
         }
-    };
-    if corpus.schema_version != SCHEMA_VERSION {
-        eprintln!(
-            "corpus schema_version {} != harness schema_version {}",
-            corpus.schema_version, SCHEMA_VERSION
-        );
-        std::process::exit(2);
+        rows.extend(corpus.rows);
     }
+    let corpus = Corpus {
+        schema_version: SCHEMA_VERSION,
+        rows,
+    };
 
     let corpus_sha256 = format!("{:x}", Sha256::digest(&raw));
 
