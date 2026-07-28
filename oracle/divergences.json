@@ -170,18 +170,6 @@
         "ok|-|a%20b"
       ],
       "slice": "5 builtins and pycompat"
-    },
-    {
-      "id": "err/syntax-incomplete-if",
-      "class": "engine",
-      "summary": "Both engines reject the template, but the fork returns an unexported *parser.Error rather than *minijinja.Error, so an external consumer cannot classify a compile error at all.",
-      "rust_signatures": [
-        "error|syntax"
-      ],
-      "go_signatures": [
-        "error|unclassifiable"
-      ],
-      "slice": "6 full template sweep (error surface)"
     }
   ]
 }

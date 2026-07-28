@@ -35,6 +35,7 @@ type State struct {
 	out               outputWriter
 	depth             int
 	currentBlock      string                            // name of block currently being rendered
+	currentLoop       *loopObject                       // innermost active loop, for loop.depth
 	loopRecurse       func(value.Value) (string, error) // for recursive loops
 	undefinedBehavior UndefinedBehavior
 	temps             *tempStore
@@ -722,6 +723,13 @@ func (s *State) callMacroWithValues(macro *parser.Macro, args []value.Value, kwa
 	s.pushScope()
 	defer s.popScope()
 
+	// A macro body is evaluated in its own state in Rust (vm/mod.rs eval_macro),
+	// whose context has no current loop. A loop inside the macro therefore
+	// starts at depth 0 however deep the caller's recursion is.
+	// See PATCHES.md #5.
+	defer s.saveLoop()()
+	s.currentLoop = nil
+
 	if len(args) > len(macro.Args) {
 		return value.Undefined(), NewError(ErrTooManyArguments, "too many arguments")
 	}
@@ -737,7 +745,7 @@ func (s *State) callMacroWithValues(macro *parser.Macro, args []value.Value, kwa
 			// Check if provided as kwarg
 			if val, ok := remainingKwargs[varArg.ID]; ok {
 				if i < len(args) {
-					return value.Undefined(), NewError(ErrTooManyArguments, "multiple values for argument")
+					return value.Undefined(), NewError(ErrTooManyArguments, fmt.Sprintf("duplicate argument `%s`", varArg.ID))
 				}
 				s.Set(varArg.ID, val)
 				delete(remainingKwargs, varArg.ID)
@@ -764,12 +772,34 @@ func (s *State) callMacroWithValues(macro *parser.Macro, args []value.Value, kwa
 		}
 	}
 
-	if len(remainingKwargs) > 0 {
-		return value.Undefined(), NewError(ErrTooManyArguments, "too many keyword arguments")
+	// A macro that references caller() accepts `caller` as a keyword argument:
+	// that is how Rust passes a call block's body in the first place
+	// (vm/macro_object.rs marks it used), so an explicit one is an argument
+	// rather than an unknown keyword. See PATCHES.md #7.
+	if macroUsesCaller(macro) {
+		if explicit, ok := remainingKwargs["caller"]; ok {
+			caller = explicit
+			delete(remainingKwargs, "caller")
+		}
 	}
 
-	// Set caller if provided
-	if !caller.IsUndefined() {
+	if len(remainingKwargs) > 0 {
+		names := make([]string, 0, len(remainingKwargs))
+		for name := range remainingKwargs {
+			names = append(names, name)
+		}
+		sort.Strings(names)
+		return value.Undefined(), NewError(ErrTooManyArguments,
+			fmt.Sprintf("unknown keyword argument `%s`", names[0]))
+	}
+
+	// Bind caller whenever the macro references it, even when no call block
+	// supplied one. Rust binds it as undefined in that case (vm/macro_object.rs
+	// fills Value::UNDEFINED, vm/mod.rs stores it), so `{{ caller() }}` in a
+	// macro invoked normally is "value of type undefined is not callable" --
+	// not the unknown-function error a missing binding would give.
+	// See PATCHES.md #7.
+	if macroUsesCaller(macro) {
 		s.Set("caller", caller)
 	}
 
@@ -789,13 +819,36 @@ func (s *State) callMacroWithValues(macro *parser.Macro, args []value.Value, kwa
 	return value.FromSafeString(result), nil
 }
 
+// nextLoopDepth is the depth a loop opened right now would report.
+//
+// Rust only counts recursion: a loop nested inside another plain loop is still
+// at depth 0, and the counter advances only when the enclosing loop was
+// declared `recursive` (vm/mod.rs push_loop). The port used the evaluator's own
+// recursion counter instead, so any nesting -- including an if inside a for --
+// inflated loop.depth. See PATCHES.md #5.
+func (s *State) nextLoopDepth() int {
+	if s.currentLoop != nil && s.currentLoop.recursive {
+		return s.currentLoop.depth + 1
+	}
+	return 0
+}
+
+// saveLoop remembers the innermost loop and returns a function restoring it,
+// so a loop statement leaves the surrounding one in place when it ends.
+func (s *State) saveLoop() func() {
+	previous := s.currentLoop
+	return func() { s.currentLoop = previous }
+}
+
 // loopObject is the loop variable object that supports cycle() and previtem/nextitem
 type loopObject struct {
 	index      int                // 0-based index
 	length     int                // total length (-1 for unknown)
 	depth      int                // nesting depth (0-based)
 	items      []value.Value      // all items for previtem/nextitem
-	changed    *value.Value       // last value for changed()
+	recursive  bool               // the loop statement was declared `recursive`
+	changed    []value.Value      // last argument tuple seen by changed()
+	hasChanged bool               // whether changed() has been called at all
 	prevItem   value.Value        // previous item (for pull iterators)
 	pullIter   value.PullIterator // pull-based iterator
 	peekedNext *value.Value       // peeked next item for pullIter
@@ -876,7 +929,7 @@ func (l *loopObject) String() string {
 func (l *loopObject) Call(state value.State, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
 	_ = state
 	if l.recurseFn == nil {
-		return value.Undefined(), NewError(ErrInvalidOperation, "loop recursion cannot be called this way")
+		return value.Undefined(), NewError(ErrInvalidOperation, "cannot recurse outside of recursive loop")
 	}
 	if len(args) != 1 {
 		return value.Undefined(), NewError(ErrInvalidOperation, "loop() takes exactly 1 argument")
@@ -909,12 +962,28 @@ type loopCycleCallable struct {
 	loop *loopObject
 }
 
+// Call selects the argument for this iteration.
+//
+// There is deliberately no zero-argument guard. The engine computes
+// `idx % args.len()` before it looks at the argument list at all
+// (vm/loop_object.rs call_method), so `{{ loop.cycle() }}` faults there with a
+// remainder-by-zero. Guarding it here would make this engine render a
+// successful empty string for a template the engine it mirrors cannot render at
+// all — a prompt BAML would never produce — so the same arithmetic fault is
+// reproduced instead: in Go that is a runtime panic from the same expression.
+//
+// This is engine behaviour, not an accident, and it is the one place where this
+// engine panics on template input. Callers rendering untrusted templates should
+// recover, exactly as they would around any Rust engine that can abort.
+// See PATCHES.md #9 and the corpus row tmpl/loop-cycle-no-args.
 func (c *loopCycleCallable) Call(state value.State, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
 	_ = state
-	if len(args) == 0 {
+	idx := c.loop.index % len(args)
+	// Mirrors args.get(idx): unreachable after a successful remainder, and kept
+	// so the two implementations read the same.
+	if idx >= len(args) {
 		return value.Undefined(), nil
 	}
-	idx := c.loop.index % len(args)
 	return args[idx], nil
 }
 
@@ -925,69 +994,31 @@ type loopChangedCallable struct {
 
 func (c *loopChangedCallable) Call(state value.State, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
 	_ = state
-	// Create a comparable representation of args
-	newVal := value.FromSlice(args)
-	if c.loop.changed == nil {
-		c.loop.changed = &newVal
-		return value.FromBool(true), nil
-	}
-	changed := !newVal.Equal(*c.loop.changed)
+	// Rust compares the whole argument tuple against the previous one and
+	// remembers it (vm/loop_object.rs call_method). Comparing the tuples as
+	// sequence values instead reported "changed" on every iteration, because
+	// two distinct sequence values are not equal to each other. See
+	// PATCHES.md #4.
+	changed := !c.loop.hasChanged || !sameArgs(c.loop.changed, args)
 	if changed {
-		c.loop.changed = &newVal
+		c.loop.changed = append(c.loop.changed[:0:0], args...)
+		c.loop.hasChanged = true
 	}
 	return value.FromBool(changed), nil
 }
 
-// selfObject provides access to blocks via self.blockname()
-type selfObject struct {
-	state *State
-}
-
-func (so *selfObject) GetAttr(name string) value.Value {
-	// Return a callable that renders the block
-	return value.FromCallable(&blockCallable{
-		state:     so.state,
-		blockName: name,
-	})
-}
-
-// blockCallable renders a block when called
-type blockCallable struct {
-	state     *State
-	blockName string
-}
-
-func (bc *blockCallable) Call(state value.State, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
-	_ = state
-	bs := bc.state.blocks[bc.blockName]
-	if bs == nil || len(bs.layers) == 0 {
-		return value.Undefined(), NewError(ErrInvalidOperation, fmt.Sprintf("block '%s' not found", bc.blockName))
+// sameArgs compares two argument tuples element by element, which is what
+// Rust's Vec<Value> equality does.
+func sameArgs(a, b []value.Value) bool {
+	if len(a) != len(b) {
+		return false
 	}
-
-	// Capture output
-	oldOut := bc.state.out
-	builder := &strings.Builder{}
-	bc.state.out = builder
-
-	oldBlock := bc.state.currentBlock
-	bc.state.currentBlock = bc.blockName
-
-	bc.state.pushScope()
-	for _, stmt := range bs.layers[0] {
-		if err := bc.state.evalStmt(stmt); err != nil {
-			bc.state.popScope()
-			bc.state.currentBlock = oldBlock
-			bc.state.out = oldOut
-			return value.Undefined(), err
+	for i := range a {
+		if !a[i].Equal(b[i]) {
+			return false
 		}
 	}
-	bc.state.popScope()
-
-	result := builder.String()
-	bc.state.out = oldOut
-	bc.state.currentBlock = oldBlock
-
-	return value.FromSafeString(result), nil
+	return true
 }
 
 const maxRecursion = 500
@@ -1055,10 +1086,11 @@ func (s *State) decorateError(err error) error {
 
 // Lookup looks up a variable in the current scope chain.
 func (s *State) Lookup(name string) value.Value {
-	// Special handling for "self"
-	if name == "self" {
-		return value.FromObject(&selfObject{state: s})
-	}
+	// `self` is not bound here. It exists only to reach blocks
+	// (`{{ self.body() }}`), which multi_template carries and BAML does not
+	// enable, so in that build `self` is an ordinary undefined name -- and a
+	// method call on it fails as one. See internal/parser/features.go and
+	// PATCHES.md #2.
 
 	// Search scopes from inner to outer
 	for i := len(s.scopes) - 1; i >= 0; i-- {
@@ -1089,6 +1121,50 @@ func (s *State) Lookup(name string) value.Value {
 	}
 
 	return value.Undefined()
+}
+
+// lookupBinding resolves a name and reports whether it was bound at all.
+//
+// The distinction matters for calls: Rust reports an unbound name as
+// "<name> is unknown" (UnknownFunction) and a bound-but-not-callable value as
+// "value of type <kind> is not callable" (InvalidOperation), and the two are
+// different outcomes (vm/mod.rs Instruction::CallFunction).
+func (s *State) lookupBinding(name string) (value.Value, bool) {
+	for i := len(s.scopes) - 1; i >= 0; i-- {
+		if v, ok := s.scopes[i][name]; ok {
+			return v, true
+		}
+	}
+	if !s.rootContext.IsUndefined() {
+		if v := s.rootContext.GetAttr(name); !v.IsUndefined() {
+			return v, true
+		}
+	}
+	if macro, ok := s.macros[name]; ok {
+		return value.FromCallable(newMacroCallableFromDefinition(macro, value.Undefined())), true
+	}
+	if v, ok := s.env.getGlobal(name); ok {
+		return v, true
+	}
+	if fn, ok := s.env.getFunction(name); ok {
+		return value.FromCallable(&functionCallable{state: s, fn: fn, name: name}), true
+	}
+	return value.Undefined(), false
+}
+
+// notCallable is the error a bound value that cannot be called produces.
+func notCallable(v value.Value) *Error {
+	return NewError(ErrInvalidOperation, fmt.Sprintf("value of type %s is not callable", v.Kind()))
+}
+
+// unknownMethod is the error a receiver without such a method produces.
+func unknownMethod(receiver value.Value, name string) *Error {
+	return NewError(ErrUnknownMethod, fmt.Sprintf("%s has no method named %s", receiver.Kind(), name))
+}
+
+// unknownFunction is the error an unbound name produces when it is called.
+func unknownFunction(name string) *Error {
+	return NewError(ErrUnknownFunction, fmt.Sprintf("%s is unknown", name))
 }
 
 // Set sets a variable in the current scope.
@@ -1331,9 +1407,29 @@ func (s *State) evalForLoopPull(loop *parser.ForLoop, pull value.PullIterator) e
 		s.depth--
 	}()
 
+	depth := s.nextLoopDepth()
+	defer s.saveLoop()()
+
 	index := 0
 	prevItem := value.Undefined()
 	var peekedItem *value.Value // Track peeked item across loop iterations
+
+	// One loop object for the whole statement, advanced in place. Rust does the
+	// same (vm/loop_object.rs keeps a single Loop and bumps its index), and it
+	// is what lets loop.changed() remember the previous call: a fresh object per
+	// iteration lost that state and reported a change every time.
+	// See PATCHES.md #4.
+	loopObj := &loopObject{
+		length:    -1, // Unknown length for pull iterators
+		depth:     depth,
+		items:     nil,
+		prevItem:  prevItem,
+		pullIter:  pull,
+		recursive: loop.Recursive,
+		recurseFn: s.loopRecurse,
+	}
+	s.Set("loop", value.FromObject(loopObj))
+	s.currentLoop = loopObj
 
 	for {
 		var item value.Value
@@ -1355,17 +1451,9 @@ func (s *State) evalForLoopPull(loop *parser.ForLoop, pull value.PullIterator) e
 			return err
 		}
 
-		// For pull iterators, length is unknown (-1)
-		loopObj := &loopObject{
-			index:     index,
-			length:    -1, // Unknown length
-			depth:     s.depth - 1,
-			items:     nil,
-			prevItem:  prevItem,
-			pullIter:  pull,
-			recurseFn: s.loopRecurse,
-		}
-		s.Set("loop", value.FromObject(loopObj))
+		loopObj.index = index
+		loopObj.prevItem = prevItem
+		loopObj.peekedNext = nil
 
 		for _, stmt := range loop.Body {
 			err := s.evalStmt(stmt)
@@ -1445,6 +1533,9 @@ func (s *State) evalForLoopItems(loop *parser.ForLoop, items []value.Value) erro
 		s.depth--
 	}()
 
+	depth := s.nextLoopDepth()
+	defer s.saveLoop()()
+
 	// Set up recursive loop function if needed
 	var oldRecurse func(value.Value) (string, error)
 	if loop.Recursive {
@@ -1458,6 +1549,9 @@ func (s *State) evalForLoopItems(loop *parser.ForLoop, items []value.Value) erro
 
 			s.pushScope()
 			defer s.popScope()
+
+			nestedDepth := s.nextLoopDepth()
+			defer s.saveLoop()()
 
 			nestedItems := iterValue.Iter()
 			if nestedItems == nil {
@@ -1474,20 +1568,25 @@ func (s *State) evalForLoopItems(loop *parser.ForLoop, items []value.Value) erro
 			builder := &strings.Builder{}
 			s.out = builder
 
+			// One loop object per recursion level, advanced in place; see the
+			// note in evalForLoopPull and PATCHES.md #4.
+			loopObj := &loopObject{
+				length:    len(nestedItems),
+				depth:     nestedDepth,
+				items:     nestedItems,
+				recursive: true,
+				recurseFn: s.loopRecurse,
+			}
+			s.Set("loop", value.FromObject(loopObj))
+			s.currentLoop = loopObj
+
 			for i := range nestedItems {
 				if err := s.unpackLoopTarget(loop.Target, nestedItems[i]); err != nil {
 					s.out = oldOut
 					return "", err
 				}
 
-				loopObj := &loopObject{
-					index:     i,
-					length:    len(nestedItems),
-					depth:     s.depth - 1,
-					items:     nestedItems,
-					recurseFn: s.loopRecurse,
-				}
-				s.Set("loop", value.FromObject(loopObj))
+				loopObj.index = i
 
 				for _, stmt := range loop.Body {
 					err := s.evalStmt(stmt)
@@ -1513,20 +1612,24 @@ func (s *State) evalForLoopItems(loop *parser.ForLoop, items []value.Value) erro
 		defer func() { s.loopRecurse = oldRecurse }()
 	}
 
+	// Set loop variable as an object: one per statement, advanced in place; see
+	// the note in evalForLoopPull and PATCHES.md #4.
+	loopObj := &loopObject{
+		length:    len(items),
+		depth:     depth,
+		items:     items,
+		recursive: loop.Recursive,
+		recurseFn: s.loopRecurse,
+	}
+	s.Set("loop", value.FromObject(loopObj))
+	s.currentLoop = loopObj
+
 	for i := range items {
 		if err := s.unpackLoopTarget(loop.Target, items[i]); err != nil {
 			return err
 		}
 
-		// Set loop variable as an object
-		loopObj := &loopObject{
-			index:     i,
-			length:    len(items),
-			depth:     s.depth - 1,
-			items:     items,
-			recurseFn: s.loopRecurse,
-		}
-		s.Set("loop", value.FromObject(loopObj))
+		loopObj.index = i
 
 		for _, stmt := range loop.Body {
 			err := s.evalStmt(stmt)
@@ -1545,7 +1648,15 @@ func (s *State) evalForLoopItems(loop *parser.ForLoop, items []value.Value) erro
 	return nil
 }
 
-func (s *State) unpackTarget(target parser.Expr, val value.Value) {
+// unpackTarget assigns val to an assignment target: a name, a target list, or
+// an attribute of a namespace.
+//
+// Every failure here is an error rather than a silent fallback. A target list
+// of the wrong arity used to pad with undefined outside a for loop, and a
+// dotted assignment onto a non-namespace used to be dropped on the floor: both
+// are errors in BAML's engine (vm/mod.rs unpack_list and Instruction::SetAttr),
+// and the second silently discarded the assignment. See PATCHES.md #6.
+func (s *State) unpackTarget(target parser.Expr, val value.Value) error {
 	switch t := target.(type) {
 	case *parser.Var:
 		s.Set(t.ID, val)
@@ -1554,46 +1665,36 @@ func (s *State) unpackTarget(target parser.Expr, val value.Value) {
 		if !ok {
 			items = val.Iter()
 		}
-		if items != nil {
-			for i, item := range t.Items {
-				if i < len(items) {
-					s.unpackTarget(item, items[i])
-				} else {
-					s.unpackTarget(item, value.Undefined())
-				}
-			}
-		} else {
-			for _, item := range t.Items {
-				s.unpackTarget(item, value.Undefined())
+		if items == nil {
+			return NewError(ErrCannotUnpack, "value is not iterable")
+		}
+		if len(items) != len(t.Items) {
+			return NewError(ErrCannotUnpack, fmt.Sprintf(
+				"sequence of wrong length (expected %d, got %d)", len(t.Items), len(items)))
+		}
+		for i, item := range t.Items {
+			if err := s.unpackTarget(item, items[i]); err != nil {
+				return err
 			}
 		}
 	case *parser.GetAttr:
 		// Handle attribute assignment (e.g., ns.count = value)
 		obj, err := s.evalExpr(t.Expr)
 		if err != nil {
-			return
+			return err
 		}
-		if mutableObj, ok := obj.AsMutableObject(); ok {
-			mutableObj.SetAttr(t.Name, val)
+		mutableObj, ok := obj.AsMutableObject()
+		if !ok {
+			return NewError(ErrInvalidOperation, fmt.Sprintf(
+				"can only assign to namespaces, not %s", obj.Kind()))
 		}
+		mutableObj.SetAttr(t.Name, val)
 	}
+	return nil
 }
 
 func (s *State) unpackLoopTarget(target parser.Expr, val value.Value) error {
-	if list, ok := target.(*parser.List); ok {
-		items, ok := val.AsSlice()
-		if !ok {
-			items = val.Iter()
-		}
-		if items == nil {
-			return NewError(ErrInvalidOperation, "cannot unpack non-iterable")
-		}
-		if len(items) != len(list.Items) {
-			return NewError(ErrInvalidOperation, "wrong number of values to unpack")
-		}
-	}
-	s.unpackTarget(target, val)
-	return nil
+	return s.unpackTarget(target, val)
 }
 
 func (s *State) evalIfCond(cond *parser.IfCond) error {
@@ -1632,7 +1733,9 @@ func (s *State) evalWithBlock(block *parser.WithBlock) error {
 		if err != nil {
 			return err
 		}
-		s.unpackTarget(assign.Target, val)
+		if err := s.unpackTarget(assign.Target, val); err != nil {
+			return err
+		}
 	}
 
 	for _, stmt := range block.Body {
@@ -1648,8 +1751,7 @@ func (s *State) evalSet(set *parser.Set) error {
 	if err != nil {
 		return err
 	}
-	s.unpackTarget(set.Target, val)
-	return nil
+	return s.unpackTarget(set.Target, val)
 }
 
 func (s *State) evalSetBlock(block *parser.SetBlock) error {
@@ -1677,8 +1779,7 @@ func (s *State) evalSetBlock(block *parser.SetBlock) error {
 		}
 	}
 
-	s.unpackTarget(block.Target, result)
-	return nil
+	return s.unpackTarget(block.Target, result)
 }
 
 func (s *State) evalExtends(ext *parser.Extends) error {
@@ -2189,27 +2290,39 @@ func (s *State) evalCallBlock(cb *parser.CallBlock) error {
 	}
 
 	if macroDef == nil {
-		// Try to evaluate as a callable
-		expr, err := s.evalExpr(callExpr.Expr)
-		if err != nil {
-			return err
-		}
-		if mc, ok := expr.AsObject(); ok {
-			if macroC, ok := mc.(*macroCallable); ok {
-				macroDef = &macroDefinition{
-					macro:  macroC.macro,
-					state:  macroC.state,
-					scopes: cloneScopes(macroC.scopes),
-				}
+		// Not a macro declared in this template. Rust compiles a call block into
+		// an ordinary call that passes `caller` as a keyword argument, so the
+		// callee is resolved by the same rules and produces the same errors: an
+		// unbound name is unknown, a bound non-callable is not callable.
+		// See PATCHES.md #7.
+		if v, ok := callExpr.Expr.(*parser.Var); ok {
+			bound, ok := s.lookupBinding(v.ID)
+			if !ok {
+				return unknownFunction(v.ID).WithSpan(callExpr.Span())
 			}
+			if macroC, isMacro := callableMacro(bound); isMacro {
+				macroDef = macroC
+			} else {
+				return notCallable(bound).WithSpan(callExpr.Span())
+			}
+		} else {
+			expr, err := s.evalExpr(callExpr.Expr)
+			if err != nil {
+				return err
+			}
+			macroC, isMacro := callableMacro(expr)
+			if !isMacro {
+				return notCallable(expr).WithSpan(callExpr.Span())
+			}
+			macroDef = macroC
 		}
 	}
 
-	if macroDef == nil {
-		return NewError(ErrInvalidOperation, "call block requires a macro")
-	}
 	if !macroUsesCaller(macroDef.macro) {
-		return NewError(ErrInvalidOperation, "caller is not allowed")
+		// A macro that never mentions caller() does not accept one. Rust reaches
+		// the same conclusion through the keyword-argument check in
+		// vm/macro_object.rs, which reports an unknown keyword argument.
+		return NewError(ErrTooManyArguments, "unknown keyword argument `caller`")
 	}
 
 	// Create a caller callable that renders the call block body
@@ -2236,6 +2349,23 @@ func (s *State) evalCallBlock(cb *parser.CallBlock) error {
 		return err
 	}
 	return nil
+}
+
+// callableMacro unwraps a value that is a macro into its definition.
+func callableMacro(v value.Value) (*macroDefinition, bool) {
+	obj, ok := v.AsObject()
+	if !ok {
+		return nil, false
+	}
+	macroC, ok := obj.(*macroCallable)
+	if !ok {
+		return nil, false
+	}
+	return &macroDefinition{
+		macro:  macroC.macro,
+		state:  macroC.state,
+		scopes: cloneScopes(macroC.scopes),
+	}, true
 }
 
 // callerCallable represents the caller() function inside a macro invoked via call block
@@ -2724,15 +2854,84 @@ func (s *State) evalCall(call *parser.Call) (value.Value, error) {
 			return fn(s, args, kwargs)
 		}
 
-		// Check if variable is callable
-		val := s.Lookup(v.ID)
-		if callable, ok := val.AsCallable(); ok {
-			args, kwargs, err := s.evalCallArgs(call.Args)
-			if err != nil {
-				return value.Undefined(), err
+		// Check if variable is callable. A name that is bound but not callable
+		// is a different error from a name that is not bound at all, and the
+		// two are distinguished exactly as Rust distinguishes them.
+		// See PATCHES.md #7.
+		val, bound := s.lookupBinding(v.ID)
+		if bound {
+			if callable, ok := val.AsCallable(); ok {
+				args, kwargs, err := s.evalCallArgs(call.Args)
+				if err != nil {
+					return value.Undefined(), err
+				}
+				return callable.Call(s, args, kwargs)
 			}
-			return callable.Call(s, args, kwargs)
+			if obj, ok := val.AsObject(); ok {
+				if co, ok := obj.(value.CallableObject); ok {
+					args, kwargs, err := s.evalCallArgs(call.Args)
+					if err != nil {
+						return value.Undefined(), err
+					}
+					return co.ObjectCall(s, args, kwargs)
+				}
+			}
+			return value.Undefined(), notCallable(val).WithSpan(call.Span())
 		}
+		return value.Undefined(), unknownFunction(v.ID).WithSpan(call.Span())
+	}
+
+	// A `receiver.name(...)` call is a method call, which resolves against the
+	// receiver rather than through the surrounding scope. It is tried before the
+	// generic path so the receiver is never evaluated as a whole expression:
+	// Rust compiles this shape to its own CallMethod instruction, and a receiver
+	// that has no such method is an unknown-method error rather than an
+	// undefined-value or unknown-function one. See PATCHES.md #8.
+	if getAttr, ok := call.Expr.(*parser.GetAttr); ok {
+		obj, err := s.evalExpr(getAttr.Expr)
+		if err != nil {
+			return value.Undefined(), err
+		}
+
+		// Check if object supports method calls directly
+		if objVal, ok := obj.AsObject(); ok {
+			if mc, ok := objVal.(value.MethodCallable); ok {
+				args, kwargs, err := s.evalCallArgs(call.Args)
+				if err != nil {
+					return value.Undefined(), err
+				}
+				result, err := mc.CallMethod(s, getAttr.Name, args, kwargs)
+				if err != value.ErrUnknownMethod {
+					return result, err
+				}
+				// Fall through to try GetAttr
+			}
+		}
+
+		// An attribute that exists is called, and failing to be callable is its
+		// own error; an attribute that does not exist is an unknown method.
+		// This mirrors the default Object::call_method in value/mod.rs.
+		attr := obj.GetAttr(getAttr.Name)
+		if !attr.IsUndefined() {
+			if callable, ok := attr.AsCallable(); ok {
+				args, kwargs, err := s.evalCallArgs(call.Args)
+				if err != nil {
+					return value.Undefined(), err
+				}
+				return callable.Call(s, args, kwargs)
+			}
+			if attrObj, ok := attr.AsObject(); ok {
+				if co, ok := attrObj.(value.CallableObject); ok {
+					args, kwargs, err := s.evalCallArgs(call.Args)
+					if err != nil {
+						return value.Undefined(), err
+					}
+					return co.ObjectCall(s, args, kwargs)
+				}
+			}
+			return value.Undefined(), notCallable(attr).WithSpan(call.Span())
+		}
+		return value.Undefined(), unknownMethod(obj, getAttr.Name).WithSpan(call.Span())
 	}
 
 	// Evaluate the expression to get a callable
@@ -2761,44 +2960,12 @@ func (s *State) evalCall(call *parser.Call) (value.Value, error) {
 		}
 	}
 
-	// Check if it's a method call on a map (like module.macro())
-	if getAttr, ok := call.Expr.(*parser.GetAttr); ok {
-		obj, err := s.evalExpr(getAttr.Expr)
-		if err != nil {
-			return value.Undefined(), err
-		}
-
-		// Check if object supports method calls directly
-		if objVal, ok := obj.AsObject(); ok {
-			if mc, ok := objVal.(value.MethodCallable); ok {
-				args, kwargs, err := s.evalCallArgs(call.Args)
-				if err != nil {
-					return value.Undefined(), err
-				}
-				result, err := mc.CallMethod(s, getAttr.Name, args, kwargs)
-				if err != value.ErrUnknownMethod {
-					return result, err
-				}
-				// Fall through to try GetAttr
-			}
-		}
-
-		attr := obj.GetAttr(getAttr.Name)
-		if callable, ok := attr.AsCallable(); ok {
-			args, kwargs, err := s.evalCallArgs(call.Args)
-			if err != nil {
-				return value.Undefined(), err
-			}
-			return callable.Call(s, args, kwargs)
-		}
-	}
-
-	return value.Undefined(), NewError(ErrUnknownFunction, "unknown callable").WithSpan(call.Span())
+	return value.Undefined(), notCallable(expr).WithSpan(call.Span())
 }
 
 func (s *State) evalSuper(span parser.Span) (value.Value, error) {
 	if s.currentBlock == "" {
-		return value.Undefined(), NewError(ErrInvalidOperation, "super() can only be used inside a block").WithSpan(span)
+		return value.Undefined(), NewError(ErrInvalidOperation, "cannot super outside of block").WithSpan(span)
 	}
 
 	bs := s.blocks[s.currentBlock]

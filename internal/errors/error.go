@@ -125,6 +125,29 @@ const (
 
 	// ErrEvalBlock indicates an error occurred while evaluating a super block.
 	ErrEvalBlock
+
+	// ErrCannotUnpack indicates a value could not be unpacked into a target
+	// list.
+	//
+	// BAML's engine reports unpacking failures under their own kind rather than
+	// as a generic invalid operation, and the distinction is observable
+	// (tmpl/for-unpack-arity-mismatch).
+	//
+	// Example:
+	//     {% for a, b in [[1, 2, 3]] %}  // three values, two targets
+	ErrCannotUnpack
+
+	// ErrUnknownMethod indicates a method call named something the receiver
+	// does not have.
+	//
+	// It is distinct from ErrUnknownFunction, which is a name that is not bound
+	// at all, and from ErrInvalidOperation, which is a value that exists but
+	// cannot be called. BAML's engine separates all three, and its pycompat
+	// callback keys off exactly this kind.
+	//
+	// Example:
+	//     {{ "text".no_such_method() }}
+	ErrUnknownMethod
 )
 
 // String returns a human-readable string representation of the error kind.
@@ -158,6 +181,10 @@ func (k ErrorKind) String() string {
 		return "out of fuel"
 	case ErrEvalBlock:
 		return "could not render block"
+	case ErrCannotUnpack:
+		return "cannot unpack"
+	case ErrUnknownMethod:
+		return "unknown method"
 	default:
 		return "error"
 	}

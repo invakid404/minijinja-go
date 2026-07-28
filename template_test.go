@@ -111,11 +111,26 @@ func TestTemplates(t *testing.T) {
 				}
 			}
 
-			// Add reference templates
+			// Add reference templates. A ref that exists only to be included or
+			// extended cannot be registered in this build, because neither
+			// statement exists here; bamlGatedRefTemplates names them and
+			// feature_gate_test.go asserts they fail for exactly that reason.
 			for name, source := range refTemplates {
+				if keyword, gated := bamlGatedRefTemplates[name]; gated {
+					assertGatedTemplateSource(t, name, keyword, source)
+					continue
+				}
 				if err := env.AddTemplate(name, source); err != nil {
 					t.Fatalf("failed to add ref template %s: %v", name, err)
 				}
+			}
+
+			// An input that uses a statement this build does not have must fail
+			// to compile with the engine's own "unknown statement" error rather
+			// than render; that assertion replaces its upstream snapshot.
+			if keyword, gated := bamlGatedTemplates[inputName]; gated {
+				assertGatedTemplateSource(t, inputName, keyword, input.Template)
+				return
 			}
 
 			// Add get_args function (used by some tests)
@@ -130,6 +145,7 @@ func TestTemplates(t *testing.T) {
 			var rendered string
 			if err := env.AddTemplate(inputName, input.Template); err != nil {
 				// Syntax error
+				failIfUnlistedGateError(t, inputName, err)
 				rendered = formatSyntaxError(err)
 			} else {
 				tmpl, err := env.GetTemplate(inputName)

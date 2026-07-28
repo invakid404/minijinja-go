@@ -45,7 +45,12 @@ jobs:
       # invariant. scripts/verify-seed.sh is what guards the engine tree.
       - name: gofmt (fork-authored code)
         run: |
-          unformatted="$(gofmt -l oracle)"
+          unformatted="$(gofmt -l \
+            oracle \
+            feature_gate_test.go \
+            engine_contract_test.go \
+            internal/parser/features.go \
+            internal/parser/features_test.go)"
           if [ -n "$unformatted" ]; then
             echo "these files need gofmt:"
             echo "$unformatted"

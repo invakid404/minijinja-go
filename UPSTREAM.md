@@ -51,7 +51,9 @@ hard-code BAML enums, aliases or media.
 ## Seed fidelity
 
 The engine tree is a **mechanical derivation** of upstream, with exactly two
-transforms and no semantic changes:
+transforms, plus the semantic patches declared in
+[PATCHES.md](PATCHES.md) (none at the `v2.16.0-baml.2` baseline; the template
+sweep is the first to add any):
 
 1. **Module path.** `github.com/mitsuhiko/minijinja/minijinja-go/v2` →
    `github.com/invakid404/minijinja-go/v2`, across 51 files. Plain upstream
@@ -75,8 +77,13 @@ diffs the result against the working tree. It also fails on any file in the repo
 that is neither derived from upstream nor in its declared fork-added allowlist,
 so nothing can be added unlisted. It runs in CI on every push.
 
-Once intentional semantic patches land, run it with `--allow-semantic-delta`;
-every reported difference must have a `PATCHES.md` entry.
+Semantic patches have landed since, so the script also carries a
+`SEMANTIC_DELTA` list: the derived files this fork intentionally modifies. A
+modified file that is not on it fails the check, and a listed file that no
+longer differs fails it too, so the declaration can neither hide a change nor
+rot. Every entry on that list is explained by a `PATCHES.md` row with the corpus
+ID that pins it. `--allow-semantic-delta` remains as an escape hatch for a
+work-in-progress tree.
 
 ## Upstream merge and security-update procedure
 

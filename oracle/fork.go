@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	minijinja "github.com/invakid404/minijinja-go/v2"
+	"github.com/invakid404/minijinja-go/v2/syntax"
 	"github.com/invakid404/minijinja-go/v2/value"
 )
 
@@ -101,10 +102,11 @@ func BuildValue(tv TypedValue) (value.Value, error) {
 // Rust harness also emits. Categories, not message text, are what the
 // differential compares.
 //
-// The fork has no counterpart for several Rust kinds (unknown_method,
-// non_primitive, non_key, cannot_unpack, bad_serialization, write_failure).
-// That asymmetry is real and shows up as a category divergence rather than
-// being smoothed over here.
+// The fork still has no counterpart for several Rust kinds (non_primitive,
+// non_key, bad_serialization, write_failure). That asymmetry is real and shows
+// up as a category divergence rather than being smoothed over here.
+// cannot_unpack and unknown_method were two of them until the template slice
+// added them (PATCHES.md #6, #8).
 func errorCategory(kind minijinja.ErrorKind) string {
 	switch kind {
 	case minijinja.ErrSyntax:
@@ -135,6 +137,10 @@ func errorCategory(kind minijinja.ErrorKind) string {
 		return "out_of_fuel"
 	case minijinja.ErrEvalBlock:
 		return "eval_block"
+	case minijinja.ErrCannotUnpack:
+		return "cannot_unpack"
+	case minijinja.ErrUnknownMethod:
+		return "unknown_method"
 	default:
 		return "other"
 	}
@@ -169,6 +175,30 @@ func forkError(err error) Outcome {
 	}
 }
 
+// environmentFor builds the environment a row's profile names. Every profile
+// is engine configuration only, set exactly as the Rust harness sets it; no
+// filter, function or global is registered on either side.
+func environmentFor(profile Profile) (*minijinja.Environment, bool) {
+	ws := syntax.DefaultWhitespace()
+	switch profile {
+	case ProfileStock:
+	case ProfileTrimBlocks:
+		ws.TrimBlocks = true
+	case ProfileLstripBlocks:
+		ws.LstripBlocks = true
+	case ProfileTrimLstrip:
+		ws.TrimBlocks = true
+		ws.LstripBlocks = true
+	case ProfileKeepTrailingNewline:
+		ws.KeepTrailingNewline = true
+	default:
+		return nil, false
+	}
+	env := minijinja.NewEnvironment()
+	env.SetWhitespace(ws)
+	return env, true
+}
+
 // RunFork evaluates a row against this fork and reports the outcome in the same
 // shape the Rust harness uses.
 //
@@ -182,11 +212,11 @@ func RunFork(row Row) (out Outcome) {
 		}
 	}()
 
-	if row.Profile != ProfileStock {
-		return Outcome{Status: StatusUnsupported, Message: "unknown engine profile"}
+	env, ok := environmentFor(row.Profile)
+	if !ok {
+		return Outcome{Status: StatusUnsupported, Message: fmt.Sprintf("unknown engine profile %q", row.Profile)}
 	}
 
-	env := minijinja.NewEnvironment()
 	// The `.txt` name keeps the default auto-escape callback on "none" on both
 	// sides, so escaping never silently colours a byte comparison.
 	tmpl, err := env.TemplateFromNamedString("corpus.txt", row.TemplateSource())

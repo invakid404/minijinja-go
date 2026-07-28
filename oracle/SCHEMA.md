@@ -7,6 +7,10 @@ fixtures.
 
 ## Corpus (`corpus/*.json`)
 
+Corpus files are lanes: `seed.json`, `template.json`. Every file is loaded, and
+each has its own recording (see below), so a change to one lane cannot stale
+another's. Row ids are unique across the whole set.
+
 ```json
 {
   "schema_version": 1,
@@ -34,7 +38,7 @@ fixtures.
 | `surface` | no | Divergence surface: `arithmetic`, `comparison`, `string`, `container`, `value_cmp`, `environment`, `control`. |
 | `form` | yes | `expression` wraps the source as `{{ expr }}`, the same shape BAML uses to evaluate a constraint predicate (`jinja_helpers.rs:67-94`). `template` uses the source verbatim. |
 | `source` | yes | The expression or template. |
-| `profile` | no | Environment. Defaults to `stock` (stock engine defaults), currently the only value. The BAML v0.223 profile becomes a second value here in a later slice. |
+| `profile` | no | Environment. Defaults to `stock`. One of `stock`, `trim_blocks`, `lstrip_blocks`, `trim_lstrip`, `keep_trailing_newline` — all *engine configuration only*, set identically on both sides. The BAML v0.223 profile (globals, filters, pycompat) becomes another value here in a later slice. |
 | `inputs` | no | Ordered list of named bindings. |
 | `expect` | no | `bytes` (default), `boolean` or `error`. It selects boolean normalization and documents intent; outcomes are always compared in full regardless. |
 | `notes` | no | Why the row exists and what it is probing. |
@@ -69,7 +73,7 @@ implement the *same* canonical-value semantics, so any difference the
 differential reports about them is a statement about comparison dispatch, not
 about the fixture.
 
-## Harness output (`recorded/*.json`)
+## Harness output (`recorded/rust-<rev>-<lane>.json`)
 
 ```json
 {
@@ -89,7 +93,9 @@ about the fixture.
 ```
 
 `corpus_sha256` is the digest of the exact corpus bytes the run was produced
-from. Replaying a recording against a different corpus is a hard error.
+from. Replaying a recording against a different corpus is a hard error, and the
+recording a corpus replays against is chosen by its file name, so the two cannot
+drift apart silently.
 
 `os`/`arch` are recorded because they matter: `int64(float64)` conversion was an
 architecture-dependent source of behaviour in the parked evaluator work, so the
@@ -112,10 +118,13 @@ Error categories are a canonical vocabulary shared by both implementations:
 `out_of_fuel`, `eval_block`, `non_primitive`, `non_key`, `cannot_unpack`,
 `bad_serialization`, `write_failure`, `other`.
 
-Two more categories exist only on the Go side and are deliberately not smoothed
-over: several Rust kinds have no fork counterpart (they surface as a category
-divergence), and `unclassifiable` means the fork returned an error type an
-external consumer cannot classify at all.
+One more category exists only on the Go side and is deliberately not smoothed
+over: `unclassifiable` means the fork returned an error type an external
+consumer cannot classify at all. It has no occurrences left — compile errors
+were the last source of it (`PATCHES.md` #1) — and it stays in the vocabulary so
+a regression would be named rather than absorbed. Four Rust kinds still have no
+fork counterpart (`non_primitive`, `non_key`, `bad_serialization`,
+`write_failure`); they would surface as a category divergence.
 
 ## Ledger (`divergences.json`)
 

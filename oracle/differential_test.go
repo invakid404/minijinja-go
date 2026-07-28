@@ -21,14 +21,17 @@ func TestDifferential(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	t.Logf("rust engine: %s@%s (%s), %s/%s, outcomes %s",
-		report.Provenance.EngineRepo, report.Provenance.EngineRev[:7],
-		report.Provenance.EngineBranch, report.Provenance.OS, report.Provenance.Arch,
-		report.Source)
+	for _, run := range report.Runs {
+		t.Logf("corpus %s: %d rows against %s@%s (%s), %s/%s, outcomes %s",
+			run.Corpus.Name, len(run.Corpus.Rows),
+			run.Provenance.EngineRepo, run.Provenance.EngineRev[:7],
+			run.Provenance.EngineBranch, run.Provenance.OS, run.Provenance.Arch,
+			run.Source)
+	}
 
 	counts := report.Counts()
 	t.Logf("%d rows: %d match, %d known divergence",
-		len(report.Corpus.Rows), counts[VerdictMatch], counts[VerdictKnownDivergence])
+		report.Rows(), counts[VerdictMatch], counts[VerdictKnownDivergence])
 
 	for _, res := range report.Results {
 		res := res
@@ -67,22 +70,61 @@ func TestCorpusIsMeaningful(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	corpus, err := LoadCorpus(root + "/" + DefaultCorpusPath)
+	corpora, err := LoadCorpora(root + "/" + CorpusDir)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(corpus.Rows) == 0 {
-		t.Fatal("corpus is empty")
+
+	// Each lane must span the surfaces it exists to cover, so a regression
+	// cannot hide by being in an untested category.
+	want := map[string][]string{
+		"seed":     {"arithmetic", "comparison", "string", "container", "value_cmp"},
+		"template": {"control", "whitespace", "macros", "loader"},
 	}
-	surfaces := map[string]int{}
-	for _, row := range corpus.Rows {
-		surfaces[row.Surface]++
+	seen := map[string]bool{}
+	for _, corpus := range corpora {
+		seen[corpus.Name] = true
+		if len(corpus.Rows) == 0 {
+			t.Errorf("corpus %s is empty", corpus.Name)
+		}
+		surfaces := map[string]int{}
+		for _, row := range corpus.Rows {
+			surfaces[row.Surface]++
+		}
+		for _, surface := range want[corpus.Name] {
+			if surfaces[surface] == 0 {
+				t.Errorf("corpus %s has no rows for surface %q", corpus.Name, surface)
+			}
+		}
 	}
-	// The seed corpus is deliberately small but must span the surface, so a
-	// regression cannot hide by being in an untested category.
-	for _, want := range []string{"arithmetic", "comparison", "string", "container", "value_cmp"} {
-		if surfaces[want] == 0 {
-			t.Errorf("corpus has no rows for surface %q", want)
+	for name := range want {
+		if !seen[name] {
+			t.Errorf("corpus %s is missing entirely", name)
+		}
+	}
+}
+
+// TestTemplateCorpusExercisesEveryProfile keeps the whitespace lane honest: a
+// profile nobody uses proves nothing, and a row silently falling back to the
+// stock profile would compare the wrong environment on both sides.
+func TestTemplateCorpusExercisesEveryProfile(t *testing.T) {
+	root, err := ModuleRoot()
+	if err != nil {
+		t.Fatal(err)
+	}
+	corpora, err := LoadCorpora(root + "/" + CorpusDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	used := map[Profile]int{}
+	for _, corpus := range corpora {
+		for _, row := range corpus.Rows {
+			used[row.Profile]++
+		}
+	}
+	for profile := range KnownProfiles {
+		if used[profile] == 0 {
+			t.Errorf("no corpus row uses profile %q", profile)
 		}
 	}
 }

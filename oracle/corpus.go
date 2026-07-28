@@ -14,7 +14,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
+	"sort"
 	"strconv"
+	"strings"
 )
 
 // SchemaVersion is the corpus/outcome schema version. It is checked on both
@@ -34,12 +37,44 @@ const (
 
 // Profile names the environment a row is evaluated in.
 //
-// Today the only profile is stock engine defaults. The BAML v0.223 profile
-// (get_env, pycompat, regex_match/sum, prompt lowering) is a later slice; it
-// arrives as a second profile on both sides without a schema change.
+// Every profile below is *engine configuration only*: the same knobs the Rust
+// Environment exposes, set identically on both sides. BAML's environment
+// (get_env, pycompat, regex_match/sum, prompt lowering, ctx/_/enum globals) is
+// deliberately not one of them — it arrives as its own profile in a later
+// slice, without a schema change.
+//
+// The whitespace profiles exist because trim_blocks/lstrip_blocks/
+// keep_trailing_newline are not reachable from a template: they are set on the
+// environment. BAML sets trim_blocks and lstrip_blocks in its own environment
+// (jinja_helpers.rs:7-35), so the machinery those flags drive has to be
+// compared under them, not only under the engine defaults.
 type Profile string
 
-const ProfileStock Profile = "stock"
+const (
+	// ProfileStock is stock engine defaults: no trimming, no lstrip, trailing
+	// newline stripped.
+	ProfileStock Profile = "stock"
+	// ProfileTrimBlocks is set_trim_blocks(true).
+	ProfileTrimBlocks Profile = "trim_blocks"
+	// ProfileLstripBlocks is set_lstrip_blocks(true).
+	ProfileLstripBlocks Profile = "lstrip_blocks"
+	// ProfileTrimLstrip is both of the above — the combination BAML's own
+	// environment uses.
+	ProfileTrimLstrip Profile = "trim_lstrip"
+	// ProfileKeepTrailingNewline is set_keep_trailing_newline(true).
+	ProfileKeepTrailingNewline Profile = "keep_trailing_newline"
+)
+
+// KnownProfiles is the closed set of profiles both sides implement. A corpus
+// naming anything else fails to load rather than being silently evaluated
+// under the wrong environment.
+var KnownProfiles = map[Profile]bool{
+	ProfileStock:               true,
+	ProfileTrimBlocks:          true,
+	ProfileLstripBlocks:        true,
+	ProfileTrimLstrip:          true,
+	ProfileKeepTrailingNewline: true,
+}
 
 // Expect declares what the row is primarily asserting. It does not gate the
 // comparison — outcomes are always compared in full — it selects boolean
@@ -53,9 +88,19 @@ const (
 )
 
 // Corpus is one differential fixture file.
+//
+// The corpus is split across files by lane (seed, template, ...) rather than
+// kept in one document: each file is recorded independently, so adding rows to
+// one lane never invalidates another lane's recording.
 type Corpus struct {
 	SchemaVersion int   `json:"schema_version"`
 	Rows          []Row `json:"rows"`
+
+	// Name is the file's base name without extension ("seed", "template"). It
+	// selects the recording that belongs to this corpus.
+	Name string `json:"-"`
+	// Path is where the corpus was loaded from.
+	Path string `json:"-"`
 
 	// SHA256 of the exact bytes the corpus was loaded from. The Rust harness
 	// records the same digest, which is what ties a recorded harness run to
@@ -223,6 +268,8 @@ func LoadCorpus(path string) (*Corpus, error) {
 	}
 	sum := sha256.Sum256(raw)
 	c.SHA256 = hex.EncodeToString(sum[:])
+	c.Path = path
+	c.Name = strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))
 
 	seen := make(map[string]bool, len(c.Rows))
 	for i := range c.Rows {
@@ -237,7 +284,7 @@ func LoadCorpus(path string) (*Corpus, error) {
 		if row.Profile == "" {
 			row.Profile = ProfileStock
 		}
-		if row.Profile != ProfileStock {
+		if !KnownProfiles[row.Profile] {
 			return nil, fmt.Errorf("%s: row %q has unknown profile %q", path, row.ID, row.Profile)
 		}
 		if row.Expect == "" {
@@ -250,4 +297,43 @@ func LoadCorpus(path string) (*Corpus, error) {
 		}
 	}
 	return &c, nil
+}
+
+// LoadCorpora loads every corpus file under dir, in stable filename order.
+//
+// Row ids are unique across the whole set, not merely within a file: the
+// divergence ledger and PATCHES.md are keyed by id, so two lanes must never be
+// able to claim the same one.
+func LoadCorpora(dir string) ([]*Corpus, error) {
+	paths, err := filepath.Glob(filepath.Join(dir, "*.json"))
+	if err != nil {
+		return nil, err
+	}
+	if len(paths) == 0 {
+		return nil, fmt.Errorf("no corpus files in %s", dir)
+	}
+	sort.Strings(paths)
+
+	seen := make(map[string]string)
+	out := make([]*Corpus, 0, len(paths))
+	for _, path := range paths {
+		c, err := LoadCorpus(path)
+		if err != nil {
+			return nil, err
+		}
+		for _, row := range c.Rows {
+			if other, dup := seen[row.ID]; dup {
+				return nil, fmt.Errorf("row id %q appears in both %s and %s", row.ID, other, path)
+			}
+			seen[row.ID] = path
+		}
+		out = append(out, c)
+	}
+	return out, nil
+}
+
+// RecordingPath is where a corpus's committed harness run lives. One recording
+// per corpus file, so a change to one lane cannot stale another lane's.
+func RecordingPath(root string, c *Corpus) string {
+	return filepath.Join(root, RecordedDir, fmt.Sprintf("rust-%s-%s.json", EngineRevShort, c.Name))
 }

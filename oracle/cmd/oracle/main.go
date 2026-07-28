@@ -49,11 +49,15 @@ func report(root string) int {
 		fail(err)
 	}
 
-	p := rep.Provenance
+	p := rep.Runs[0].Provenance
 	fmt.Printf("rust engine : %s@%s (branch %s)\n", p.EngineRepo, p.EngineRev, p.EngineBranch)
 	fmt.Printf("features    : %s\n", strings.Join(p.EngineFeatures, ","))
-	fmt.Printf("platform    : %s/%s   outcomes: %s\n", p.OS, p.Arch, rep.Source)
-	fmt.Printf("corpus      : %d rows, sha256 %s\n\n", len(rep.Corpus.Rows), rep.Corpus.SHA256)
+	fmt.Printf("platform    : %s/%s\n", p.OS, p.Arch)
+	for _, run := range rep.Runs {
+		fmt.Printf("corpus      : %-10s %3d rows, outcomes %-8s sha256 %s\n",
+			run.Corpus.Name, len(run.Corpus.Rows), run.Source, run.Corpus.SHA256)
+	}
+	fmt.Println()
 
 	width := 0
 	for _, res := range rep.Results {
@@ -126,41 +130,43 @@ func record(root string) error {
 	}
 
 	bin := filepath.Join(harnessDir, "target", "release", "mj-oracle-harness")
-	corpusPath := filepath.Join(root, oracle.DefaultCorpusPath)
-	run := exec.Command(bin, corpusPath)
-	run.Stderr = os.Stderr
-	raw, err := run.Output()
+	corpora, err := oracle.LoadCorpora(filepath.Join(root, oracle.CorpusDir))
 	if err != nil {
-		return fmt.Errorf("running harness: %w", err)
+		return err
 	}
 
-	// Parse before writing: a recording that cannot be replayed is worse than
-	// no recording.
-	parsed, err := oracle.ParseHarnessOutput(raw)
-	if err != nil {
-		return fmt.Errorf("harness produced unusable output: %w", err)
-	}
-	corpus, err := oracle.LoadCorpus(corpusPath)
-	if err != nil {
-		return err
-	}
-	if parsed.Provenance.CorpusSHA256 != corpus.SHA256 {
-		return fmt.Errorf("harness recorded corpus sha256 %s but corpus is %s",
-			parsed.Provenance.CorpusSHA256, corpus.SHA256)
-	}
+	for _, corpus := range corpora {
+		run := exec.Command(bin, corpus.Path)
+		run.Stderr = os.Stderr
+		raw, err := run.Output()
+		if err != nil {
+			return fmt.Errorf("running harness on %s: %w", corpus.Path, err)
+		}
 
-	out := filepath.Join(root, oracle.DefaultRecordedPath)
-	if err := os.MkdirAll(filepath.Dir(out), 0o755); err != nil {
-		return err
+		// Parse before writing: a recording that cannot be replayed is worse
+		// than no recording.
+		parsed, err := oracle.ParseHarnessOutput(raw)
+		if err != nil {
+			return fmt.Errorf("harness produced unusable output for %s: %w", corpus.Path, err)
+		}
+		if parsed.Provenance.CorpusSHA256 != corpus.SHA256 {
+			return fmt.Errorf("harness recorded corpus sha256 %s but %s is %s",
+				parsed.Provenance.CorpusSHA256, corpus.Path, corpus.SHA256)
+		}
+
+		out := oracle.RecordingPath(root, corpus)
+		if err := os.MkdirAll(filepath.Dir(out), 0o755); err != nil {
+			return err
+		}
+		if !json.Valid(raw) {
+			return fmt.Errorf("harness output for %s is not valid JSON", corpus.Path)
+		}
+		if err := os.WriteFile(out, raw, 0o644); err != nil {
+			return err
+		}
+		fmt.Fprintf(os.Stderr, "recorded %d outcomes from %s@%s (%s/%s) to %s\n",
+			len(parsed.Results), parsed.Provenance.EngineRepo, parsed.Provenance.EngineRev[:7],
+			parsed.Provenance.OS, parsed.Provenance.Arch, out)
 	}
-	if !json.Valid(raw) {
-		return fmt.Errorf("harness output is not valid JSON")
-	}
-	if err := os.WriteFile(out, raw, 0o644); err != nil {
-		return err
-	}
-	fmt.Fprintf(os.Stderr, "recorded %d outcomes from %s@%s (%s/%s) to %s\n",
-		len(parsed.Results), parsed.Provenance.EngineRepo, parsed.Provenance.EngineRev[:7],
-		parsed.Provenance.OS, parsed.Provenance.Arch, out)
 	return nil
 }

@@ -1,10 +1,12 @@
 package parser
 
 import (
+	goerrors "errors"
 	"fmt"
 	"math/big"
 	"strconv"
 
+	"github.com/invakid404/minijinja-go/v2/internal/errors"
 	"github.com/invakid404/minijinja-go/v2/internal/lexer"
 	"github.com/invakid404/minijinja-go/v2/syntax"
 )
@@ -24,10 +26,29 @@ type Error struct {
 	Detail string
 	Name   string
 	Line   uint16
+	Col    uint16
 }
 
 func (e *Error) Error() string {
 	return fmt.Sprintf("%s: %s (line %d)", e.Kind, e.Detail, e.Line)
+}
+
+// EngineError converts a parse error into the engine's public error type.
+//
+// Compilation failures used to escape as *parser.Error, a type in an internal
+// package: an external consumer could not tell a syntax error from any other
+// failure, which the differential recorded as an unclassifiable outcome
+// (err/syntax-incomplete-if and the tmpl/err-* family). Every compile failure
+// now leaves the engine as *errors.Error of kind ErrSyntax, located, exactly as
+// BAML's engine reports one.
+func (e *Error) EngineError() *errors.Error {
+	span := syntax.Span{
+		StartLine: e.Line,
+		StartCol:  e.Col,
+		EndLine:   e.Line,
+		EndCol:    e.Col,
+	}
+	return errors.NewError(errors.ErrSyntax, e.Detail).WithName(e.Name).WithSpan(span)
 }
 
 // Result represents the result of parsing: either an AST or an error.
@@ -49,15 +70,31 @@ type Parser struct {
 }
 
 // Parse parses a template string and returns the AST or an error.
+//
+// The error is always an *errors.Error of kind ErrSyntax: the engine's public
+// error type, so a caller can classify a compile failure. parseTemplate keeps
+// the internal shape for ParseDefault and the snapshot tests.
 func Parse(source, filename string, syntaxConfig syntax.SyntaxConfig, whitespaceConfig syntax.WhitespaceConfig) (*Template, error) {
+	tmpl, err := parseTemplate(source, filename, syntaxConfig, whitespaceConfig)
+	if err != nil {
+		return nil, err.EngineError()
+	}
+	return tmpl, nil
+}
+
+func parseTemplate(source, filename string, syntaxConfig syntax.SyntaxConfig, whitespaceConfig syntax.WhitespaceConfig) (*Template, *Error) {
 	tokens, err := lexer.Tokenize(source, syntaxConfig, whitespaceConfig)
 	if err != nil {
-		return nil, &Error{
-			Kind:   "SyntaxError",
-			Detail: err.Error(),
-			Name:   filename,
-			Line:   1,
+		// A tokenizer failure carries its own position; keeping it is what
+		// makes the reported line meaningful instead of always being line 1.
+		perr := &Error{Kind: "SyntaxError", Detail: err.Error(), Name: filename, Line: 1}
+		var lexErr *lexer.Error
+		if goerrors.As(err, &lexErr) {
+			perr.Detail = lexErr.Message
+			perr.Line = lexErr.Line
+			perr.Col = lexErr.Col
 		}
+		return nil, perr
 	}
 
 	p := &Parser{
@@ -78,12 +115,9 @@ func ParseDefault(source, filename string) Result {
 	syntaxCfg := syntax.DefaultSyntax()
 	whitespaceCfg := syntax.DefaultWhitespace()
 
-	tmpl, err := Parse(source, filename, syntaxCfg, whitespaceCfg)
+	tmpl, err := parseTemplate(source, filename, syntaxCfg, whitespaceCfg)
 	if err != nil {
-		if e, ok := err.(*Error); ok {
-			return Result{Err: e}
-		}
-		return Result{Err: &Error{Kind: "ParseError", Detail: err.Error(), Name: filename}}
+		return Result{Err: err}
 	}
 	return Result{Template: tmpl}
 }
@@ -143,6 +177,7 @@ func (p *Parser) syntaxError(msg string) *Error {
 		Detail: msg,
 		Name:   p.filename,
 		Line:   span.StartLine,
+		Col:    span.StartCol,
 	}
 }
 
@@ -883,7 +918,16 @@ func (p *Parser) parseStmt() (Stmt, *Error) {
 	span := tok.Span
 
 	if tok.Type != lexer.TokenIdent {
-		return nil, p.unexpected(tokenDescription(tok), "statement")
+		// Rust words this one "unknown", not "unexpected"
+		// (compiler/parser.rs parse_stmt_unprotected).
+		return nil, p.syntaxError(fmt.Sprintf("unknown %s, expected statement", tokenDescription(tok)))
+	}
+
+	// Statements carried by an engine feature BAML does not enable are not
+	// statements at all in this build; see features.go. Rust reports them
+	// through the same "unknown statement" path as a typo, and so does this.
+	if _, gated := gatedStatements[tok.Value]; gated {
+		return nil, p.syntaxError(fmt.Sprintf("unknown statement %s", tok.Value))
 	}
 
 	switch tok.Value {
@@ -930,46 +974,6 @@ func (p *Parser) parseStmt() (Stmt, *Error) {
 		stmt.span = p.expandSpan(span)
 		return stmt, nil
 
-	case "block":
-		stmt, err := p.parseBlock()
-		if err != nil {
-			return nil, err
-		}
-		stmt.span = p.expandSpan(span)
-		return stmt, nil
-
-	case "extends":
-		stmt, err := p.parseExtends()
-		if err != nil {
-			return nil, err
-		}
-		stmt.span = p.expandSpan(span)
-		return stmt, nil
-
-	case "include":
-		stmt, err := p.parseInclude()
-		if err != nil {
-			return nil, err
-		}
-		stmt.span = p.expandSpan(span)
-		return stmt, nil
-
-	case "import":
-		stmt, err := p.parseImport()
-		if err != nil {
-			return nil, err
-		}
-		stmt.span = p.expandSpan(span)
-		return stmt, nil
-
-	case "from":
-		stmt, err := p.parseFromImport()
-		if err != nil {
-			return nil, err
-		}
-		stmt.span = p.expandSpan(span)
-		return stmt, nil
-
 	case "macro":
 		stmt, err := p.parseMacro()
 		if err != nil {
@@ -985,18 +989,6 @@ func (p *Parser) parseStmt() (Stmt, *Error) {
 		}
 		stmt.span = p.expandSpan(span)
 		return stmt, nil
-
-	case "continue":
-		if !p.inLoop {
-			return nil, p.syntaxError("'continue' must be placed inside a loop")
-		}
-		return &Continue{span: p.expandSpan(span)}, nil
-
-	case "break":
-		if !p.inLoop {
-			return nil, p.syntaxError("'break' must be placed inside a loop")
-		}
-		return &Break{span: p.expandSpan(span)}, nil
 
 	case "do":
 		stmt, err := p.parseDo()
@@ -1652,7 +1644,7 @@ func (p *Parser) parseDo() (*Do, *Error) {
 
 	call, ok := expr.(*Call)
 	if !ok {
-		return nil, p.syntaxError(fmt.Sprintf("expected call expression in do block, got %s", exprDescription(expr)))
+		return nil, p.syntaxError(fmt.Sprintf("expected call expression in call block, got %s", exprDescription(expr)))
 	}
 
 	return &Do{Call: call, CallSpan: call.span}, nil
