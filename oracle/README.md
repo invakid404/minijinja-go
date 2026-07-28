@@ -8,7 +8,7 @@ oracle/corpus/*.json ──┬──> oracle/harness (Rust)  ─> boundaryml/min
                        └──> oracle (Go)            ─> this fork                     ─┘
 ```
 
-The corpus is split by lane — `seed.json`, `template.json` — and each file is
+The corpus is split by lane — `seed.json`, `template.json`, `numeric.json` — and each file is
 recorded independently as `recorded/rust-8cfc770-<lane>.json`. Adding rows to
 one lane therefore never invalidates another lane's recording. Row ids are
 unique across the whole set, because the ledger and `PATCHES.md` are keyed by
@@ -88,6 +88,23 @@ A panic is an outcome, not a crashed run. So is "the harness cannot model this
 row" (`unsupported`), which is what makes `harness-incomplete` distinguishable
 from a real engine difference instead of being silently scored as one.
 
+### Panic diagnostics
+
+A panic reduces to just `panic` in the compared signature. Aborting evaluation
+is the whole semantic outcome of a panic row; the accompanying text is the host
+language runtime's message for the fault, not either engine's — Rust says
+`attempt to calculate the remainder with a divisor of zero` where Go says
+`runtime error: integer divide by zero`, for the same fault. Reproducing the
+other language's wording would be less useful to a caller that recovers and no
+more faithful, since the fault itself is what is being reproduced.
+
+Out of contract is not unchecked. `panics_test.go` PINS both diagnostics for
+every panic row, from both sides, alongside the status parity that *is* the
+contract. A row that starts or stops faulting fails, a change to either
+diagnostic fails, and a new panic row anywhere in the corpus fails until it is
+pinned deliberately. So a claim of byte-exactness means byte-exact on the
+compared signature, with the one field outside it pinned rather than ignored.
+
 ## The ledger
 
 `divergences.json` is the permanent record of known differences. The test fails
@@ -120,6 +137,32 @@ does not have. Whitespace is a family of its own: trim markers, `trim_blocks`,
 `lstrip_blocks`, CR/LF, leading spaces, trailing newlines and non-ASCII
 whitespace, run under the engine profiles below.
 
+**`numeric.json`** — 146 rows: the numeric core. The 2^53 boundary and the i64,
+i128 and u128 edges through every operator and through the value model;
+negatives and zero divisors through `//`, `%`, `/` and `**`, where the engine's
+Euclidean and checked semantics differ from Go's; overflow, which is an error in
+the engine and never a wrap; integral floats, where the engine's PAYLOAD type
+decides and the source spelling does not — including the cases
+[#649](https://github.com/invakid404/baml-rest/pull/649) reverse-engineered
+(`2.0 ** 63`, `(2.0 ** 52) * (2.0 ** 11)`, `562949953421312.000000000000001`);
+the integer-literal repr in both directions, since a literal is lexed as a `u64`
+and the lossless coercion casts a float back through the operand's own type, so
+`i64::MAX` and `u64::MAX` answer OPPOSITELY against their own f64 images;
+deterministic float-to-int conversion at every consumer the engine has —
+operators, indexing, all three slice bounds, `range`, and the `int`, `abs`,
+`round` and `float` filters; the five inputs on which the engine's ORDERING
+panics, reached through operators and through `sort`, beside the equality rows
+over the same operands that answer normally; and float rendering, since exact
+arithmetic that renders to different bytes is not parity.
+
+**A corpus row must be architecture-deterministic.** The NaN ordering rows take
+their NaN from `'nan'|float` rather than from `0.0 / 0.0`, because the sign of a
+hardware-produced NaN is not portable — `0.0 / 0.0` is a positive NaN on arm64
+and a negative one on amd64 — and `f64_total_cmp` orders by the bit pattern.
+Running the *Rust harness* on both architectures is what surfaced that: it
+disagreed with itself on exactly those two rows. A defect in the fixture, not in
+either engine.
+
 ### Engine profiles
 
 `trim_blocks`, `lstrip_blocks` and `keep_trailing_newline` cannot be reached
@@ -132,17 +175,33 @@ here and arrives as its own profile in a later slice.
 
 ### Where the corpus stands
 
-217 rows: 203 agree, 14 diverge and every one of the 14 is declared — none of them in the template lane, whose rows all agree with the engine. The
-`value_cmp` rows are the generic form of BAML's #597 enum fence: a host object
-with a canonical comparison identity (`RED`) and a different display (`Red`).
-Its display row agrees on both engines, which is what isolates the remaining
-four rows to comparison dispatch rather than to the fixture.
+363 rows: 353 agree, 10 diverge and every one of the 10 is declared — none of
+them in the template lane or the numeric lane, whose rows all agree with the
+engine. The `value_cmp` rows are the generic form of BAML's #597 enum fence: a
+host object with a canonical comparison identity (`RED`) and a different display
+(`Red`). Its display row agrees on both engines, which is what isolates the
+remaining four rows to comparison dispatch rather than to the fixture.
 
-One of them, `arith/int-mul-i64-edge`, is **architecture-dependent**: the
-fork renders `9223372036854775807` on darwin/arm64 and `-9223372036854775808`
-on linux/amd64 for the same input. The first cross-platform CI run found it,
-because the ledger refuses a divergence that changed shape. That is why the
-differential runs on both architectures.
+`arith/int-mul-i64-edge` used to be **architecture-dependent**: the fork rendered
+`9223372036854775807` on darwin/arm64 and `-9223372036854775808` on linux/amd64
+for the same input, because Go leaves an out-of-range `int64(float64)`
+implementation-defined. The first cross-platform CI run found it, because the
+ledger refuses a divergence that changed shape. That is why the differential
+runs on both architectures; slice 3 closed it, and the row is now the same on
+both.
+
+### A landed lane may not carry a declared divergence
+
+A declared divergence is a record for the slice that closes it — but once a
+slice has landed, declaring a mismatch in its lane must not be a way to make the
+differential green, or the ledger becomes a place to hide a decline. Slice 3's
+exit gate is byte-exactness with no decline, so `Report.Failures` and
+`TestDifferential` FAIL on a known divergence in the numeric class, and
+`TestNumericClassIsByteExact` fails if the ledger names a numeric row at all. An
+undeclared numeric mismatch fails the first; declaring it fails the second. The
+class is the whole `numeric` lane plus every row with surface `arithmetic`, so a
+numeric regression cannot escape into the seed lane. A later slice adds its own
+lane the same way as it lands.
 
 ## Rust is test-only
 

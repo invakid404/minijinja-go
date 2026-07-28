@@ -4,6 +4,9 @@
 
 # Oracle harness (Rust, test-only — never part of the Go module surface)
 oracle/harness/target/
+# A cross-architecture harness build, e.g. the linux/amd64 one used to prove
+# the numeric corpus is byte-exact on both architectures from one machine.
+oracle/harness/target-*/
 oracle/bin/
 
 # macOS

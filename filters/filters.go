@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"math/big"
 	"net/url"
 	"sort"
 	"strconv"
@@ -1939,20 +1940,34 @@ func FilterZip(_ State, val value.Value, args []value.Value, _ map[string]value.
 //	  -> 42
 //	{{ 3.14|abs }}
 //	  -> 3.14
+// `filters::abs` (filters.rs:531-549) dispatches on the PAYLOAD, not on what
+// converts to a number: a bool or a string cannot be absoluted at all, and an
+// integer is absoluted exactly. Asking `AsInt` instead answered 1 for `true`
+// and lost precision past 2^53.
 func FilterAbs(_ State, val value.Value, _ []value.Value, _ map[string]value.Value) (value.Value, error) {
-	if i, ok := val.AsInt(); ok {
-		if i < 0 {
-			return value.FromInt(-i), nil
-		}
-		return val, nil
+	if val.IsActualFloat() {
+		f, _ := val.AsFloat()
+		return value.FromFloat(math.Abs(f)), nil
 	}
-	if f, ok := val.AsFloat(); ok {
-		if f < 0 {
-			return value.FromFloat(-f), nil
+	if val.IsActualInt() {
+		i, ok := val.AsBigInt()
+		if !ok {
+			// ValueRepr::U128 past i128::MAX: already non-negative, returned
+			// unchanged.
+			return val, nil
 		}
-		return val, nil
+		if i.Sign() >= 0 {
+			return val, nil
+		}
+		// i64::MIN widens to i128 rather than erroring; only i128::MIN
+		// overflows.
+		out, ok := value.FromI128(i.Neg(i))
+		if !ok {
+			return value.Undefined(), mjerrors.NewError(mjerrors.ErrInvalidOperation, "overflow on abs")
+		}
+		return out, nil
 	}
-	return val, nil
+	return value.Undefined(), mjerrors.NewError(mjerrors.ErrInvalidOperation, "cannot get absolute value")
 }
 
 // FilterInt converts a value to an integer.
@@ -1978,14 +1993,13 @@ func FilterInt(_ State, val value.Value, args []value.Value, kwargs map[string]v
 		return value.Undefined(), mjerrors.NewError(mjerrors.ErrTooManyArguments, "too many keyword arguments")
 	}
 
+	// `filters::int` (filters.rs:557-588) dispatches on the payload and works
+	// in i128 throughout. Both float conversions below are Rust's SATURATING
+	// `f64 as i128` cast, which is deterministic; the port used Go's
+	// `int64(float64)`, which is implementation-defined out of range and
+	// therefore answered differently on arm64 and amd64.
 	if val.IsUndefined() || val.IsNone() {
 		return value.FromInt(0), nil
-	}
-	if i, ok := val.AsInt(); ok {
-		return value.FromInt(i), nil
-	}
-	if f, ok := val.AsFloat(); ok {
-		return value.FromInt(int64(f)), nil
 	}
 	if b, ok := val.AsBool(); ok {
 		if b {
@@ -1993,15 +2007,26 @@ func FilterInt(_ State, val value.Value, args []value.Value, kwargs map[string]v
 		}
 		return value.FromInt(0), nil
 	}
+	if val.IsActualInt() {
+		return val, nil
+	}
+	if val.IsActualFloat() {
+		f, _ := val.AsFloat()
+		out, _ := value.FromI128(value.F64ToI128(f))
+		return out, nil
+	}
 	if s, ok := val.AsString(); ok {
-		if i, err := strconv.ParseInt(s, 10, 64); err == nil {
-			return value.FromInt(i), nil
+		if i, ok := new(big.Int).SetString(s, 10); ok {
+			if out, ok := value.FromI128(i); ok {
+				return out, nil
+			}
 		}
-		if f, err := strconv.ParseFloat(s, 64); err == nil {
-			return value.FromInt(int64(f)), nil
-		} else {
+		f, err := strconv.ParseFloat(s, 64)
+		if err != nil {
 			return value.Undefined(), mjerrors.NewError(mjerrors.ErrInvalidOperation, err.Error())
 		}
+		out, _ := value.FromI128(value.F64ToI128(f))
+		return out, nil
 	}
 
 	return value.Undefined(), mjerrors.NewError(mjerrors.ErrInvalidOperation, fmt.Sprintf("cannot convert %s to integer", val.Kind()))

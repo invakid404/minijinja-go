@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	stderrors "errors"
 	"fmt"
 	"io"
 	"sort"
@@ -2558,6 +2559,17 @@ func (s *State) evalConst(c *parser.Const) value.Value {
 	case bool:
 		return value.FromBool(v)
 	case int64:
+		// An integer LITERAL is ValueRepr::U64 in the engine: the lexer parses
+		// it with `u64::from_str_radix` and only falls back to u128
+		// (compiler/lexer.rs:481-491), and this fork's lexer does the same, so
+		// the token is always non-negative and a leading `-` is unary minus
+		// applied afterwards. The repr is observable — see the payload model in
+		// value/numeric.go — so it has to be carried rather than flattened onto
+		// I64. A negative constant can only be a folded unary minus, which the
+		// engine's `neg` also lands on I64 via `int_as_value`.
+		if v >= 0 {
+			return value.FromUint64(uint64(v))
+		}
 		return value.FromInt(v)
 	case float64:
 		return value.FromFloat(v)
@@ -2579,6 +2591,14 @@ func wrapEvalError(err error, span parser.Span) error {
 			templErr.WithSpan(span)
 		}
 		return templErr
+	}
+	// A few engine errors are `Error::from(kind)` rather than
+	// `Error::new(kind, detail)` and render as just the kind. The value package
+	// raises a sentinel for the one numeric operation that does, because an
+	// empty detail cannot be used as the signal: it is still a detail, and an
+	// error built from dynamic input can legitimately have one.
+	if stderrors.Is(err, value.ErrInvalidOperationNoDetail) {
+		return NewErrorWithoutDetail(ErrInvalidOperation).WithSpan(span)
 	}
 	return NewError(ErrInvalidOperation, err.Error()).WithSpan(span)
 }
@@ -3078,33 +3098,47 @@ func (s *State) evalSlice(sl *parser.Slice) (value.Value, error) {
 	var start, stop *int64
 	var step int64 = 1
 
-	if sl.Start != nil {
-		v, err := s.evalExpr(sl.Start)
+	// `ops::slice` (value/ops.rs:133-148) reads each present bound with
+	// `i64::try_from`, which is fallible: a bound that does not convert is an
+	// error. Leaving it unset instead — which is what the port did — makes an
+	// invalid bound indistinguishable from an OMITTED one, so `xs[1.5:]`
+	// silently sliced the whole sequence. An omitted bound is `none` here, and
+	// none is the one value the engine also treats as absent.
+	bound := func(e parser.Expr) (*int64, error) {
+		v, err := s.evalExpr(e)
 		if err != nil {
-			return value.Undefined(), err
+			return nil, err
 		}
-		if i, ok := v.AsInt(); ok {
-			start = &i
+		if v.IsNone() {
+			return nil, nil
+		}
+		i, ok := v.AsInt()
+		if !ok {
+			return nil, NewError(ErrInvalidOperation,
+				fmt.Sprintf("cannot convert %s to i64", v.Kind())).WithSpan(sl.Span())
+		}
+		return &i, nil
+	}
+
+	if sl.Start != nil {
+		if start, err = bound(sl.Start); err != nil {
+			return value.Undefined(), err
 		}
 	}
 
 	if sl.Stop != nil {
-		v, err := s.evalExpr(sl.Stop)
-		if err != nil {
+		if stop, err = bound(sl.Stop); err != nil {
 			return value.Undefined(), err
-		}
-		if i, ok := v.AsInt(); ok {
-			stop = &i
 		}
 	}
 
 	if sl.Step != nil {
-		v, err := s.evalExpr(sl.Step)
+		p, err := bound(sl.Step)
 		if err != nil {
 			return value.Undefined(), err
 		}
-		if i, ok := v.AsInt(); ok {
-			step = i
+		if p != nil {
+			step = *p
 		}
 	}
 

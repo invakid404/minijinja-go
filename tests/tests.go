@@ -145,8 +145,11 @@ func TestOdd(_ filters.State, val value.Value, args []value.Value) (bool, error)
 	if len(args) > 0 {
 		return false, mjerrors.NewError(mjerrors.ErrInvalidOperation, "odd test expects no arguments")
 	}
-	if i, ok := val.AsInt(); ok {
-		return i%2 != 0, nil
+	// `tests::is_odd` is `i128::try_from(v).ok().is_some_and(|x| x % 2 != 0)`
+	// (tests.rs:133-135), so the conversion is i128 rather than i64 and an
+	// integer past int64 still decides.
+	if i, ok := val.AsBigInt(); ok {
+		return i.Bit(0) == 1, nil
 	}
 	return false, nil
 }
@@ -176,8 +179,9 @@ func TestEven(_ filters.State, val value.Value, args []value.Value) (bool, error
 	if len(args) > 0 {
 		return false, mjerrors.NewError(mjerrors.ErrInvalidOperation, "even test expects no arguments")
 	}
-	if i, ok := val.AsInt(); ok {
-		return i%2 == 0, nil
+	// `tests::is_even` (tests.rs:143-145); see TestOdd for the conversion.
+	if i, ok := val.AsBigInt(); ok {
+		return i.Bit(0) == 0, nil
 	}
 	return false, nil
 }
@@ -458,10 +462,10 @@ func TestNumber(_ filters.State, val value.Value, _ []value.Value) (bool, error)
 //	{{ 42.0 is integer }}
 //	  -> false
 func TestInteger(_ filters.State, val value.Value, _ []value.Value) (bool, error) {
-	_, ok := val.AsInt()
-	if !ok {
-		return false, nil
-	}
+	// `tests::is_integer` is `v.is_integer()` (tests.rs:179-181), a question
+	// about the PAYLOAD: every integer ValueRepr answers true and nothing else
+	// does. Asking it through a conversion instead made `true is integer` and
+	// an integer past int64 answer wrongly in opposite directions.
 	return val.IsActualInt(), nil
 }
 
