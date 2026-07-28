@@ -2,7 +2,7 @@
 package tests
 
 import (
-	"fmt"
+	"math"
 	"strings"
 	"unicode"
 
@@ -207,11 +207,27 @@ func TestEven(_ filters.State, val value.Value, args []value.Value) (bool, error
 //	  -> false
 func TestDivisibleBy(_ filters.State, val value.Value, args []value.Value) (bool, error) {
 	if len(args) < 1 {
-		return false, fmt.Errorf("divisibleby test requires argument")
+		return false, mjerrors.NewError(mjerrors.ErrMissingArgument, "missing argument")
 	}
-	if i, ok := val.AsInt(); ok {
-		if d, ok := args[0].AsInt(); ok && d != 0 {
-			return i%d == 0, nil
+	if val.IsActualInt() && args[0].IsActualInt() {
+		i, _ := val.AsInt()
+		d, _ := args[0].AsInt()
+		if d == 0 {
+			// The engine computes `a % b` on integers and panics on a zero
+			// divisor. A panic is not a behaviour worth reproducing, and
+			// answering `false` where the reference implementation aborts is
+			// the dangerous direction, so this refuses instead. Corpus:
+			// test/divisibleby-zero.
+			return false, mjerrors.NewError(mjerrors.ErrInvalidOperation,
+				"cannot check divisibility by zero")
+		}
+		return i%d == 0, nil
+	}
+	// Floats coerce and follow IEEE semantics, where a zero divisor is a NaN
+	// remainder rather than a trap: `6.0 is divisibleby(0.0)` is false.
+	if a, ok := val.AsFloat(); ok {
+		if b, ok := args[0].AsFloat(); ok {
+			return math.Mod(a, b) == 0, nil
 		}
 	}
 	return false, nil
@@ -705,7 +721,15 @@ func TestMapping(_ filters.State, val value.Value, _ []value.Value) (bool, error
 //	{{ 42 is iterable }}
 //	  -> false
 func TestIterable(_ filters.State, val value.Value, _ []value.Value) (bool, error) {
-	return val.Iter() != nil, nil
+	// `v.try_iter().is_ok()` (tests.rs:223-225): none and undefined iterate as
+	// empty and are therefore iterable, while a number is not.
+	switch val.Kind() {
+	case value.KindSeq, value.KindMap, value.KindIterable, value.KindString,
+		value.KindNone, value.KindUndefined:
+		return true, nil
+	default:
+		return val.Iter() != nil, nil
+	}
 }
 
 // TestStartingWith checks if a string starts with a given prefix.
