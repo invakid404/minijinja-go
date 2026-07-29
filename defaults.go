@@ -155,12 +155,24 @@ func registerDefaultFunctions(env *Environment) {
 // prettyRepr is Rust's alternate debug format, `{:#?}`: a container is printed
 // one element per line, indented four spaces per level, with a trailing comma
 // on every element. A scalar prints the same as its compact debug form.
+//
+// The renderer is selected the way the engine selects it (value/object.rs:327-353),
+// the same way `pprint` does — `debug(x)` is literally `format!("{x:#?}")`
+// (functions.rs:430-439), the same formatting `{x:#?}` that `pprint` is. A
+// sequence OR an iterable is a `debug_list`, but only when its enumerator has
+// an EXACT length: the engine will not risk iterating an unsized object just
+// to print it, and falls back to the object's own debug form. So
+// `debug(42|chain([1]))` is `<iterator>`, not a materialized list — and
+// materializing it was also evaluating an iteration the engine never performs.
 func prettyRepr(val value.Value, depth int) string {
 	pad := strings.Repeat("    ", depth)
 	inner := pad + "    "
 
 	switch val.Kind() {
 	case value.KindSeq, value.KindIterable:
+		if _, sized := val.Len(); !sized {
+			return val.Repr()
+		}
 		items := val.Iter()
 		if len(items) == 0 {
 			return "[]"

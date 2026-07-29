@@ -121,7 +121,13 @@ type CallableObject interface {
 type MethodCallable interface {
 	Object
 	// CallMethod invokes a method on the object.
-	// Return ErrUnknownMethod to fall back to GetAttr(name) + call.
+	//
+	// Implementing it REPLACES the default attribute-as-method dispatch, the
+	// way overriding `Object::call_method` does in the engine
+	// (value/object.rs:241-252). Returning ErrUnknownMethod therefore does NOT
+	// fall back to GetAttr(name) + call: the call goes straight to the
+	// environment's unknown-method callback, and an object that wants
+	// attribute dispatch for some names has to do that lookup itself.
 	CallMethod(state State, name string, args []Value, kwargs *OrderedMap) (Value, error)
 }
 

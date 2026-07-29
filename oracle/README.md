@@ -234,7 +234,7 @@ on the Go side). Every profile is *engine configuration only*; BAML's
 environment (globals, `regex_match`/`sum`, the none-formatter, prompt lowering)
 is not here and arrives as its own profile in a later slice.
 
-**`reviewfixes.json`** — 489 rows: the cases four rounds of cold review found by
+**`reviewfixes.json`** — 498 rows: the cases five rounds of cold review found by
 probing the pinned engine directly rather than by reading the corpus. `range`
 cardinality at the i64 boundary; integer ArgTypes at their declared widths,
 including `usize` at its real 64-bit one; integers past i64 through the tests
@@ -251,12 +251,15 @@ the generic comparison hook; the attribute-path grammar — empty comma fields, 
 complete `usize` parse, an empty attribute that is still a path — across all six
 consumers; `chain`'s newest-first mapping lookup; the formatter's `i128`-then-`u128`
 cast; `indent`'s terminal line ending; `items` and `zip` as iterable objects; and
-`pprint`'s alternate debug layout. A row here is a repro that was RED against the
-engine before it was a row.
+`pprint`'s alternate debug layout. The fifth round added 9 more, both about
+ORDER: that a macro rejects an unused keyword before a parameter default can run
+and mask the error, and that `debug()` selects its renderer by whether the
+enumerator has an exact length — the same selection `pprint` already made. A row
+here is a repro that was RED against the engine before it was a row.
 
 ### Where the corpus stands
 
-1943 rows: 1927 agree, 16 diverge and every one of the 16 is declared. None is
+1952 rows: 1936 agree, 16 diverge and every one of the 16 is declared. None is
 in the template, numeric, coercion or argument-contract lane, whose rows all
 agree with the engine. Fourteen of the sixteen are deliberate and permanent
 rather than pending:

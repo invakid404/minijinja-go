@@ -583,7 +583,7 @@ func (s *State) callMacroWithValues(macro *parser.Macro, args []value.Value, kwa
 	// `Macro::call` builds the whole argument vector first, forwards
 	// (vm/macro_object.rs:67-91): each parameter takes the positional at its
 	// index, else the keyword of its name, else undefined — and it is that
-	// pass that reports a duplicate or an unused keyword.
+	// pass that reports a duplicate keyword.
 	//
 	// The defaults are the macro's own INSTRUCTIONS, and the compiler emits
 	// them for `args.iter().rev()` (compiler/codegen.rs:419-430): the last
@@ -609,6 +609,23 @@ func (s *State) callMacroWithValues(macro *parser.Macro, args []value.Value, kwa
 		if i < len(args) {
 			argValues[i] = args[i]
 		}
+	}
+
+	// Every keyword the argument vector did not consume is rejected HERE, after
+	// the matching pass and the `caller` consumption above but BEFORE anything
+	// evaluates (vm/macro_object.rs:108-117, immediately before eval_macro at
+	// 119). The defaults below are macro INSTRUCTIONS, so they run inside
+	// eval_macro — after this check, never before it. Rejecting late let a
+	// default's own error or side effect mask the required too_many_arguments:
+	// `{% macro f(a=42|sort) %}{% endmacro %}{{ f(nope=1) }}` reported the
+	// filter's invalid_operation, and `{% macro f(a=nosuch()) %}` reported an
+	// unknown_function, where the engine reports the unknown keyword in both.
+	if remainingKwargs.Len() > 0 {
+		// The FIRST unused keyword in the order they were written, which is
+		// what the engine reports (value/argtypes.rs assert_all_used walks an
+		// insertion-ordered map).
+		return value.Undefined(), NewError(ErrTooManyArguments,
+			fmt.Sprintf("unknown keyword argument `%s`", remainingKwargs.Keys()[0]))
 	}
 
 	// A macro body runs in a state whose context is only its closure
@@ -641,14 +658,6 @@ func (s *State) callMacroWithValues(macro *parser.Macro, args []value.Value, kwa
 			val = evaluated
 		}
 		s.Set(varArg.ID, val)
-	}
-
-	if remainingKwargs.Len() > 0 {
-		// The FIRST unused keyword in the order they were written, which is
-		// what the engine reports (value/argtypes.rs assert_all_used walks an
-		// insertion-ordered map).
-		return value.Undefined(), NewError(ErrTooManyArguments,
-			fmt.Sprintf("unknown keyword argument `%s`", remainingKwargs.Keys()[0]))
 	}
 
 	// Capture output

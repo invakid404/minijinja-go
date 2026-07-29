@@ -16486,6 +16486,73 @@
       "surface": "string",
       "form": "expression",
       "source": "dict(**{'á':1})|pprint"
+    },
+    {
+      "id": "review/macro-unknown-kwarg-before-default-filter",
+      "surface": "control",
+      "form": "template",
+      "source": "{% macro f(a=42|sort) %}{{ a }}{% endmacro %}{{ f(nope=1) }}",
+      "expect": "error",
+      "notes": "Macro::call rejects every unused keyword BEFORE eval_macro (vm/macro_object.rs:108-119), and a parameter's default is one of the macro's instructions. The fork evaluated the defaults first, so this reported the default's invalid_operation instead of the unknown keyword."
+    },
+    {
+      "id": "review/macro-unknown-kwarg-before-default-call",
+      "surface": "control",
+      "form": "template",
+      "source": "{% macro f(a=nosuch()) %}{{ a }}{% endmacro %}{{ f(nope=1) }}",
+      "expect": "error",
+      "notes": "The same precedence through a different masking error: the default's unknown_function is never reached, because the keyword is rejected first."
+    },
+    {
+      "id": "review/macro-default-error-without-kwarg",
+      "surface": "control",
+      "form": "template",
+      "source": "{% macro f(a=42|sort) %}{{ a }}{% endmacro %}{{ f() }}",
+      "expect": "error",
+      "notes": "The control on the other side of that order: with no unused keyword there is nothing to report first, so the default's own error is still the outcome."
+    },
+    {
+      "id": "review/macro-unknown-kwarg-plain-default",
+      "surface": "control",
+      "form": "template",
+      "source": "{% macro f(a=1) %}{{ a }}{% endmacro %}{{ f(nope=1) }}",
+      "expect": "error",
+      "notes": "The common case the reordering must leave alone: a default that cannot fail, so only the keyword is left to report."
+    },
+    {
+      "id": "review/debug-unsized-chain",
+      "surface": "container",
+      "form": "expression",
+      "source": "debug(42|chain([1]))",
+      "notes": "debug(x) is format!(\"{x:#?}\"), so it selects its renderer the way every other debug does (value/object.rs:327-353): an iterable is a debug_list only when its enumerator has an exact length. The fork materialized it, which also evaluated an iteration the engine never performs -- here one that fails."
+    },
+    {
+      "id": "review/debug-unsized-zip",
+      "surface": "container",
+      "form": "expression",
+      "source": "debug([1]|zip(missing))",
+      "notes": "The same selection reached through zip, whose one unsized operand takes the exact length away: <iterator>, not the empty list the fork printed."
+    },
+    {
+      "id": "review/debug-sized-items",
+      "surface": "container",
+      "form": "expression",
+      "source": "debug(dict(a=1)|items)",
+      "notes": "The control that keeps the selection honest: items IS a sized iterable, so it stays a debug_list."
+    },
+    {
+      "id": "review/debug-sized-zip",
+      "surface": "container",
+      "form": "expression",
+      "source": "debug([1]|zip([2]))",
+      "notes": "zip over two sized operands keeps its exact length, so the same filter renders as a list here."
+    },
+    {
+      "id": "review/debug-nested-unsized",
+      "surface": "container",
+      "form": "expression",
+      "source": "debug([42|chain([1])])",
+      "notes": "The selection is per value, not per call: an unsized iterable nested inside a sized list is <iterator> at its own position."
     }
   ]
 }

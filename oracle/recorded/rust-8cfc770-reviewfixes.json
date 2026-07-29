@@ -20,7 +20,7 @@
     "harness_version": "1",
     "os": "macos",
     "arch": "aarch64",
-    "corpus_sha256": "635bbaf90746e5350ce2bd4df1e2c1d9f8e0d583ae14ccb9c3b6c7b0d3c04ea6"
+    "corpus_sha256": "e76734d20c735ddb333682ff4b74a64d88e0aeaa5c5180081a17e464ef814f1e"
   },
   "results": [
     {
@@ -3977,6 +3977,82 @@
       "outcome": {
         "status": "ok",
         "render": "{\n    \"a\\u{301}\": 1,\n}",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/macro-unknown-kwarg-before-default-filter",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments: unknown keyword argument `nope` (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "review/macro-unknown-kwarg-before-default-call",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments: unknown keyword argument `nope` (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "review/macro-default-error-without-kwarg",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot convert value to list (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "review/macro-unknown-kwarg-plain-default",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments: unknown keyword argument `nope` (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "review/debug-unsized-chain",
+      "outcome": {
+        "status": "ok",
+        "render": "<iterator>",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/debug-unsized-zip",
+      "outcome": {
+        "status": "ok",
+        "render": "<iterator>",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/debug-sized-items",
+      "outcome": {
+        "status": "ok",
+        "render": "[\n    [\n        \"a\",\n        1,\n    ],\n]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/debug-sized-zip",
+      "outcome": {
+        "status": "ok",
+        "render": "[\n    [\n        1,\n        2,\n    ],\n]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/debug-nested-unsized",
+      "outcome": {
+        "status": "ok",
+        "render": "[\n    <iterator>,\n]",
         "boolean": null
       }
     }
