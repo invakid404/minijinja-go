@@ -129,6 +129,87 @@ const SAMPLES: &[&str] = &[
     "\u{fb00}\u{fb01}",       // ff fi
 ];
 
+/// The scalars `Debug for str` special-cases into a short escape rather than
+/// into `\u{...}`. They are handled in code on the Go side, so the generated
+/// table only has to carry the `\u{...}` decision.
+///
+/// `impl Debug for str` calls `escape_debug_ext` with
+/// `EscapeDebugExtArgs { escape_grapheme_extended: true, escape_single_quote:
+/// false, escape_double_quote: true }` for EVERY character, which is why a
+/// single scalar decides the whole thing and no context is needed.
+const DEBUG_SHORT_ESCAPES: &[(char, &str)] = &[
+    ('\0', "\\0"),
+    ('\t', "\\t"),
+    ('\r', "\\r"),
+    ('\n', "\\n"),
+    ('\\', "\\\\"),
+    ('"', "\\\""),
+];
+
+/// The `Debug for str` form of one scalar, without the surrounding quotes.
+fn debug_escaped(c: char) -> String {
+    let quoted = format!("{:?}", String::from(c));
+    quoted[1..quoted.len() - 1].to_string()
+}
+
+/// Inclusive ranges of the scalars `Debug for str` renders as `\u{...}`.
+///
+/// That is `is_grapheme_extended(c) || !is_printable(c)` minus the short
+/// escapes above, but it is derived from the reference's own output rather than
+/// from those predicates, neither of which is a stable public API.
+fn debug_unicode_escape_ranges() -> Vec<[u32; 2]> {
+    ranges(|c| debug_escaped(c).starts_with("\\u{"))
+}
+
+/// Fails the generator if any scalar escapes into something that is neither a
+/// listed short escape nor `\u{...}`, so a Rust release that grew a new escape
+/// form cannot be absorbed silently by a table that only models two shapes.
+fn assert_debug_escape_shapes() {
+    for cp in 0..=0x10FFFFu32 {
+        let Some(c) = char::from_u32(cp) else { continue };
+        let escaped = debug_escaped(c);
+        if escaped == String::from(c) || escaped.starts_with("\\u{") {
+            continue;
+        }
+        if DEBUG_SHORT_ESCAPES.iter().any(|(k, v)| *k == c && *v == escaped) {
+            continue;
+        }
+        panic!("U+{cp:04X} debug-escapes as {escaped:?}, which is neither a known short escape nor \\u{{...}}");
+    }
+}
+
+/// Whole strings, so the Go port is checked against `Debug for str` itself and
+/// not only against the per-scalar decision it is built from.
+const DEBUG_SAMPLES: &[&str] = &[
+    "",
+    "hello",
+    "a\"b",
+    "a\\b",
+    "a\0b",
+    "a\tb\rc\nd",
+    "it's",
+    "\u{e9}",           // precomposed e-acute: printable, left alone
+    "e\u{301}",         // ...and its decomposition, whose mark IS escaped
+    "i\u{307}",
+    "\u{130}",
+    "a\u{a0}b",         // no-break space
+    "a\u{200d}b",       // zero width joiner
+    "a\u{ad}b",         // soft hyphen
+    "\u{1f600}",        // emoji: printable
+    "\u{1f1fa}\u{1f1f8}",
+    "a\u{903}b",        // Mc, not Grapheme_Extend: NOT escaped
+    "a\u{9be}b",        // Mc but Other_Grapheme_Extend: escaped
+    "a\u{20dd}b",       // Me
+    "a\u{e0100}b",      // supplementary variation selector
+    "a\u{378}b",        // unassigned
+    "a\u{e000}b",       // private use
+    "a\u{2028}b\u{2029}c",
+    "\u{7f}\u{80}\u{9f}",
+    "\u{feff}",
+    "\u{3000}",
+    "caf\u{e9} \u{4e2d}\u{6587}",
+];
+
 /// Strings whose UniCase ordering is what `sort` and `groupby` actually ask
 /// for. Every ordered pair of these is dumped, so the Go port is checked
 /// against real comparisons and not only against the per-scalar fold table.
@@ -242,6 +323,41 @@ fn main() {
         "unicase_fold",
         &mappings(|c| unicase::UniCase::unicode(String::from(c)).to_folded_case()),
     );
+
+    // `Debug for str` is what the engine renders a string INSIDE a container
+    // with — a list, a map, `pprint`, `debug()` — and it is not Go's `%q`. Two
+    // things differ: the escape syntax is `\u{a0}` where Go writes ` `,
+    // `\x7f` or `\U000e0020`; and Rust escapes every GRAPHEME-EXTENDED scalar,
+    // so "e" + U+0301 debug-prints as `e\u{301}` while Go prints `é`. Both are
+    // prompt bytes wherever a container holds a non-ASCII string.
+    //
+    // Only the `\u{...}` DECISION is tabulated. It covers every unassigned and
+    // private-use scalar, so a per-scalar map would be enormous, while as
+    // inclusive ranges it is the same shape as the property tables above. The
+    // six short escapes are a closed set, asserted here and written in code on
+    // the Go side.
+    assert_debug_escape_shapes();
+    emit_ranges(
+        &mut out,
+        "debug_unicode_escape",
+        &debug_unicode_escape_ranges(),
+        false,
+    );
+
+    out.push_str("  \"debug_samples\": [");
+    for (i, sample) in DEBUG_SAMPLES.iter().enumerate() {
+        if i > 0 {
+            out.push(',');
+        }
+        write!(
+            out,
+            "[{},{}]",
+            json_string(sample),
+            json_string(&format!("{sample:?}"))
+        )
+        .unwrap();
+    }
+    out.push_str("],\n");
 
     // Real orderings, over the strings a case-insensitive sort actually has to
     // separate. Ordered pairs, so asymmetry would show.

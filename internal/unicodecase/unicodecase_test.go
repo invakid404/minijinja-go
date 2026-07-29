@@ -2,6 +2,7 @@ package unicodecase
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"testing"
 )
@@ -22,6 +23,8 @@ type dump struct {
 	CaseIgnorable [][2]rune   `json:"case_ignorable"`
 	UnicaseFold   []mapping   `json:"unicase_fold"`
 	UnicaseCmp    []foldCmp   `json:"unicase_cmp"`
+	DebugEscape   [][2]rune   `json:"debug_unicode_escape"`
+	DebugSamples  [][2]string `json:"debug_samples"`
 	Samples       [][6]string `json:"samples"`
 }
 
@@ -224,5 +227,61 @@ func sign(n int) int {
 		return 1
 	default:
 		return 0
+	}
+}
+
+// TestQuoteDebugMatchesReference replays `Debug for str` for every Unicode
+// scalar and for the recorded whole-string samples.
+//
+// Per-scalar coverage is the point: the escaping decision is context-free, so a
+// scalar the fork leaves alone that the reference escapes is a prompt-byte
+// divergence that only shows up when someone happens to render that character
+// inside a container.
+func TestQuoteDebugMatchesReference(t *testing.T) {
+	d := load(t)
+	if len(d.DebugEscape) == 0 || len(d.DebugSamples) == 0 {
+		t.Fatal("the dump carries no debug-escape tables; regenerate it")
+	}
+
+	for _, sample := range d.DebugSamples {
+		if got := QuoteDebug(sample[0]); got != sample[1] {
+			t.Errorf("QuoteDebug(%q) = %s, want %s", sample[0], got, sample[1])
+		}
+	}
+
+	// The six short escapes are written in code rather than tabulated, so they
+	// are stated here as well.
+	short := map[rune]string{
+		0: `\0`, '\t': `\t`, '\r': `\r`, '\n': `\n`, '\\': `\\`, '"': `\"`,
+	}
+	for r, want := range short {
+		if got := QuoteDebug(string(r)); got != `"`+want+`"` {
+			t.Errorf("QuoteDebug(U+%04X) = %s, want %q", r, got, `"`+want+`"`)
+		}
+	}
+	// ...and the single quote is deliberately NOT one of them.
+	if got := QuoteDebug("it's"); got != `"it's"` {
+		t.Errorf(`QuoteDebug("it's") = %s, want "it's" unescaped`, got)
+	}
+
+	escaped := rangeSet(d.DebugEscape)
+	for r := rune(0); r <= 0x10FFFF; r++ {
+		if r >= 0xD800 && r <= 0xDFFF {
+			continue // surrogates are not scalars
+		}
+		if _, isShort := short[r]; isShort {
+			continue
+		}
+		got := QuoteDebug(string(r))
+		if escaped[r] {
+			// Lowercase hex, no padding, one pair of braces.
+			if want := fmt.Sprintf(`"\u{%x}"`, r); got != want {
+				t.Errorf("QuoteDebug(U+%04X) = %s, want %s", r, got, want)
+			}
+			continue
+		}
+		if want := `"` + string(r) + `"`; got != want {
+			t.Errorf("QuoteDebug(U+%04X) = %s, want the character unchanged", r, got)
+		}
 	}
 }

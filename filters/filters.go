@@ -2712,7 +2712,7 @@ func pprintValue(val value.Value, indent int) string {
 		sb.WriteString("{\n")
 		for _, k := range keys {
 			sb.WriteString(strings.Repeat(" ", indent+4))
-			sb.WriteString(fmt.Sprintf("%q: %s,", k, pprintValue(m[k], indent+4)))
+			sb.WriteString(fmt.Sprintf("%s: %s,", unicodecase.QuoteDebug(k), pprintValue(m[k], indent+4)))
 			sb.WriteString("\n")
 		}
 		sb.WriteString(pad)

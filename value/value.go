@@ -61,6 +61,8 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+
+	"github.com/invakid404/minijinja-go/v2/internal/unicodecase"
 )
 
 // Callable is an interface for callable objects like functions and macros.
@@ -340,7 +342,7 @@ type Value struct {
 }
 
 // internal marker types for special values
-type undefinedType struct{
+type undefinedType struct {
 	silent bool
 }
 type noneType struct{}
@@ -1054,9 +1056,14 @@ func (v Value) Repr() string {
 		// arm builds, with the ".0" already forced on an integral value.
 		return formatFloat(d)
 	case string:
-		return fmt.Sprintf("%q", d)
+		// `Debug for str`, not Go's %q: the escape syntax differs and Rust
+		// escapes every grapheme-extended scalar, so `['e' + U+0301]` renders
+		// `["e\u{301}"]`. See [unicodecase.QuoteDebug].
+		return unicodecase.QuoteDebug(d)
 	case safeString:
-		return fmt.Sprintf("%q", string(d))
+		// A safe string is a string to the debug formatter; the marker only
+		// affects auto-escaping.
+		return unicodecase.QuoteDebug(string(d))
 	case []byte:
 		return fmt.Sprintf("b%q", d)
 	case []Value:

@@ -24,6 +24,7 @@
 package unicodecase
 
 import (
+	"strconv"
 	"strings"
 	"unicode/utf8"
 )
@@ -183,6 +184,62 @@ func TrimRightSpace(s string) string { return strings.TrimRightFunc(s, IsSpace) 
 // whitespace.
 func Fields(s string) []string {
 	return strings.FieldsFunc(s, IsSpace)
+}
+
+// QuoteDebug is Rust's `Debug for str`: the form the engine renders a string in
+// when it renders it INSIDE something — a list, a mapping, `pprint`, `debug()`
+// — as opposed to Display, which writes the characters out unchanged.
+//
+// It is not Go's `%q`, and the two differ in ways that are prompt bytes:
+//
+//   - the escape SYNTAX. Rust writes `\u{a0}`, `\u{7f}` and `\u{e0020}`, with
+//     lowercase hex and no padding; Go's %q writes those same three scalars as
+//     `\u00a0`, `\x7f` and `\U000e0020`. Rust has no `\a`, `\v`, `\f` or `\x`
+//     form at all — the six short escapes below are the whole set, and NUL is
+//     `\0` rather than `\x00`.
+//   - GRAPHEME-EXTENDED scalars are escaped. `Debug for str` passes
+//     `escape_grapheme_extended: true` for every character, so "e" followed by
+//     U+0301 debug-prints as `e\u{301}` where Go prints `é`. A combining mark,
+//     a variation selector or an enclosing mark anywhere in a string is enough.
+//
+// The decision is per character and carries no context — the arguments are
+// constant for the whole string — so one table of scalars decides it. That
+// table is dumped from the reference implementation itself and covers every
+// unassigned and private-use scalar, which is why it is inclusive RANGES and
+// not a per-scalar map.
+//
+// The single quote is deliberately not escaped: `Debug for str` passes
+// `escape_single_quote: false`, which is what makes `"it's"` come out unchanged.
+func QuoteDebug(s string) string {
+	var b strings.Builder
+	b.Grow(len(s) + 2)
+	b.WriteByte('"')
+	for _, r := range s {
+		switch r {
+		case 0:
+			b.WriteString(`\0`)
+		case '\t':
+			b.WriteString(`\t`)
+		case '\r':
+			b.WriteString(`\r`)
+		case '\n':
+			b.WriteString(`\n`)
+		case '\\':
+			b.WriteString(`\\`)
+		case '"':
+			b.WriteString(`\"`)
+		default:
+			if inRanges(debugUnicodeEscapeRanges, r) {
+				b.WriteString(`\u{`)
+				b.WriteString(strconv.FormatInt(int64(r), 16))
+				b.WriteByte('}')
+			} else {
+				b.WriteRune(r)
+			}
+		}
+	}
+	b.WriteByte('"')
+	return b.String()
 }
 
 // FoldCompare is `UniCase::cmp`: the engine's case-insensitive string ordering.

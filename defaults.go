@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/invakid404/minijinja-go/v2/filters"
+	"github.com/invakid404/minijinja-go/v2/internal/unicodecase"
 	"github.com/invakid404/minijinja-go/v2/tests"
 	"github.com/invakid404/minijinja-go/v2/value"
 )
@@ -406,7 +407,7 @@ func (n *namespaceValue) String() string {
 
 	parts := make([]string, 0, len(keys))
 	for _, k := range keys {
-		parts = append(parts, fmt.Sprintf("%q: %s", k, n.data[k].Repr()))
+		parts = append(parts, fmt.Sprintf("%s: %s", unicodecase.QuoteDebug(k), n.data[k].Repr()))
 	}
 	return "{" + strings.Join(parts, ", ") + "}"
 }
@@ -435,7 +436,7 @@ func fnDebug(state *State, args []value.Value, kwargs *value.OrderedMap) (value.
 	// Otherwise debug the current state
 	var parts []string
 	parts = append(parts, fmt.Sprintf("State {"))
-	parts = append(parts, fmt.Sprintf("  name: %q,", state.name))
+	parts = append(parts, fmt.Sprintf("  name: %s,", unicodecase.QuoteDebug(state.name)))
 	parts = append(parts, "  current variables: {")
 
 	// Collect variables from scopes

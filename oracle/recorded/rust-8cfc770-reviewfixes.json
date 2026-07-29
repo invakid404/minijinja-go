@@ -20,7 +20,7 @@
     "harness_version": "1",
     "os": "macos",
     "arch": "aarch64",
-    "corpus_sha256": "56d47a0d7da16de5ebe3a53f76bf7282b5ba90cdfd31fd9820c0fa7a0cbd2dbd"
+    "corpus_sha256": "74f99de5d1eb1ebba3a34be16daa95eb5396b761b13ae3932e5613e85681e513"
   },
   "results": [
     {
@@ -1878,6 +1878,478 @@
         "category": "invalid_operation",
         "kind": "InvalidOperation",
         "message": "invalid operation: cannot convert sequence to i64 (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "review/debugstr-list-e-acute",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"e\\u{301}\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/debugstr-list-dotted-i",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"i\\u{307}\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/debugstr-map-dotted-i",
+      "outcome": {
+        "status": "ok",
+        "render": "{\"i\\u{307}\": 1}",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/debugstr-list-nbsp",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"a\\u{a0}b\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/debugstr-list-zwj",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"a\\u{200d}b\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/debugstr-pprint-dotted-i",
+      "outcome": {
+        "status": "ok",
+        "render": "[\n    \"i\\u{307}\",\n]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/debugstr-pprint-nbsp",
+      "outcome": {
+        "status": "ok",
+        "render": "[\n    \"a\\u{a0}b\",\n]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/debugstr-pprint-map-key",
+      "outcome": {
+        "status": "ok",
+        "render": "{\n    \"i\\u{307}\": 1,\n}",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/debugstr-display-unchanged",
+      "outcome": {
+        "status": "ok",
+        "render": "i̇",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/debugstr-display-nbsp-unchanged",
+      "outcome": {
+        "status": "ok",
+        "render": "a b",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/debugstr-display-interpolated",
+      "outcome": {
+        "status": "ok",
+        "render": "áb c",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/debugstr-tojson-unchanged",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"i̇\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/debugstr-tojson-nbsp-unchanged",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"a b\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/debugstr-tojson-map-unchanged",
+      "outcome": {
+        "status": "ok",
+        "render": "{\"i̇\":1}",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/debugstr-tojson-control",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"a\\tb\\\"c\\\\d e\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/debugstr-join-unchanged",
+      "outcome": {
+        "status": "ok",
+        "render": "i̇-a b",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/debugstr-ascii-plain",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"hello\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/debugstr-ascii-punct",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"a~b!c9\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/debugstr-ascii-space",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"a b\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/debugstr-ascii-apostrophe",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"it's\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/debugstr-ascii-quote",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"a\\\"b\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/debugstr-ascii-backslash",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"a\\\\b\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/debugstr-nul",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"a\\0b\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/debugstr-tab-cr-lf",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"a\\tb\\rc\\nd\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/debugstr-bell",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"a\\u{7}b\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/debugstr-vtab-formfeed",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"a\\u{b}x\\u{c}b\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/debugstr-escape-char",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"a\\u{1b}b\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/debugstr-del-c1",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"a\\u{7f}\\u{80}b\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/debugstr-mn-marks",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"a\\u{300}\\u{301}\\u{307}\\u{308}b\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/debugstr-me-enclosing",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"a\\u{20dd}\\u{20e0}b\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/debugstr-mc-not-extended",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"aःb\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/debugstr-mc-other-extended",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"a\\u{9be}\\u{b3e}b\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/debugstr-variation-selectors",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"a\\u{fe0f}\\u{e0100}b\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/debugstr-hangul-jamo-not-extended",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"aᅠᆨb\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/debugstr-emoji-not-extended",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"a😀🇺b\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/debugstr-astral-mark",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"a\\u{101fd}b\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/debugstr-musical-mark",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"a\\u{1d165}b\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/debugstr-format-chars",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"a\\u{ad}\\u{2060}\\u{feff}b\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/debugstr-zero-width",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"a\\u{200b}\\u{200c}\\u{200d}b\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/debugstr-spaces",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"a\\u{2000}\\u{2003}\\u{202f}\\u{3000}b\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/debugstr-line-separators",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"a\\u{2028}b\\u{2029}c\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/debugstr-unassigned",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"a\\u{378}\\u{530}b\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/debugstr-private-use",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"a\\u{e000}\\u{100000}b\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/debugstr-cjk-printable",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"café 中文 ひ\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/debugstr-site-nested-list",
+      "outcome": {
+        "status": "ok",
+        "render": "[[\"i\\u{307}\"]]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/debugstr-site-map-value",
+      "outcome": {
+        "status": "ok",
+        "render": "{\"k\": \"i\\u{307}\"}",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/debugstr-site-items",
+      "outcome": {
+        "status": "ok",
+        "render": "[[\"k\", \"i\\u{307}\"]]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/debugstr-site-dictsort",
+      "outcome": {
+        "status": "ok",
+        "render": "[[\"i\\u{307}\", 1]]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/debugstr-site-safe",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"i\\u{307}\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/debugstr-site-escape",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"i\\u{307}\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/debugstr-site-string-filter",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"i\\u{307}\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/debugstr-site-groupby-list",
+      "outcome": {
+        "status": "ok",
+        "render": "[{\"k\": \"i\\u{307}\"}]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/debugstr-site-sort",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"a\\u{a0}b\", \"i\\u{307}\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/debugstr-site-debug-one",
+      "outcome": {
+        "status": "ok",
+        "render": "\"i\\u{307}\"",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/debugstr-site-debug-list",
+      "outcome": {
+        "status": "ok",
+        "render": "[\n    \"i\\u{307}\",\n    \"a\\u{a0}b\",\n]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/debugstr-site-namespace",
+      "outcome": {
+        "status": "ok",
+        "render": "{\"k\": \"i\\u{307}\"}",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/debugstr-site-loop-render",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"i\\u{307}\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/debugstr-site-pycompat-items",
+      "outcome": {
+        "status": "ok",
+        "render": "[[\"k\", \"i\\u{307}\"]]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/debugstr-site-pycompat-keys",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"i\\u{307}\"]",
+        "boolean": null
       }
     }
   ]

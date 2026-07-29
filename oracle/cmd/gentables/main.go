@@ -36,6 +36,8 @@ type dump struct {
 	Cased         [][2]rune    `json:"cased"`
 	CaseIgnorable [][2]rune    `json:"case_ignorable"`
 	UnicaseFold   []mappingRaw `json:"unicase_fold"`
+	DebugEscape   [][2]rune    `json:"debug_unicode_escape"`
+	DebugSamples  [][2]string  `json:"debug_samples"`
 	UnicaseCmp    []cmpRaw     `json:"unicase_cmp"`
 	Samples       [][6]string  `json:"samples"`
 }
@@ -137,6 +139,10 @@ const rustcVersion = %q
 	writeRanges(&buf, "casedRanges", "the Unicode Cased property, used by the final-sigma rule", d.Cased)
 	writeRanges(&buf, "caseIgnorableRanges", "the Unicode Case_Ignorable property, used by the final-sigma rule", d.CaseIgnorable)
 
+	writeRanges(&buf, "debugUnicodeEscapeRanges", `the scalars Rust's `+"`"+`Debug for str`+"`"+` renders as
+// \u{...}: every grapheme-extended one and every unprintable one, minus the six
+// short escapes QuoteDebug writes in code`, d.DebugEscape)
+
 	writeMappings(&buf, "unicaseFoldMap", `unicase's own fold, tabulated per scalar: the character
 // sequence UniCase::cmp compares. It is dumped as the ITERATION order of
 // unicase's Fold, which for a three-character fold is not the folded order —
@@ -150,8 +156,8 @@ const rustcVersion = %q
 	if err := os.WriteFile(out, src, 0o644); err != nil {
 		fail(err)
 	}
-	fmt.Fprintf(os.Stderr, "wrote %s: %d upper, %d lower, %d fold mappings; %d property ranges\n",
-		out, len(d.ToUpper), len(d.ToLower), len(d.UnicaseFold),
+	fmt.Fprintf(os.Stderr, "wrote %s: %d upper, %d lower, %d fold mappings; %d debug-escape ranges; %d property ranges\n",
+		out, len(d.ToUpper), len(d.ToLower), len(d.UnicaseFold), len(d.DebugEscape),
 		len(d.Lowercase)+len(d.Uppercase)+len(d.Alphabetic)+len(d.Numeric)+
 			len(d.Whitespace)+len(d.Cased)+len(d.CaseIgnorable))
 }

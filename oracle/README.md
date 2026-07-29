@@ -213,7 +213,7 @@ on the Go side). Every profile is *engine configuration only*; BAML's
 environment (globals, `regex_match`/`sum`, the none-formatter, prompt lowering)
 is not here and arrives as its own profile in a later slice.
 
-**`reviewfixes.json`** — 228 rows: the cases two rounds of cold review found by
+**`reviewfixes.json`** — 287 rows: the cases three rounds of cold review found by
 probing the pinned engine directly rather than by reading the corpus. `range`
 cardinality at the i64 boundary; integer ArgTypes at their declared widths,
 including `usize` at its real 64-bit one; integers past i64 through the tests
@@ -221,13 +221,14 @@ and the formatters; the string tests' typing; composite sort and select paths;
 the pycompat view objects' kind, indexing and truth; `debug()`'s exact bytes;
 whether a macro accepts the synthetic `caller` keyword, decided the way the
 compiler decides it; `dict()`'s key spellings; the engine's one case-insensitive
-comparator across `sort`, `groupby` and `dictsort`; and `groupby`'s two
-observable kinds. A row here is a repro that was RED against the engine before
-it was a row.
+comparator across `sort`, `groupby` and `dictsort`; `groupby`'s two observable
+kinds; and the debug form of a string, which every container rendering goes
+through. A row here is a repro that was RED against the engine
+before it was a row.
 
 ### Where the corpus stands
 
-1682 rows: 1670 agree, 12 diverge and every one of the 12 is declared. None is
+1741 rows: 1729 agree, 12 diverge and every one of the 12 is declared. None is
 in the template, numeric, coercion or argument-contract lane, whose rows all
 agree with the engine. Ten of the twelve are deliberate and permanent rather
 than pending:

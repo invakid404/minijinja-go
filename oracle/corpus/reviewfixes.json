@@ -14423,6 +14423,638 @@
       "form": "template",
       "source": "{% macro f() %}{{ caller[caller:] }}{% endmacro %}{{ f(caller=[1,2]) }}",
       "notes": "With a bound present the name is free after all, so the keyword binds and the slice then fails on its own terms."
+    },
+    {
+      "id": "review/debugstr-list-e-acute",
+      "surface": "string",
+      "form": "expression",
+      "source": "['é']",
+      "notes": "The reported repro. `Debug for str` escapes every GRAPHEME-EXTENDED scalar, so the decomposed e + U+0301 renders [\"e\\u{301}\"]. Go's %q renders the character, and this is prompt bytes wherever a container holds a non-ASCII string."
+    },
+    {
+      "id": "review/debugstr-list-dotted-i",
+      "surface": "string",
+      "form": "expression",
+      "source": "['i̇']"
+    },
+    {
+      "id": "review/debugstr-map-dotted-i",
+      "surface": "string",
+      "form": "expression",
+      "source": "{'i̇': 1}",
+      "notes": "A map KEY goes through the same formatter."
+    },
+    {
+      "id": "review/debugstr-list-nbsp",
+      "surface": "string",
+      "form": "expression",
+      "source": "['a b']",
+      "notes": "The escape SYNTAX: Rust writes \\u{a0} with lowercase hex and no padding where Go's %q writes \\u00a0."
+    },
+    {
+      "id": "review/debugstr-list-zwj",
+      "surface": "string",
+      "form": "expression",
+      "source": "['a‍b']"
+    },
+    {
+      "id": "review/debugstr-pprint-dotted-i",
+      "surface": "string",
+      "form": "expression",
+      "source": "['i̇']|pprint",
+      "notes": "`pprint` formats its elements with the same debug form, and its map keys separately -- both had to move."
+    },
+    {
+      "id": "review/debugstr-pprint-nbsp",
+      "surface": "string",
+      "form": "expression",
+      "source": "['a b']|pprint"
+    },
+    {
+      "id": "review/debugstr-pprint-map-key",
+      "surface": "string",
+      "form": "expression",
+      "source": "{'i̇': 1}|pprint"
+    },
+    {
+      "id": "review/debugstr-display-unchanged",
+      "surface": "string",
+      "form": "expression",
+      "source": "'i̇'",
+      "notes": "The control that says this is the DEBUG form only: Display writes the characters out unchanged, and always did."
+    },
+    {
+      "id": "review/debugstr-display-nbsp-unchanged",
+      "surface": "string",
+      "form": "expression",
+      "source": "'a b'"
+    },
+    {
+      "id": "review/debugstr-display-interpolated",
+      "surface": "string",
+      "form": "template",
+      "source": "{{ x }}",
+      "inputs": [
+        {
+          "name": "x",
+          "value": {
+            "kind": "string",
+            "value": "áb c"
+          }
+        }
+      ]
+    },
+    {
+      "id": "review/debugstr-tojson-unchanged",
+      "surface": "string",
+      "form": "expression",
+      "source": "['i̇']|tojson",
+      "notes": "And JSON is a third formatter again: serde_json escapes the quote, the backslash and the control characters, and leaves every other scalar alone."
+    },
+    {
+      "id": "review/debugstr-tojson-nbsp-unchanged",
+      "surface": "string",
+      "form": "expression",
+      "source": "['a b']|tojson"
+    },
+    {
+      "id": "review/debugstr-tojson-map-unchanged",
+      "surface": "string",
+      "form": "expression",
+      "source": "{'i̇': 1}|tojson"
+    },
+    {
+      "id": "review/debugstr-tojson-control",
+      "surface": "string",
+      "form": "expression",
+      "source": "[x]|tojson",
+      "inputs": [
+        {
+          "name": "x",
+          "value": {
+            "kind": "string",
+            "value": "a\tb\"c\\d e"
+          }
+        }
+      ]
+    },
+    {
+      "id": "review/debugstr-join-unchanged",
+      "surface": "string",
+      "form": "expression",
+      "source": "['i̇','a b']|join('-')",
+      "notes": "`join` concatenates the Display forms."
+    },
+    {
+      "id": "review/debugstr-ascii-plain",
+      "surface": "string",
+      "form": "expression",
+      "source": "['hello']",
+      "notes": "The controls: ordinary ASCII text is identical under both formatters, so the change cannot have moved the common case."
+    },
+    {
+      "id": "review/debugstr-ascii-punct",
+      "surface": "string",
+      "form": "expression",
+      "source": "['a~b!c9']"
+    },
+    {
+      "id": "review/debugstr-ascii-space",
+      "surface": "string",
+      "form": "expression",
+      "source": "['a b']"
+    },
+    {
+      "id": "review/debugstr-ascii-apostrophe",
+      "surface": "string",
+      "form": "expression",
+      "source": "[x]",
+      "inputs": [
+        {
+          "name": "x",
+          "value": {
+            "kind": "string",
+            "value": "it's"
+          }
+        }
+      ],
+      "notes": "`escape_single_quote` is FALSE for a string, so an apostrophe is left alone."
+    },
+    {
+      "id": "review/debugstr-ascii-quote",
+      "surface": "string",
+      "form": "expression",
+      "source": "[x]",
+      "inputs": [
+        {
+          "name": "x",
+          "value": {
+            "kind": "string",
+            "value": "a\"b"
+          }
+        }
+      ]
+    },
+    {
+      "id": "review/debugstr-ascii-backslash",
+      "surface": "string",
+      "form": "expression",
+      "source": "[x]",
+      "inputs": [
+        {
+          "name": "x",
+          "value": {
+            "kind": "string",
+            "value": "a\\b"
+          }
+        }
+      ]
+    },
+    {
+      "id": "review/debugstr-nul",
+      "surface": "string",
+      "form": "expression",
+      "source": "[x]",
+      "inputs": [
+        {
+          "name": "x",
+          "value": {
+            "kind": "string",
+            "value": "a\u0000b"
+          }
+        }
+      ],
+      "notes": "NUL is \\0, not \\u{0} and not Go's \\x00."
+    },
+    {
+      "id": "review/debugstr-tab-cr-lf",
+      "surface": "string",
+      "form": "expression",
+      "source": "[x]",
+      "inputs": [
+        {
+          "name": "x",
+          "value": {
+            "kind": "string",
+            "value": "a\tb\rc\nd"
+          }
+        }
+      ]
+    },
+    {
+      "id": "review/debugstr-bell",
+      "surface": "string",
+      "form": "expression",
+      "source": "[x]",
+      "inputs": [
+        {
+          "name": "x",
+          "value": {
+            "kind": "string",
+            "value": "a\u0007b"
+          }
+        }
+      ],
+      "notes": "Rust has no \\a: everything outside the six short escapes is \\u{...}."
+    },
+    {
+      "id": "review/debugstr-vtab-formfeed",
+      "surface": "string",
+      "form": "expression",
+      "source": "[x]",
+      "inputs": [
+        {
+          "name": "x",
+          "value": {
+            "kind": "string",
+            "value": "a\u000bx\fb"
+          }
+        }
+      ],
+      "notes": "Nor \\v or \\f."
+    },
+    {
+      "id": "review/debugstr-escape-char",
+      "surface": "string",
+      "form": "expression",
+      "source": "[x]",
+      "inputs": [
+        {
+          "name": "x",
+          "value": {
+            "kind": "string",
+            "value": "a\u001bb"
+          }
+        }
+      ],
+      "notes": "Nor \\x1b."
+    },
+    {
+      "id": "review/debugstr-del-c1",
+      "surface": "string",
+      "form": "expression",
+      "source": "[x]",
+      "inputs": [
+        {
+          "name": "x",
+          "value": {
+            "kind": "string",
+            "value": "ab"
+          }
+        }
+      ],
+      "notes": "\\u{7f} and \\u{80}, where Go writes \\x7f and \\u0080."
+    },
+    {
+      "id": "review/debugstr-mn-marks",
+      "surface": "string",
+      "form": "expression",
+      "source": "[x]",
+      "inputs": [
+        {
+          "name": "x",
+          "value": {
+            "kind": "string",
+            "value": "à́̇̈b"
+          }
+        }
+      ],
+      "notes": "Mn is grapheme-extended."
+    },
+    {
+      "id": "review/debugstr-me-enclosing",
+      "surface": "string",
+      "form": "expression",
+      "source": "[x]",
+      "inputs": [
+        {
+          "name": "x",
+          "value": {
+            "kind": "string",
+            "value": "a⃝⃠b"
+          }
+        }
+      ],
+      "notes": "So is Me."
+    },
+    {
+      "id": "review/debugstr-mc-not-extended",
+      "surface": "string",
+      "form": "expression",
+      "source": "[x]",
+      "inputs": [
+        {
+          "name": "x",
+          "value": {
+            "kind": "string",
+            "value": "aःb"
+          }
+        }
+      ],
+      "notes": "Mc is NOT: U+0903 is a spacing combining mark and is left alone. This is the property, not 'any combining mark'."
+    },
+    {
+      "id": "review/debugstr-mc-other-extended",
+      "surface": "string",
+      "form": "expression",
+      "source": "[x]",
+      "inputs": [
+        {
+          "name": "x",
+          "value": {
+            "kind": "string",
+            "value": "aাାb"
+          }
+        }
+      ],
+      "notes": "...except where Other_Grapheme_Extend says otherwise: U+09BE and U+0B3E are Mc AND grapheme-extended, and they escape."
+    },
+    {
+      "id": "review/debugstr-variation-selectors",
+      "surface": "string",
+      "form": "expression",
+      "source": "[x]",
+      "inputs": [
+        {
+          "name": "x",
+          "value": {
+            "kind": "string",
+            "value": "a️󠄀b"
+          }
+        }
+      ],
+      "notes": "Variation selectors escape, in both planes."
+    },
+    {
+      "id": "review/debugstr-hangul-jamo-not-extended",
+      "surface": "string",
+      "form": "expression",
+      "source": "[x]",
+      "inputs": [
+        {
+          "name": "x",
+          "value": {
+            "kind": "string",
+            "value": "aᅠᆨb"
+          }
+        }
+      ],
+      "notes": "A Hangul V/T jamo is grapheme-extended in the CLUSTER algorithm but not by the property, and it is left alone."
+    },
+    {
+      "id": "review/debugstr-emoji-not-extended",
+      "surface": "string",
+      "form": "expression",
+      "source": "[x]",
+      "inputs": [
+        {
+          "name": "x",
+          "value": {
+            "kind": "string",
+            "value": "a😀🇺b"
+          }
+        }
+      ],
+      "notes": "An emoji and a regional indicator are printable and not extended."
+    },
+    {
+      "id": "review/debugstr-astral-mark",
+      "surface": "string",
+      "form": "expression",
+      "source": "[x]",
+      "inputs": [
+        {
+          "name": "x",
+          "value": {
+            "kind": "string",
+            "value": "a𐇽b"
+          }
+        }
+      ],
+      "notes": "An astral combining mark escapes with its full scalar value, \\u{101fd} -- Go's %q would write \\U000101fd."
+    },
+    {
+      "id": "review/debugstr-musical-mark",
+      "surface": "string",
+      "form": "expression",
+      "source": "[x]",
+      "inputs": [
+        {
+          "name": "x",
+          "value": {
+            "kind": "string",
+            "value": "a𝅥b"
+          }
+        }
+      ]
+    },
+    {
+      "id": "review/debugstr-format-chars",
+      "surface": "string",
+      "form": "expression",
+      "source": "[x]",
+      "inputs": [
+        {
+          "name": "x",
+          "value": {
+            "kind": "string",
+            "value": "a­⁠﻿b"
+          }
+        }
+      ],
+      "notes": "Cf: soft hyphen, word joiner, BOM."
+    },
+    {
+      "id": "review/debugstr-zero-width",
+      "surface": "string",
+      "form": "expression",
+      "source": "[x]",
+      "inputs": [
+        {
+          "name": "x",
+          "value": {
+            "kind": "string",
+            "value": "a​‌‍b"
+          }
+        }
+      ]
+    },
+    {
+      "id": "review/debugstr-spaces",
+      "surface": "string",
+      "form": "expression",
+      "source": "[x]",
+      "inputs": [
+        {
+          "name": "x",
+          "value": {
+            "kind": "string",
+            "value": "a   　b"
+          }
+        }
+      ],
+      "notes": "Zs other than the ASCII space is unprintable to the debug formatter."
+    },
+    {
+      "id": "review/debugstr-line-separators",
+      "surface": "string",
+      "form": "expression",
+      "source": "[x]",
+      "inputs": [
+        {
+          "name": "x",
+          "value": {
+            "kind": "string",
+            "value": "a b c"
+          }
+        }
+      ],
+      "notes": "Zl and Zp."
+    },
+    {
+      "id": "review/debugstr-unassigned",
+      "surface": "string",
+      "form": "expression",
+      "source": "[x]",
+      "inputs": [
+        {
+          "name": "x",
+          "value": {
+            "kind": "string",
+            "value": "a͸԰b"
+          }
+        }
+      ],
+      "notes": "Cn: an unassigned scalar escapes, which is why the table is ranges and not a per-scalar map."
+    },
+    {
+      "id": "review/debugstr-private-use",
+      "surface": "string",
+      "form": "expression",
+      "source": "[x]",
+      "inputs": [
+        {
+          "name": "x",
+          "value": {
+            "kind": "string",
+            "value": "a􀀀b"
+          }
+        }
+      ],
+      "notes": "Co, in the BMP and in plane 16."
+    },
+    {
+      "id": "review/debugstr-cjk-printable",
+      "surface": "string",
+      "form": "expression",
+      "source": "[x]",
+      "inputs": [
+        {
+          "name": "x",
+          "value": {
+            "kind": "string",
+            "value": "café 中文 ひ"
+          }
+        }
+      ],
+      "notes": "And the large printable blocks are left alone."
+    },
+    {
+      "id": "review/debugstr-site-nested-list",
+      "surface": "string",
+      "form": "expression",
+      "source": "[['i̇']]",
+      "notes": "Nesting changes nothing: the formatter is per value."
+    },
+    {
+      "id": "review/debugstr-site-map-value",
+      "surface": "string",
+      "form": "expression",
+      "source": "{'k': 'i̇'}"
+    },
+    {
+      "id": "review/debugstr-site-items",
+      "surface": "string",
+      "form": "expression",
+      "source": "{'k': 'i̇'}|items|list"
+    },
+    {
+      "id": "review/debugstr-site-dictsort",
+      "surface": "string",
+      "form": "expression",
+      "source": "{'i̇': 1}|dictsort"
+    },
+    {
+      "id": "review/debugstr-site-safe",
+      "surface": "string",
+      "form": "expression",
+      "source": "['i̇'|safe]",
+      "notes": "A safe string is a string to the debug formatter; the marker only affects auto-escaping."
+    },
+    {
+      "id": "review/debugstr-site-escape",
+      "surface": "string",
+      "form": "expression",
+      "source": "['i̇'|e]"
+    },
+    {
+      "id": "review/debugstr-site-string-filter",
+      "surface": "string",
+      "form": "expression",
+      "source": "['i̇']|string"
+    },
+    {
+      "id": "review/debugstr-site-groupby-list",
+      "surface": "string",
+      "form": "expression",
+      "source": "([dict(k='i̇')]|groupby('k'))[0].list"
+    },
+    {
+      "id": "review/debugstr-site-sort",
+      "surface": "string",
+      "form": "expression",
+      "source": "['i̇','a b']|sort"
+    },
+    {
+      "id": "review/debugstr-site-debug-one",
+      "surface": "string",
+      "form": "template",
+      "source": "{{ debug('i̇') }}",
+      "notes": "`debug()` pretty-prints with the same form. Its other argument shapes are already pinned by review/debug-*."
+    },
+    {
+      "id": "review/debugstr-site-debug-list",
+      "surface": "string",
+      "form": "template",
+      "source": "{{ debug(['i̇','a b']) }}"
+    },
+    {
+      "id": "review/debugstr-site-namespace",
+      "surface": "string",
+      "form": "template",
+      "source": "{% set n = namespace(k='i̇') %}{{ n }}",
+      "notes": "A namespace renders its keys with the debug form too."
+    },
+    {
+      "id": "review/debugstr-site-loop-render",
+      "surface": "string",
+      "form": "template",
+      "source": "{% for v in ['i̇'] %}{{ [v] }}{% endfor %}"
+    },
+    {
+      "id": "review/debugstr-site-pycompat-items",
+      "surface": "string",
+      "form": "expression",
+      "source": "dict(k='i̇').items()|list",
+      "profile": "pycompat",
+      "notes": "The pycompat views yield ordinary values, so they inherit it."
+    },
+    {
+      "id": "review/debugstr-site-pycompat-keys",
+      "surface": "string",
+      "form": "expression",
+      "source": "dict(**{'i̇': 1}).keys()|list",
+      "profile": "pycompat"
     }
   ]
 }
