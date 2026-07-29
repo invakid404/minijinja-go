@@ -168,6 +168,25 @@ the `reviewfixes` lane and microseconds everywhere else. `LoadHarnessOutcomes`
 memoizes the harness per corpus for the life of the process so that a `go test
 ./...` sweeping the corpus four times pays that once, not four times.
 
+**The memo is keyed by what its inputs CONTAIN, not by what they are called.**
+Both inputs move under a stable name: `cargo build --release` rewrites the
+harness at the path it already had, and `record.sh` rewrites a recording at the
+path it already had. So the key carries a SHA-256 of the harness binary or
+recording file as it is at that moment, beside the corpus digest — recomputed
+per load, never itself cached by path. For that digest to be about the harness
+that runs, the name has to be resolved to a file first: a bare
+`MJ_ORACLE_HARNESS` means one thing to `exec` (a PATH search) and another to the
+digest's `os.Open` (the working directory), so the PATH lookup happens once, up
+front, and both halves use its answer. A source that cannot be digested at all
+gets no entry rather than a wrong one, so a missing harness or absent recording
+still fails in the load path's own words. Without this, a process that rebuilds
+its Rust reference and compares again is answered from the reference it
+replaced, which is a green differential against an engine that is no longer on
+disk. `harness_cache_test.go` replaces each input in place, holding every name
+fixed, and requires the next load to see it — for a harness named by path and
+for one named bare on PATH, the latter with an unchanging same-named file in the
+working directory to catch a key that describes the wrong file.
+
 **A timeout is compared as `timeout`, with the number excluded.** The seconds
 field is the bound the row exceeded — a property of how the runner is
 configured, not of what the engine did — so comparing it would pin every

@@ -1,7 +1,10 @@
 package oracle
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -135,8 +138,8 @@ func (r *Report) Failures() []RowResult {
 	return out
 }
 
-// harnessCache memoizes one harness invocation per (binary, corpus) for the
-// life of the process.
+// harnessCache memoizes one harness invocation per (outcome source, corpus) for
+// the life of the process.
 //
 // `go test ./...` sweeps the corpus four times — the differential itself twice,
 // then the panic pins and the message comparison — and each sweep used to spawn
@@ -147,10 +150,18 @@ func (r *Report) Failures() []RowResult {
 // RowTimeout would otherwise multiply: at 30 seconds the un-memoized suite pays
 // the deliberate non-terminating row four times over.
 //
-// Keyed by binary and by the corpus digest, so a different harness, a different
-// lane or an edited corpus is never served a stale entry. Recorded replays are
-// cached too; reading a file four times is cheap, but the entry has to exist
-// under the same key either way.
+// Keyed by the CONTENT of both inputs — the corpus digest and a digest of the
+// harness binary or recording file the outcomes would come from — so a rebuilt
+// harness, a re-recorded lane, a different harness, a different lane or an
+// edited corpus is never served a stale entry. Keying on the pathname alone
+// would not do: a harness rebuilt in place keeps its path, and a memo that
+// cannot see that is a differential that compares the fork against an engine
+// that is no longer on disk. The harness is resolved to a single file before
+// either half looks at it ([resolveHarnessBin]), because a bare name is not yet
+// a file and the two halves would resolve it differently. Recorded replays are
+// cached on the same terms;
+// reading a file four times is cheap, but the entry has to be identified by
+// what it holds either way.
 var harnessCache sync.Map // string -> *harnessCacheEntry
 
 type harnessCacheEntry struct {
@@ -169,29 +180,122 @@ type harnessCacheEntry struct {
 //
 // The result is memoized per process; see [harnessCache].
 func LoadHarnessOutcomes(root string, corpus *Corpus) (*HarnessOutput, Source, error) {
-	corpusPath := corpus.Path
+	spelling := harnessBin(root)
 
-	// MJ_ORACLE_RECORDED_ONLY forces the replay path even when a harness is
-	// present. CI uses it in the no-Rust job to prove the differential still
-	// runs, and it is the fastest way to check a recording is not stale.
-	var bin string
-	if os.Getenv("MJ_ORACLE_RECORDED_ONLY") == "" {
-		bin = os.Getenv("MJ_ORACLE_HARNESS")
-		if bin == "" {
-			candidate := filepath.Join(root, DefaultHarnessBin)
-			if _, err := os.Stat(candidate); err == nil {
-				bin = candidate
-			}
-		}
+	// Settle on one file before anything looks at it, so the digest and the
+	// execution cannot mean different files; see [resolveHarnessBin].
+	bin, err := resolveHarnessBin(spelling)
+	if err != nil {
+		// The name resolves to no executable at all. There is nothing to
+		// digest and nothing to cache under; run uncached under the spelling
+		// that was configured, and let exec report it in its own words.
+		return runHarnessOutcomes(root, corpus, spelling)
 	}
 
-	key := fmt.Sprintf("%s\x00%s\x00%s", bin, corpusPath, corpus.SHA256)
+	key, err := outcomeSourceKey(root, corpus, bin)
+	if err != nil {
+		// The outcome source cannot be identified — it is missing, or
+		// unreadable. Rather than cache under an identity that does not
+		// describe it, load uncached and let the real path report the failure
+		// in its own words.
+		return runHarnessOutcomes(root, corpus, bin)
+	}
+
 	cached, _ := harnessCache.LoadOrStore(key, &harnessCacheEntry{})
 	entry := cached.(*harnessCacheEntry)
 	entry.once.Do(func() {
 		entry.output, entry.source, entry.err = runHarnessOutcomes(root, corpus, bin)
 	})
 	return entry.output, entry.source, entry.err
+}
+
+// harnessBin is how the harness executable was SPELLED, or "" to replay a
+// recording.
+//
+// A spelling is not yet a file: MJ_ORACLE_HARNESS may be a bare name, which
+// only a PATH search turns into one. [resolveHarnessBin] does that.
+//
+// MJ_ORACLE_RECORDED_ONLY forces the replay path even when a harness is
+// present. CI uses it in the no-Rust job to prove the differential still runs,
+// and it is the fastest way to check a recording is not stale.
+func harnessBin(root string) string {
+	if os.Getenv("MJ_ORACLE_RECORDED_ONLY") != "" {
+		return ""
+	}
+	if bin := os.Getenv("MJ_ORACLE_HARNESS"); bin != "" {
+		return bin
+	}
+	candidate := filepath.Join(root, DefaultHarnessBin)
+	if _, err := os.Stat(candidate); err == nil {
+		return candidate
+	}
+	return ""
+}
+
+// resolveHarnessBin turns a harness spelling into the one file that will be
+// both digested and executed.
+//
+// A bare name means two different files to the two halves of this package.
+// [fileDigest] opens it with os.Open, which resolves it against the working
+// directory; exec.Command resolves a name with no separator through PATH
+// instead — `filepath.Base(name) == name` is exec's own test for that, so it is
+// the test used here. Left unresolved, the memo would key on whatever the
+// working directory happens to hold — or, far more often, fail to key at all
+// and quietly run the harness on every load — while the differential executed
+// something entirely else off PATH. That is the same stale-reference hazard the
+// content key exists to close, reached through the name instead of the bytes.
+//
+// So the lookup happens once, here, and its answer is what both halves use. A
+// spelling that already contains a separator, and "" for a recording, mean the
+// same file to both and are returned unchanged. A bare name that resolves to
+// nothing is an error: the caller runs uncached under the original spelling, so
+// exec still reports the failure the way it always did.
+func resolveHarnessBin(spelling string) (string, error) {
+	if spelling == "" || filepath.Base(spelling) != spelling {
+		return spelling, nil
+	}
+	return exec.LookPath(spelling)
+}
+
+// outcomeSourceKey is the cache identity of one (outcome source, corpus) pair.
+//
+// Both halves are content digests, because both halves can change under a
+// stable name: a harness is rebuilt at its existing path, a recording is
+// re-recorded in place. The path is carried alongside for legibility only; the
+// digest is what decides identity. It must be the RESOLVED harness path (see
+// [resolveHarnessBin]) — a digest of a file other than the one that will run is
+// not an identity for these outcomes at all.
+func outcomeSourceKey(root string, corpus *Corpus, bin string) (string, error) {
+	mode, path := SourceLive, bin
+	if bin == "" {
+		mode, path = SourceRecorded, RecordingPath(root, corpus)
+	}
+	digest, err := fileDigest(path)
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%s\x00%s\x00%s\x00%s\x00%s",
+		mode, path, digest, corpus.Path, corpus.SHA256), nil
+}
+
+// fileDigest is the SHA-256 of a file's bytes as they are right now.
+//
+// Deliberately recomputed on every call and never memoized by path: a
+// path-keyed digest cache would reintroduce exactly the stale-identity bug this
+// exists to close. The cost is bounded and small — hashing a 2 MB harness is
+// milliseconds, while running it over a corpus is seconds, and the run is what
+// the memo actually saves.
+func fileDigest(path string) (string, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return "", err
+	}
+	defer f.Close()
+	sum := sha256.New()
+	if _, err := io.Copy(sum, f); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(sum.Sum(nil)), nil
 }
 
 // runHarnessOutcomes is the uncached body of [LoadHarnessOutcomes]: it produces
