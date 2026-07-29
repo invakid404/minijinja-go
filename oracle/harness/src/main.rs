@@ -61,7 +61,23 @@ struct Corpus {
 
 /// How long one row may take before it is recorded as a timeout rather than
 /// hanging the whole run. Only a row that does not terminate waits this long.
-const ROW_TIMEOUT: Duration = Duration::from_secs(5);
+///
+/// The budget separates "does not terminate" from "is slow", so it has to sit
+/// far above the slowest real row and still be finite. Every row in the corpus
+/// but one terminates in microseconds — the whole 1971-row set evaluates in
+/// about 0.2 seconds of CPU here — so the margin is what buys reliability, not
+/// the absolute number. At 5 seconds a shared 2-vCPU CI runner missed it on
+/// `review/pprint-key-mixed`, a pretty-print of a three-entry map, and reddened
+/// the merge gate on a row that is not a divergence at all.
+///
+/// 30 seconds is roughly 150x the entire corpus's evaluation time and 6x the
+/// budget that was observed to flake. The cost is paid by exactly one row —
+/// `review/pycompat-count-empty-needle`, whose reference implementation loops
+/// forever (`pycompat.rs:177-186`), so no finite budget lets it through and a
+/// larger one only makes it wait longer. Its outcome is compared as `timeout`
+/// with the number deliberately excluded, so changing this constant cannot
+/// invalidate a recording or a ledger signature.
+const ROW_TIMEOUT: Duration = Duration::from_secs(30);
 
 #[derive(Deserialize, Clone)]
 struct Row {

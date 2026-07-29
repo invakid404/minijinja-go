@@ -16639,25 +16639,6 @@
       "notes": "none is a key spelling too, and an unquoted one."
     },
     {
-      "id": "review/pprint-key-mixed",
-      "surface": "container",
-      "form": "expression",
-      "source": "{1: 'a', 'b': 2, true: 3}|pprint",
-      "notes": "The decision is per KEY, not per mapping: the string key stays quoted beside the two that are not."
-    },
-    {
-      "id": "review/pprint-key-mixed-debug",
-      "surface": "container",
-      "form": "expression",
-      "source": "debug({1: 'a', 'b': 2, true: 3})"
-    },
-    {
-      "id": "review/pprint-key-mixed-render",
-      "surface": "container",
-      "form": "expression",
-      "source": "{1: 'a', 'b': 2, true: 3}"
-    },
-    {
       "id": "review/pprint-key-dict-splat",
       "surface": "container",
       "form": "expression",
@@ -16677,6 +16658,32 @@
       "form": "expression",
       "source": "{'a': 1}|pprint",
       "notes": "The control that keeps the fix from becoming \"never quote\": a string key is still its own debug form, quoted."
+    },
+    {
+      "id": "review/pprint-key-int-and-string",
+      "surface": "container",
+      "form": "expression",
+      "source": "{1: 'a', 'b': 2}|pprint",
+      "notes": "The decision is per KEY, not per mapping: the string key stays quoted beside the integer that does not. Replaces review/pprint-key-mixed, whose {1: ..., true: ...} pair the engine hashes apart but compares EQUAL, so the two keys collapse on some process hash seeds and not others -- a nondeterministic fixture, never an engine difference."
+    },
+    {
+      "id": "review/pprint-key-int-and-string-debug",
+      "surface": "container",
+      "form": "expression",
+      "source": "debug({1: 'a', 'b': 2})"
+    },
+    {
+      "id": "review/pprint-key-int-and-string-render",
+      "surface": "container",
+      "form": "expression",
+      "source": "{1: 'a', 'b': 2}"
+    },
+    {
+      "id": "review/pprint-key-bool-and-string",
+      "surface": "container",
+      "form": "expression",
+      "source": "{true: 'a', 'b': 2}|pprint",
+      "notes": "The same mixture with a bool rather than an int, which is the other unquoted spelling. Kept apart from the integer row on purpose: one map holding both is not a deterministic fixture."
     }
   ]
 }

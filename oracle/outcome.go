@@ -88,6 +88,16 @@ func (o Outcome) Signature() string {
 		// language runtime's message rather than either engine's. That field is
 		// deliberately not compared here — it is pinned from both sides by
 		// panics_test.go, which also states the contract.
+		//
+		// A timeout reduces to just "timeout" for the same reason, and it is
+		// load-bearing rather than incidental: [Seconds] is the BUDGET the row
+		// exceeded, a property of the runner's configuration, not of the
+		// engine. Comparing it would make the ledger and every recording
+		// depend on the value of RowTimeout, so raising the budget — which is
+		// a reliability decision — would read as a behavioural change. What
+		// the differential asserts is "this row did not terminate within the
+		// bound", which is true at any bound. TestTimeoutSignatureIgnoresTheBudget
+		// pins that.
 		return string(o.Status)
 	}
 }

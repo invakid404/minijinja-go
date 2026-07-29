@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"sync"
 )
 
 // Default locations, relative to the oracle module root.
@@ -134,12 +135,39 @@ func (r *Report) Failures() []RowResult {
 	return out
 }
 
+// harnessCache memoizes one harness invocation per (binary, corpus) for the
+// life of the process.
+//
+// `go test ./...` sweeps the corpus four times — the differential itself twice,
+// then the panic pins and the message comparison — and each sweep used to spawn
+// the harness again. That is four evaluations of an input that is deterministic
+// by construction, and, because a timed-out row's thread is left spinning until
+// its process exits (harness/src/main.rs evaluate_bounded), four concurrent
+// CPU burners on whatever machine CI gave us. Both of those are what a longer
+// RowTimeout would otherwise multiply: at 30 seconds the un-memoized suite pays
+// the deliberate non-terminating row four times over.
+//
+// Keyed by binary and by the corpus digest, so a different harness, a different
+// lane or an edited corpus is never served a stale entry. Recorded replays are
+// cached too; reading a file four times is cheap, but the entry has to exist
+// under the same key either way.
+var harnessCache sync.Map // string -> *harnessCacheEntry
+
+type harnessCacheEntry struct {
+	once   sync.Once
+	output *HarnessOutput
+	source Source
+	err    error
+}
+
 // LoadHarnessOutcomes obtains the Rust-side outcomes for a corpus.
 //
 // If a harness binary is available (MJ_ORACLE_HARNESS, or the default release
 // build) it is executed live. Otherwise the committed recording is replayed.
 // Either way the corpus digest in the provenance must match the corpus that was
 // loaded, so a stale recording is an error rather than a silently weaker test.
+//
+// The result is memoized per process; see [harnessCache].
 func LoadHarnessOutcomes(root string, corpus *Corpus) (*HarnessOutput, Source, error) {
 	corpusPath := corpus.Path
 
@@ -157,10 +185,23 @@ func LoadHarnessOutcomes(root string, corpus *Corpus) (*HarnessOutput, Source, e
 		}
 	}
 
+	key := fmt.Sprintf("%s\x00%s\x00%s", bin, corpusPath, corpus.SHA256)
+	cached, _ := harnessCache.LoadOrStore(key, &harnessCacheEntry{})
+	entry := cached.(*harnessCacheEntry)
+	entry.once.Do(func() {
+		entry.output, entry.source, entry.err = runHarnessOutcomes(root, corpus, bin)
+	})
+	return entry.output, entry.source, entry.err
+}
+
+// runHarnessOutcomes is the uncached body of [LoadHarnessOutcomes]: it produces
+// the Rust-side outcomes and checks them against the corpus they claim to
+// describe.
+func runHarnessOutcomes(root string, corpus *Corpus, bin string) (*HarnessOutput, Source, error) {
 	var raw []byte
 	source := SourceRecorded
 	if bin != "" {
-		cmd := exec.Command(bin, corpusPath)
+		cmd := exec.Command(bin, corpus.Path)
 		out, err := cmd.Output()
 		if err != nil {
 			return nil, "", fmt.Errorf("running harness %s: %w", bin, err)

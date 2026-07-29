@@ -232,9 +232,20 @@ func environmentFor(profile Profile) (*minijinja.Environment, bool) {
 // recorded panics and hangs in this area, and losing them would understate the
 // divergence surface.
 // RowTimeout bounds one row's evaluation on the Go side, matching the Rust
-// harness's bound. A row that does not terminate is an outcome, not a hung
-// run.
-const RowTimeout = 5 * time.Second
+// harness's bound (harness/src/main.rs ROW_TIMEOUT). A row that does not
+// terminate is an outcome, not a hung run.
+//
+// It separates "does not terminate" from "is slow", so it sits far above the
+// slowest real row rather than close to it: every row in the corpus but one
+// finishes in microseconds, and the margin is what makes the differential
+// reliable on a loaded shared runner. Five seconds was not enough margin — CI
+// recorded a timeout on `review/pprint-key-mixed`, a pretty-print of a
+// three-entry map, and failed the merge gate on something that is not a
+// divergence. The one row that always spends the whole budget
+// (`review/pycompat-count-empty-needle`) loops forever on the Rust side, so any
+// finite value still catches it, and a timeout is compared as `timeout` with
+// the number excluded — see [Outcome.Signature].
+const RowTimeout = 30 * time.Second
 
 // RunFork evaluates a row against this fork, bounded in time.
 func RunFork(row Row) Outcome {

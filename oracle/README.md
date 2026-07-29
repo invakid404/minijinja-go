@@ -138,6 +138,45 @@ toolchain carries, never the toolchain's own prose.
 `TestCharBoundaryAbortCoreIsIndependentOfRustcWording` carries both wordings so
 neither is left untested by the machine that happens to be running.
 
+### The row budget
+
+Both sides evaluate every row under a wall-clock bound — `ROW_TIMEOUT` in
+`harness/src/main.rs`, `RowTimeout` in `fork.go` — and report `timeout` as an
+outcome. Without it a single non-terminating input could not be in the corpus at
+all; with it, `review/pycompat-count-empty-needle` is a row with a ledger entry.
+
+The bound separates **does not terminate** from **is slow**, so it is set far
+above the slowest real row rather than close to it. Measured at this tip:
+
+| | all 1972 rows, excluding the one deliberate timeout | slowest single row |
+| --- | --- | --- |
+| Rust harness | ~0.5 s total | well under 0.1 s |
+| Go runner | 80 ms total | 6.4 ms (`arity/join-extra`) |
+
+It is **30 seconds**, about 150x the whole corpus's evaluation time. It used to
+be 5 seconds, and 5 was not enough margin on a shared CI runner: the ubuntu job
+recorded a timeout on `review/pprint-key-mixed` — a pretty-print of a
+three-entry map — while the macos job passed the same row, reddening the merge
+gate on something that is not a divergence. A timed-out row's worker is left
+behind spinning until its process exits, which is one more reason the budget
+wants headroom rather than precision.
+
+The cost is paid by exactly one row. `review/pycompat-count-empty-needle` loops
+forever in the reference module, so no finite bound lets it through and a larger
+one only makes it wait longer; the live differential therefore spends ~30 s in
+the `reviewfixes` lane and microseconds everywhere else. `LoadHarnessOutcomes`
+memoizes the harness per corpus for the life of the process so that a `go test
+./...` sweeping the corpus four times pays that once, not four times.
+
+**A timeout is compared as `timeout`, with the number excluded.** The seconds
+field is the bound the row exceeded — a property of how the runner is
+configured, not of what the engine did — so comparing it would pin every
+recording and the ledger to whatever the budget happens to be, and raising the
+budget after a flake would read as a divergence that changed shape.
+`TestTimeoutSignatureIgnoresTheBudget` pins that, and it is why this change
+moved exactly one line of recorded output (`"seconds": 5` -> `"seconds": 30`)
+and no ledger signature at all.
+
 ## The ledger
 
 `divergences.json` is the permanent record of known differences. The test fails
@@ -196,6 +235,18 @@ Running the *Rust harness* on both architectures is what surfaced that: it
 disagreed with itself on exactly those two rows. A defect in the fixture, not in
 either engine.
 
+**And run-deterministic, which is the same rule one layer down.** A map literal
+must not hold two keys the engine compares EQUAL but hashes apart, because the
+engine's map is an `IndexMap` seeded per process: the two keys usually land in
+different buckets and stay separate, and on the seeds where they collide the
+equality check collapses them. `{1: 'a', 'b': 2, true: 3}` is such a map —
+`1 == true` — and it rendered `{1: 3, "b": 2}` in 3 runs out of 200 here. It
+reddened the merge gate on ubuntu while macos passed the same row, and it was
+retired (patch #100) in favour of one map with an int key beside a string and
+one with a bool key beside a string. The collapse itself can never be a corpus
+row: an outcome that depends on a random seed has no recording to compare
+against.
+
 **`coercion.json`** — 256 rows for the coercion, comparison, container and VM
 class: equality, ordering and containment over a cross-product of typed operands
 **in both operand orders**; truthiness, `and`/`or`/`not`, ternaries, `~` and `is`
@@ -234,7 +285,7 @@ on the Go side). Every profile is *engine configuration only*; BAML's
 environment (globals, `regex_match`/`sum`, the none-formatter, prompt lowering)
 is not here and arrives as its own profile in a later slice.
 
-**`reviewfixes.json`** — 517 rows: the cases five rounds of cold review found by
+**`reviewfixes.json`** — 518 rows: the cases five rounds of cold review found by
 probing the pinned engine directly rather than by reading the corpus. `range`
 cardinality at the i64 boundary; integer ArgTypes at their declared widths,
 including `usize` at its real 64-bit one; integers past i64 through the tests
@@ -263,7 +314,7 @@ repro that was RED against the engine before it was a row.
 
 ### Where the corpus stands
 
-1971 rows: 1955 agree, 16 diverge and every one of the 16 is declared. None is
+1972 rows: 1956 agree, 16 diverge and every one of the 16 is declared. None is
 in the template, numeric, coercion or argument-contract lane, whose rows all
 agree with the engine. Fourteen of the sixteen are deliberate and permanent
 rather than pending:
@@ -281,7 +332,8 @@ rather than pending:
   arity instead.
 - `review/pycompat-count-empty-needle` — `"abc".count("")` does not terminate in
   the reference module; the outcome is recorded as a timeout rather than the row
-  being left out.
+  being left out. See [the row budget](#the-row-budget) for what "timeout" is
+  compared as.
 - `fn/debug-state-dump` — `debug()` with no arguments prints the host language's
   debug rendering of the environment, Rust type paths included.
 - `review/pyformat-precision-char-boundary`, `-printf`, `-combining`,

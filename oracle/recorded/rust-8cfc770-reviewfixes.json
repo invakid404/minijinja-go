@@ -20,7 +20,7 @@
     "harness_version": "1",
     "os": "macos",
     "arch": "aarch64",
-    "corpus_sha256": "c8dedd193b2ac2d837823f02babd3467269c6496800be7696a8c6edf90637439"
+    "corpus_sha256": "40dc2e89f3497b627b2db70af3a1ed4470e6acd6ae2f3bb6c7155f31387fc60e"
   },
   "results": [
     {
@@ -786,7 +786,7 @@
       "id": "review/pycompat-count-empty-needle",
       "outcome": {
         "status": "timeout",
-        "seconds": 5
+        "seconds": 30
       }
     },
     {
@@ -4161,30 +4161,6 @@
       }
     },
     {
-      "id": "review/pprint-key-mixed",
-      "outcome": {
-        "status": "ok",
-        "render": "{\n    1: \"a\",\n    \"b\": 2,\n    true: 3,\n}",
-        "boolean": null
-      }
-    },
-    {
-      "id": "review/pprint-key-mixed-debug",
-      "outcome": {
-        "status": "ok",
-        "render": "{\n    1: \"a\",\n    \"b\": 2,\n    true: 3,\n}",
-        "boolean": null
-      }
-    },
-    {
-      "id": "review/pprint-key-mixed-render",
-      "outcome": {
-        "status": "ok",
-        "render": "{1: \"a\", \"b\": 2, true: 3}",
-        "boolean": null
-      }
-    },
-    {
       "id": "review/pprint-key-dict-splat",
       "outcome": {
         "status": "ok",
@@ -4205,6 +4181,38 @@
       "outcome": {
         "status": "ok",
         "render": "{\n    \"a\": 1,\n}",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/pprint-key-int-and-string",
+      "outcome": {
+        "status": "ok",
+        "render": "{\n    1: \"a\",\n    \"b\": 2,\n}",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/pprint-key-int-and-string-debug",
+      "outcome": {
+        "status": "ok",
+        "render": "{\n    1: \"a\",\n    \"b\": 2,\n}",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/pprint-key-int-and-string-render",
+      "outcome": {
+        "status": "ok",
+        "render": "{1: \"a\", \"b\": 2}",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/pprint-key-bool-and-string",
+      "outcome": {
+        "status": "ok",
+        "render": "{\n    true: \"a\",\n    \"b\": 2,\n}",
         "boolean": null
       }
     }
