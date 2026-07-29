@@ -16553,6 +16553,130 @@
       "form": "expression",
       "source": "debug([42|chain([1])])",
       "notes": "The selection is per value, not per call: an unsized iterable nested inside a sized list is <iterator> at its own position."
+    },
+    {
+      "id": "review/pprint-key-int",
+      "surface": "container",
+      "form": "expression",
+      "source": "{1: 'a'}|pprint",
+      "notes": "The reported repro. The engine's debug_map writes entry(&key, &value) with key a Value (value/object.rs:333-338), so an integer key is 1. pprint quoted the string form the fork keys its mappings by, making it \"1\" -- a HIDDEN divergence, undeclared only because no corpus row used a non-string pprint key."
+    },
+    {
+      "id": "review/pprint-key-int-debug",
+      "surface": "container",
+      "form": "expression",
+      "source": "debug({1: 'a'})",
+      "notes": "The control that says which of the two renderers was wrong: debug already read the remembered spelling, and pprint is the same {:#?} formatting."
+    },
+    {
+      "id": "review/pprint-key-int-render",
+      "surface": "container",
+      "form": "expression",
+      "source": "{1: 'a'}",
+      "notes": "And plain display already spelled it 1, which patches #37 and #81 closed. Only pprint was left quoting."
+    },
+    {
+      "id": "review/pprint-key-bool",
+      "surface": "container",
+      "form": "expression",
+      "source": "{true: 'a'}|pprint"
+    },
+    {
+      "id": "review/pprint-key-bool-debug",
+      "surface": "container",
+      "form": "expression",
+      "source": "debug({true: 'a'})"
+    },
+    {
+      "id": "review/pprint-key-bool-render",
+      "surface": "container",
+      "form": "expression",
+      "source": "{true: 'a'}"
+    },
+    {
+      "id": "review/pprint-key-float",
+      "surface": "container",
+      "form": "expression",
+      "source": "{1.5: 'a'}|pprint"
+    },
+    {
+      "id": "review/pprint-key-float-debug",
+      "surface": "container",
+      "form": "expression",
+      "source": "debug({1.5: 'a'})"
+    },
+    {
+      "id": "review/pprint-key-float-render",
+      "surface": "container",
+      "form": "expression",
+      "source": "{1.5: 'a'}"
+    },
+    {
+      "id": "review/pprint-key-float-integral",
+      "surface": "container",
+      "form": "expression",
+      "source": "{2.0: 'a'}|pprint",
+      "notes": "An integral float keeps its .0 through the key spelling too, the way the value formatter forces it."
+    },
+    {
+      "id": "review/pprint-key-negative-int",
+      "surface": "container",
+      "form": "expression",
+      "source": "{-3: 'a'}|pprint"
+    },
+    {
+      "id": "review/pprint-key-int-max",
+      "surface": "container",
+      "form": "expression",
+      "source": "{9223372036854775807: 'a'}|pprint",
+      "notes": "The spelling is the key's own debug form at full i64 width, not a reformatting of it."
+    },
+    {
+      "id": "review/pprint-key-none",
+      "surface": "container",
+      "form": "expression",
+      "source": "{none: 'a'}|pprint",
+      "notes": "none is a key spelling too, and an unquoted one."
+    },
+    {
+      "id": "review/pprint-key-mixed",
+      "surface": "container",
+      "form": "expression",
+      "source": "{1: 'a', 'b': 2, true: 3}|pprint",
+      "notes": "The decision is per KEY, not per mapping: the string key stays quoted beside the two that are not."
+    },
+    {
+      "id": "review/pprint-key-mixed-debug",
+      "surface": "container",
+      "form": "expression",
+      "source": "debug({1: 'a', 'b': 2, true: 3})"
+    },
+    {
+      "id": "review/pprint-key-mixed-render",
+      "surface": "container",
+      "form": "expression",
+      "source": "{1: 'a', 'b': 2, true: 3}"
+    },
+    {
+      "id": "review/pprint-key-dict-splat",
+      "surface": "container",
+      "form": "expression",
+      "source": "dict(**{1: 'a'})|pprint",
+      "notes": "A key's spelling survives construction through dict() (patch #81), so pprint has to read it there as well."
+    },
+    {
+      "id": "review/pprint-key-nested",
+      "surface": "container",
+      "form": "expression",
+      "source": "[{1: 'a'}]|pprint",
+      "notes": "The mapping reached as a list element, so the recursion carries the spelling down."
+    },
+    {
+      "id": "review/pprint-key-string-stays-quoted",
+      "surface": "container",
+      "form": "expression",
+      "source": "{'a': 1}|pprint",
+      "notes": "The control that keeps the fix from becoming \"never quote\": a string key is still its own debug form, quoted."
     }
   ]
 }

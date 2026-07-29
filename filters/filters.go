@@ -2874,12 +2874,22 @@ func pprintValue(val value.Value, indent int) string {
 		if len(keys) == 0 {
 			return "{}"
 		}
+		// A key is spelled by its own debug form, not quoted unconditionally:
+		// the engine's `debug_map` writes `entry(&key, &value)` with `key` a
+		// `Value` (value/object.rs:333-338), so `{1: 'a'}` is `{1: "a"}` and
+		// `{true: 'a'}` is `{true: "a"}`. This fork keys its mappings by string
+		// and remembers a key's spelling beside it (patches #37 and #81), which
+		// is what [value.OrderedMap.KeyRepr] reads; quoting the string form
+		// instead made every non-string key `"1"`. KeyRepr is nil-safe and
+		// falls back to the string's own debug form, which is what a mapping
+		// with no remembered spelling has always printed.
+		ordered, _ := val.AsOrderedMap()
 		var sb strings.Builder
 		sb.WriteString("{\n")
 		for _, k := range keys {
 			sb.WriteString(strings.Repeat(" ", indent+4))
 			sb.WriteString(fmt.Sprintf("%s: %s,",
-				unicodecase.QuoteDebug(k),
+				ordered.KeyRepr(k),
 				pprintValue(val.GetItem(value.FromString(k)), indent+4)))
 			sb.WriteString("\n")
 		}

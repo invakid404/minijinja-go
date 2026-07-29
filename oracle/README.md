@@ -234,7 +234,7 @@ on the Go side). Every profile is *engine configuration only*; BAML's
 environment (globals, `regex_match`/`sum`, the none-formatter, prompt lowering)
 is not here and arrives as its own profile in a later slice.
 
-**`reviewfixes.json`** — 498 rows: the cases five rounds of cold review found by
+**`reviewfixes.json`** — 517 rows: the cases five rounds of cold review found by
 probing the pinned engine directly rather than by reading the corpus. `range`
 cardinality at the i64 boundary; integer ArgTypes at their declared widths,
 including `usize` at its real 64-bit one; integers past i64 through the tests
@@ -251,15 +251,19 @@ the generic comparison hook; the attribute-path grammar — empty comma fields, 
 complete `usize` parse, an empty attribute that is still a path — across all six
 consumers; `chain`'s newest-first mapping lookup; the formatter's `i128`-then-`u128`
 cast; `indent`'s terminal line ending; `items` and `zip` as iterable objects; and
-`pprint`'s alternate debug layout. The fifth round added 9 more, both about
-ORDER: that a macro rejects an unused keyword before a parameter default can run
+`pprint`'s alternate debug layout. The fifth round added 28 more: two about
+ORDER — that a macro rejects an unused keyword before a parameter default can run
 and mask the error, and that `debug()` selects its renderer by whether the
-enumerator has an exact length — the same selection `pprint` already made. A row
-here is a repro that was RED against the engine before it was a row.
+enumerator has an exact length, the same selection `pprint` already made — and
+then `pprint`'s map KEYS, which were quoted unconditionally where the engine
+spells each key by its own debug form. That last one was found by probing the
+engine for a claim about the two renderers rather than by suspecting the code,
+and it was invisible to the differential until its row existed. A row here is a
+repro that was RED against the engine before it was a row.
 
 ### Where the corpus stands
 
-1952 rows: 1936 agree, 16 diverge and every one of the 16 is declared. None is
+1971 rows: 1955 agree, 16 diverge and every one of the 16 is declared. None is
 in the template, numeric, coercion or argument-contract lane, whose rows all
 agree with the engine. Fourteen of the sixteen are deliberate and permanent
 rather than pending:

@@ -20,7 +20,7 @@
     "harness_version": "1",
     "os": "macos",
     "arch": "aarch64",
-    "corpus_sha256": "e76734d20c735ddb333682ff4b74a64d88e0aeaa5c5180081a17e464ef814f1e"
+    "corpus_sha256": "c8dedd193b2ac2d837823f02babd3467269c6496800be7696a8c6edf90637439"
   },
   "results": [
     {
@@ -4053,6 +4053,158 @@
       "outcome": {
         "status": "ok",
         "render": "[\n    <iterator>,\n]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/pprint-key-int",
+      "outcome": {
+        "status": "ok",
+        "render": "{\n    1: \"a\",\n}",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/pprint-key-int-debug",
+      "outcome": {
+        "status": "ok",
+        "render": "{\n    1: \"a\",\n}",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/pprint-key-int-render",
+      "outcome": {
+        "status": "ok",
+        "render": "{1: \"a\"}",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/pprint-key-bool",
+      "outcome": {
+        "status": "ok",
+        "render": "{\n    true: \"a\",\n}",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/pprint-key-bool-debug",
+      "outcome": {
+        "status": "ok",
+        "render": "{\n    true: \"a\",\n}",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/pprint-key-bool-render",
+      "outcome": {
+        "status": "ok",
+        "render": "{true: \"a\"}",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/pprint-key-float",
+      "outcome": {
+        "status": "ok",
+        "render": "{\n    1.5: \"a\",\n}",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/pprint-key-float-debug",
+      "outcome": {
+        "status": "ok",
+        "render": "{\n    1.5: \"a\",\n}",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/pprint-key-float-render",
+      "outcome": {
+        "status": "ok",
+        "render": "{1.5: \"a\"}",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/pprint-key-float-integral",
+      "outcome": {
+        "status": "ok",
+        "render": "{\n    2.0: \"a\",\n}",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/pprint-key-negative-int",
+      "outcome": {
+        "status": "ok",
+        "render": "{\n    -3: \"a\",\n}",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/pprint-key-int-max",
+      "outcome": {
+        "status": "ok",
+        "render": "{\n    9223372036854775807: \"a\",\n}",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/pprint-key-none",
+      "outcome": {
+        "status": "ok",
+        "render": "{\n    none: \"a\",\n}",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/pprint-key-mixed",
+      "outcome": {
+        "status": "ok",
+        "render": "{\n    1: \"a\",\n    \"b\": 2,\n    true: 3,\n}",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/pprint-key-mixed-debug",
+      "outcome": {
+        "status": "ok",
+        "render": "{\n    1: \"a\",\n    \"b\": 2,\n    true: 3,\n}",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/pprint-key-mixed-render",
+      "outcome": {
+        "status": "ok",
+        "render": "{1: \"a\", \"b\": 2, true: 3}",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/pprint-key-dict-splat",
+      "outcome": {
+        "status": "ok",
+        "render": "{\n    1: \"a\",\n}",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/pprint-key-nested",
+      "outcome": {
+        "status": "ok",
+        "render": "[\n    {\n        1: \"a\",\n    },\n]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/pprint-key-string-stays-quoted",
+      "outcome": {
+        "status": "ok",
+        "render": "{\n    \"a\": 1,\n}",
         "boolean": null
       }
     }
