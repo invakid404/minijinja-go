@@ -2,6 +2,7 @@ package minijinja
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"testing"
 
@@ -862,45 +863,85 @@ func TestTojsonFilter(t *testing.T) {
 	}
 }
 
-func TestUrlencodeFilter(t *testing.T) {
-	env := NewEnvironment()
-
-	tests := []struct {
+// TestGoOnlyBuiltinsWithdrawn pins the withdrawal of the five names the Go port
+// shipped and BAML's engine build does not have (defaults.go:13-33). Each must
+// produce the engine's own unknown-filter/test/function error, never an answer.
+//
+// Corpus: err/go-only-urlencode-filter, err/go-only-containing-test,
+// err/go-only-cycler-function, err/go-only-joiner-function,
+// err/go-only-lipsum-function.
+func TestGoOnlyBuiltinsWithdrawn(t *testing.T) {
+	cases := []struct {
 		template string
-		ctx      map[string]any
-		expected string
+		kind     ErrorKind
 	}{
-		{`{{ value|urlencode }}`, map[string]any{"value": "hello world"}, `hello%20world`},
-		{`{{ value|urlencode }}`, map[string]any{"value": "a=b&c=d"}, `a%3Db%26c%3Dd`},
+		{`{{ "a b"|urlencode }}`, ErrUnknownFilter},
+		{`{{ "foobar" is containing("oob") }}`, ErrUnknownTest},
+		{`{{ cycler("a", "b") }}`, ErrUnknownFunction},
+		{`{{ joiner(", ") }}`, ErrUnknownFunction},
+		{`{{ lipsum(1) }}`, ErrUnknownFunction},
 	}
 
-	for _, test := range tests {
-		tmpl, err := env.TemplateFromString(test.template)
+	env := NewEnvironment()
+	for _, tc := range cases {
+		tmpl, err := env.TemplateFromString(tc.template)
 		if err != nil {
-			t.Fatalf("parse error for %q: %v", test.template, err)
+			t.Fatalf("parse error for %q: %v", tc.template, err)
 		}
-		result, err := tmpl.Render(test.ctx)
-		if err != nil {
-			t.Fatalf("render error for %q: %v", test.template, err)
+		out, err := tmpl.Render(nil)
+		if err == nil {
+			t.Errorf("%q: rendered %q, want %v", tc.template, out, tc.kind)
+			continue
 		}
-		if result != test.expected {
-			t.Errorf("%q: expected %q, got %q", test.template, test.expected, result)
+		var mjErr *Error
+		if !errors.As(err, &mjErr) {
+			t.Errorf("%q: error %T, want *minijinja.Error", tc.template, err)
+			continue
+		}
+		if mjErr.Kind != tc.kind {
+			t.Errorf("%q: error kind %v, want %v", tc.template, mjErr.Kind, tc.kind)
 		}
 	}
 }
 
 // --- Callable Objects Tests ---
 
+// testCycler is the shape the withdrawn `cycler` global used to provide: an
+// object whose attribute is a callable. The engine capability is still
+// supported for host objects, so it is still covered.
+type testCycler struct {
+	items []string
+	index int
+}
+
+func (c *testCycler) GetAttr(name string) value.Value {
+	if name != "next" {
+		return value.Undefined()
+	}
+	return value.FromCallable(callableFunc(func() value.Value {
+		rv := c.items[c.index]
+		c.index = (c.index + 1) % len(c.items)
+		return value.FromString(rv)
+	}))
+}
+
+type callableFunc func() value.Value
+
+func (f callableFunc) Call(value.State, []value.Value, *value.OrderedMap) (value.Value, error) {
+	return f(), nil
+}
+
 func TestCallableObject(t *testing.T) {
 	env := NewEnvironment()
 
-	// Add a cycler that actually works as a callable
-	tmpl, err := env.TemplateFromString(`{% set c = cycler("odd", "even") %}{{ c.next() }} {{ c.next() }} {{ c.next() }}`)
+	tmpl, err := env.TemplateFromString(`{{ c.next() }} {{ c.next() }} {{ c.next() }}`)
 	if err != nil {
 		t.Fatalf("parse error: %v", err)
 	}
 
-	result, err := tmpl.Render(nil)
+	result, err := tmpl.Render(map[string]any{
+		"c": value.FromObject(&testCycler{items: []string{"odd", "even"}}),
+	})
 	if err != nil {
 		t.Fatalf("render error: %v", err)
 	}
@@ -910,10 +951,18 @@ func TestCallableObject(t *testing.T) {
 	}
 }
 
-func TestJoinerCallable(t *testing.T) {
+func TestCallableValue(t *testing.T) {
 	env := NewEnvironment()
+	first := true
+	env.AddFunction("joiner", func(*State, []value.Value, *value.OrderedMap) (value.Value, error) {
+		if first {
+			first = false
+			return value.FromString(""), nil
+		}
+		return value.FromString(", "), nil
+	})
 
-	tmpl, err := env.TemplateFromString(`{% set j = joiner(", ") %}{% for item in items %}{{ j() }}{{ item }}{% endfor %}`)
+	tmpl, err := env.TemplateFromString(`{% for item in items %}{{ joiner() }}{{ item }}{% endfor %}`)
 	if err != nil {
 		t.Fatalf("parse error: %v", err)
 	}
@@ -957,7 +1006,7 @@ func TestRenderCtx(t *testing.T) {
 
 	// Add a function that accesses the context
 	type ctxKey string
-	env.AddFunction("get_value", func(state *State, args []Value, kwargs map[string]Value) (Value, error) {
+	env.AddFunction("get_value", func(state *State, args []Value, kwargs *value.OrderedMap) (Value, error) {
 		ctx := state.Context()
 		if v, ok := ctx.Value(ctxKey("test")).(string); ok {
 			return value.FromString(v), nil
@@ -996,7 +1045,7 @@ func TestStateAccessors(t *testing.T) {
 	env := NewEnvironment()
 
 	var capturedState *State
-	env.AddFunction("capture_state", func(state *State, args []Value, kwargs map[string]Value) (Value, error) {
+	env.AddFunction("capture_state", func(state *State, args []Value, kwargs *value.OrderedMap) (Value, error) {
 		capturedState = state
 		return value.FromString("ok"), nil
 	})

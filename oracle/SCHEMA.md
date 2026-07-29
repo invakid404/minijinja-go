@@ -7,9 +7,11 @@ fixtures.
 
 ## Corpus (`corpus/*.json`)
 
-Corpus files are lanes: `seed.json`, `template.json`. Every file is loaded, and
-each has its own recording (see below), so a change to one lane cannot stale
-another's. Row ids are unique across the whole set.
+Corpus files are lanes: `seed.json`, `template.json`, `numeric.json`,
+`coercion.json`, `builtins.json`, `argcontract.json`, `reviewfixes.json`. Every
+file is loaded, and each has its own
+recording (see below), so a change to one lane cannot stale another's. Row ids
+are unique across the whole set.
 
 ```json
 {
@@ -38,7 +40,7 @@ another's. Row ids are unique across the whole set.
 | `surface` | no | Divergence surface: `arithmetic`, `comparison`, `string`, `container`, `value_cmp`, `environment`, `control`. |
 | `form` | yes | `expression` wraps the source as `{{ expr }}`, the same shape BAML uses to evaluate a constraint predicate (`jinja_helpers.rs:67-94`). `template` uses the source verbatim. |
 | `source` | yes | The expression or template. |
-| `profile` | no | Environment. Defaults to `stock`. One of `stock`, `trim_blocks`, `lstrip_blocks`, `trim_lstrip`, `keep_trailing_newline` — all *engine configuration only*, set identically on both sides. The BAML v0.223 profile (globals, filters, pycompat) becomes another value here in a later slice. |
+| `profile` | no | Environment. Defaults to `stock`. One of `stock`, `trim_blocks`, `lstrip_blocks`, `trim_lstrip`, `keep_trailing_newline`, `pycompat` — all *engine configuration only*, set identically on both sides; `pycompat` adds the Python-compatible unknown-method callback (`minijinja-contrib::pycompat` on the Rust side, this fork's `pycompat` package on the Go side). The BAML v0.223 profile (globals, filters, prompt lowering) becomes another value here in a later slice. |
 | `inputs` | no | Ordered list of named bindings. |
 | `expect` | no | `bytes` (default), `boolean` or `error`. It selects boolean normalization and documents intent; outcomes are always compared in full regardless. |
 | `notes` | no | Why the row exists and what it is probing. |

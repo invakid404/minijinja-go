@@ -1,0 +1,3267 @@
+{
+  "schema_version": 1,
+  "provenance": {
+    "engine_repo": "https://github.com/boundaryml/minijinja",
+    "engine_branch": "value-cmp",
+    "engine_rev": "8cfc770a5dffeda2de5b910d2b9f870d7edeff7c",
+    "engine_features": [
+      "macros",
+      "builtins",
+      "debug",
+      "preserve_order",
+      "adjacent_loop_items",
+      "unicode",
+      "json",
+      "unstable_machinery",
+      "custom_syntax",
+      "deserialization",
+      "serde"
+    ],
+    "harness_version": "1",
+    "os": "macos",
+    "arch": "aarch64",
+    "corpus_sha256": "0eedacfa55b1b46de486b149e4a1b313e6d360e4f6c1feea1ba47c607ce130c9"
+  },
+  "results": [
+    {
+      "id": "err/go-only-containing-test",
+      "outcome": {
+        "status": "error",
+        "category": "unknown_test",
+        "kind": "UnknownTest",
+        "message": "unknown test: test containing is unknown (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "err/go-only-cycler-function",
+      "outcome": {
+        "status": "error",
+        "category": "unknown_function",
+        "kind": "UnknownFunction",
+        "message": "unknown function: cycler is unknown (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "err/go-only-joiner-function",
+      "outcome": {
+        "status": "error",
+        "category": "unknown_function",
+        "kind": "UnknownFunction",
+        "message": "unknown function: joiner is unknown (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "err/go-only-lipsum-function",
+      "outcome": {
+        "status": "error",
+        "category": "unknown_function",
+        "kind": "UnknownFunction",
+        "message": "unknown function: lipsum is unknown (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "err/go-only-urlencode-kv",
+      "outcome": {
+        "status": "error",
+        "category": "unknown_filter",
+        "kind": "UnknownFilter",
+        "message": "unknown filter: filter urlencode is unknown (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "filter/safe-ok",
+      "outcome": {
+        "status": "ok",
+        "render": "<b>",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/escape-ok",
+      "outcome": {
+        "status": "ok",
+        "render": "&lt;b&gt;&amp;&quot;",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/escape-alias-e",
+      "outcome": {
+        "status": "ok",
+        "render": "&lt;b&gt;",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/escape-int",
+      "outcome": {
+        "status": "ok",
+        "render": "42",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/escape-none",
+      "outcome": {
+        "status": "ok",
+        "render": "none",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/lower-ascii",
+      "outcome": {
+        "status": "ok",
+        "render": "hello",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/upper-ascii",
+      "outcome": {
+        "status": "ok",
+        "render": "HELLO",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/title-ascii",
+      "outcome": {
+        "status": "ok",
+        "render": "Hello World",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/capitalize-ascii",
+      "outcome": {
+        "status": "ok",
+        "render": "Hello world",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/upper-int",
+      "outcome": {
+        "status": "ok",
+        "render": "42",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/upper-none",
+      "outcome": {
+        "status": "ok",
+        "render": "NONE",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/upper-bool",
+      "outcome": {
+        "status": "ok",
+        "render": "TRUE",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/upper-seq",
+      "outcome": {
+        "status": "ok",
+        "render": "[1, 2]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/lower-none",
+      "outcome": {
+        "status": "ok",
+        "render": "none",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/capitalize-empty",
+      "outcome": {
+        "status": "ok",
+        "render": "",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/replace-ok",
+      "outcome": {
+        "status": "ok",
+        "render": "Goodbye World",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/replace-empty-pattern",
+      "outcome": {
+        "status": "ok",
+        "render": "-a-b-",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/replace-missing-arg",
+      "outcome": {
+        "status": "error",
+        "category": "missing_argument",
+        "kind": "MissingArgument",
+        "message": "missing argument (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "filter/replace-count-arg",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "filter/replace-nonstring-subject",
+      "outcome": {
+        "status": "ok",
+        "render": "x2",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/length-string",
+      "outcome": {
+        "status": "ok",
+        "render": "5",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/length-unicode",
+      "outcome": {
+        "status": "ok",
+        "render": "5",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/length-seq",
+      "outcome": {
+        "status": "ok",
+        "render": "3",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/count-alias",
+      "outcome": {
+        "status": "ok",
+        "render": "5",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/length-int",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot calculate length of value of type number (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "filter/items-single",
+      "outcome": {
+        "status": "ok",
+        "render": "[[\"a\", 1]]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/dictsort-single",
+      "outcome": {
+        "status": "ok",
+        "render": "[[\"a\", 1]]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/items-int",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot convert value into pairs (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "filter/reverse-seq",
+      "outcome": {
+        "status": "ok",
+        "render": "[3, 2, 1]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/reverse-string",
+      "outcome": {
+        "status": "ok",
+        "render": "cba",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/reverse-int",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot reverse values of type number (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "filter/trim-ascii",
+      "outcome": {
+        "status": "ok",
+        "render": "hi",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/trim-chars",
+      "outcome": {
+        "status": "ok",
+        "render": "foo12bar",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/trim-nbsp",
+      "outcome": {
+        "status": "ok",
+        "render": "hi",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/trim-int",
+      "outcome": {
+        "status": "ok",
+        "render": "42",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/join-default",
+      "outcome": {
+        "status": "ok",
+        "render": "123",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/join-sep",
+      "outcome": {
+        "status": "ok",
+        "render": "1|2|3",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/join-string-subject",
+      "outcome": {
+        "status": "ok",
+        "render": "a-b-c",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/join-int",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot join value of type number (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "filter/join-none",
+      "outcome": {
+        "status": "ok",
+        "render": "",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/split-ws",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"a\", \"b\", \"c\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/split-sep",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"a\", \"b\", \"c\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/split-maxsplits",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"a\", \"b\", \"c,d\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/split-ws-maxsplits",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"foo\", \"bar baz  \"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/split-empty-sep",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"\", \"a\", \"b\", \"\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/split-negative-maxsplits",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"a\", \"b\", \"c\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/split-int",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: value is not a string (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "filter/lines-crlf",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"foo\", \"bar\", \"baz\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/lines-trailing-newline",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"a\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/lines-lone-cr",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"a\\rb\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/lines-empty",
+      "outcome": {
+        "status": "ok",
+        "render": "[]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/lines-int",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: value is not a string (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "filter/default-undefined",
+      "outcome": {
+        "status": "ok",
+        "render": "42",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/default-empty",
+      "outcome": {
+        "status": "ok",
+        "render": "x",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/default-alias-d",
+      "outcome": {
+        "status": "ok",
+        "render": "",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/default-defined",
+      "outcome": {
+        "status": "ok",
+        "render": "0",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/round-float",
+      "outcome": {
+        "status": "ok",
+        "render": "43.0",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/round-precision",
+      "outcome": {
+        "status": "ok",
+        "render": "42.51",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/round-int",
+      "outcome": {
+        "status": "ok",
+        "render": "42",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/round-string",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot round value (string) (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "filter/abs-negative-int",
+      "outcome": {
+        "status": "ok",
+        "render": "42",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/abs-negative-float",
+      "outcome": {
+        "status": "ok",
+        "render": "42.5",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/abs-string",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot get absolute value (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "filter/int-string",
+      "outcome": {
+        "status": "ok",
+        "render": "42",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/int-float-string",
+      "outcome": {
+        "status": "ok",
+        "render": "42",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/int-bool",
+      "outcome": {
+        "status": "ok",
+        "render": "1",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/int-none",
+      "outcome": {
+        "status": "ok",
+        "render": "0",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/int-leading-space",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: invalid float literal (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "filter/int-bad",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: invalid float literal (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "filter/int-seq",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot convert sequence to integer (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "filter/float-string",
+      "outcome": {
+        "status": "ok",
+        "render": "42.5",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/float-bad",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: invalid float literal (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "filter/float-bool",
+      "outcome": {
+        "status": "ok",
+        "render": "1.0",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/float-inf-string",
+      "outcome": {
+        "status": "ok",
+        "render": "inf",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/attr-ok",
+      "outcome": {
+        "status": "ok",
+        "render": "1",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/attr-missing",
+      "outcome": {
+        "status": "ok",
+        "render": "",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/first-seq",
+      "outcome": {
+        "status": "ok",
+        "render": "1",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/first-string",
+      "outcome": {
+        "status": "ok",
+        "render": "a",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/first-empty",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "filter/first-int",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot get first item from value (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "filter/last-seq",
+      "outcome": {
+        "status": "ok",
+        "render": "2",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/last-string",
+      "outcome": {
+        "status": "ok",
+        "render": "c",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/min-ints",
+      "outcome": {
+        "status": "ok",
+        "render": "1",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/max-ints",
+      "outcome": {
+        "status": "ok",
+        "render": "3",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/min-empty",
+      "outcome": {
+        "status": "ok",
+        "render": "",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/min-strings-case",
+      "outcome": {
+        "status": "ok",
+        "render": "A",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/sort-ints",
+      "outcome": {
+        "status": "ok",
+        "render": "[1, 2, 3]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/sort-strings",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"a\", \"B\", \"C\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/sort-case-sensitive",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"B\", \"C\", \"a\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/sort-reverse",
+      "outcome": {
+        "status": "ok",
+        "render": "[3, 2, 1]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/list-string",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"a\", \"b\", \"c\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/list-int",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot convert value to list (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "filter/string-int",
+      "outcome": {
+        "status": "ok",
+        "render": "42",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/string-float",
+      "outcome": {
+        "status": "ok",
+        "render": "42.5",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/string-seq",
+      "outcome": {
+        "status": "ok",
+        "render": "[1, 2]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/bool-empty-string",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/bool-string",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/bool-int",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/batch",
+      "outcome": {
+        "status": "ok",
+        "render": "[[0, 1], [2, 3], [4]]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/batch-fill",
+      "outcome": {
+        "status": "ok",
+        "render": "[[0, 1], [2, 3], [4, \"-\"]]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/slice",
+      "outcome": {
+        "status": "ok",
+        "render": "[[0, 1, 2], [3, 4]]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/slice-fill",
+      "outcome": {
+        "status": "ok",
+        "render": "[[0, 1, 2], [3, 4, \"-\"]]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/batch-zero",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: count cannot be 0 (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "filter/sum-ints",
+      "outcome": {
+        "status": "ok",
+        "render": "10",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/sum-empty",
+      "outcome": {
+        "status": "ok",
+        "render": "0",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/sum-floats",
+      "outcome": {
+        "status": "ok",
+        "render": "1.5",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/sum-strings",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: can only sum numbers, got string (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "filter/sum-string-subject",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: can only sum numbers, got string (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "filter/indent",
+      "outcome": {
+        "status": "ok",
+        "render": "\"foo\\n  bar\\n  baz\"",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/indent-first-line",
+      "outcome": {
+        "status": "ok",
+        "render": "\"  foo\\n  bar\"",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/indent-blank-lines",
+      "outcome": {
+        "status": "ok",
+        "render": "\"  foo\\n  \\n  bar\"",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/indent-int",
+      "outcome": {
+        "status": "ok",
+        "render": "42",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/select-odd",
+      "outcome": {
+        "status": "ok",
+        "render": "[1, 3]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/select-truthy",
+      "outcome": {
+        "status": "ok",
+        "render": "[1, \"a\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/reject-odd",
+      "outcome": {
+        "status": "ok",
+        "render": "[2]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/select-unknown-test",
+      "outcome": {
+        "status": "error",
+        "category": "unknown_test",
+        "kind": "UnknownTest",
+        "message": "unknown test (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "filter/selectattr",
+      "outcome": {
+        "status": "ok",
+        "render": "[{\"a\": true, \"k\": 1}]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/rejectattr",
+      "outcome": {
+        "status": "ok",
+        "render": "[{\"a\": false, \"k\": 2}]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/map-filter",
+      "outcome": {
+        "status": "ok",
+        "render": "[1, 2]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/map-attribute",
+      "outcome": {
+        "status": "ok",
+        "render": "[1, 2]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/map-unknown-filter",
+      "outcome": {
+        "status": "error",
+        "category": "unknown_filter",
+        "kind": "UnknownFilter",
+        "message": "unknown filter (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "filter/groupby",
+      "outcome": {
+        "status": "ok",
+        "render": "[[1, [{\"a\": 1, \"b\": 2}, {\"a\": 1, \"b\": 3}]]]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/unique-ints",
+      "outcome": {
+        "status": "ok",
+        "render": "[1, 2]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/unique-case",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"a\", \"b\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/unique-case-sensitive",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"a\", \"A\", \"b\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/chain",
+      "outcome": {
+        "status": "ok",
+        "render": "[1, 2, 3]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/zip",
+      "outcome": {
+        "status": "ok",
+        "render": "[[1, 3], [2, 4]]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/zip-uneven",
+      "outcome": {
+        "status": "ok",
+        "render": "[[1, 4]]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/pprint-seq",
+      "outcome": {
+        "status": "ok",
+        "render": "[\n    1,\n    2,\n]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/pprint-map",
+      "outcome": {
+        "status": "ok",
+        "render": "{\n    \"a\": 1,\n}",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/tojson-string",
+      "outcome": {
+        "status": "ok",
+        "render": "\"hello\"",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/tojson-scary-html",
+      "outcome": {
+        "status": "ok",
+        "render": "\"\\u003c\\u003e\\u0026\\u0027\"",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/tojson-unicode",
+      "outcome": {
+        "status": "ok",
+        "render": "\"héllo \"",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/tojson-float",
+      "outcome": {
+        "status": "ok",
+        "render": "1.5",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/tojson-int",
+      "outcome": {
+        "status": "ok",
+        "render": "42",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/tojson-none",
+      "outcome": {
+        "status": "ok",
+        "render": "null",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/tojson-pretty",
+      "outcome": {
+        "status": "ok",
+        "render": "{\n  \"a\": 1\n}",
+        "boolean": null
+      }
+    },
+    {
+      "id": "filter/tojson-nested",
+      "outcome": {
+        "status": "ok",
+        "render": "[{\"a\":[1,2]}]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "arity/upper-extra",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "arity/trim-extra",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "arity/split-extra",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "arity/sum-start-arg",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "arity/tojson-both-forms",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments: unknown keyword argument 'indent' (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "arity/tojson-unknown-kwarg",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments: unknown keyword argument 'nope' (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "arity/length-extra",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "arity/first-extra",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "arity/join-extra",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "arity/replace-kwarg",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "arity/batch-negative",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot convert number to usize (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "arity/batch-missing",
+      "outcome": {
+        "status": "error",
+        "category": "missing_argument",
+        "kind": "MissingArgument",
+        "message": "missing argument (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "arity/attr-extra",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "arity/tojson-kwarg-indent",
+      "outcome": {
+        "status": "ok",
+        "render": "{\n  \"a\": 1\n}",
+        "boolean": null
+      }
+    },
+    {
+      "id": "arity/title-empty-call",
+      "outcome": {
+        "status": "ok",
+        "render": "Abc",
+        "boolean": null
+      }
+    },
+    {
+      "id": "test/defined",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "test/undefined",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "test/none",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "test/safe",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "test/escaped",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "test/boolean",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "test/odd",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "test/even",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "test/divisibleby",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "test/number",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "test/integer",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "test/int-alias",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "test/float",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "test/string",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "test/sequence",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "test/iterable",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "test/mapping",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "test/startingwith",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "test/endingwith",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "test/lower",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "test/upper",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "test/sameas",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "test/eq",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "test/equalto",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "test/ne",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "test/lt",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "test/lessthan",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "test/le",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "test/gt",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "test/greaterthan",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "test/ge",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "test/in",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "test/true",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "test/false",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "test/filter",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "test/test",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "test/divisibleby-zero",
+      "outcome": {
+        "status": "panic",
+        "message": "attempt to calculate the remainder with a divisor of zero"
+      }
+    },
+    {
+      "id": "test/odd-string",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": null
+      }
+    },
+    {
+      "id": "test/iterable-none",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "test/lower-unicode",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "test/upper-sharp-s",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "test/lower-roman-numeral",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "test/upper-roman-numeral",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "test/unknown",
+      "outcome": {
+        "status": "error",
+        "category": "unknown_test",
+        "kind": "UnknownTest",
+        "message": "unknown test: test nope is unknown (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "test/startingwith-unicode",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "fn/range-one",
+      "outcome": {
+        "status": "ok",
+        "render": "[0, 1, 2]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "fn/range-two",
+      "outcome": {
+        "status": "ok",
+        "render": "[1, 2, 3]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "fn/range-three",
+      "outcome": {
+        "status": "ok",
+        "render": "[0, 2, 4]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "fn/range-zero-step",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot create range with step of 0 (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "fn/range-string",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot convert string to isize (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "fn/dict-kwargs",
+      "outcome": {
+        "status": "ok",
+        "render": "[[\"a\", 1]]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "fn/dict-empty",
+      "outcome": {
+        "status": "ok",
+        "render": "[]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "fn/namespace",
+      "outcome": {
+        "status": "ok",
+        "render": "3",
+        "boolean": null
+      }
+    },
+    {
+      "id": "fn/debug-value",
+      "outcome": {
+        "status": "ok",
+        "render": "42",
+        "boolean": null
+      }
+    },
+    {
+      "id": "fn/debug-state-dump",
+      "outcome": {
+        "status": "ok",
+        "render": "State {\n    name: \"corpus.txt\",\n    current_block: None,\n    auto_escape: None,\n    ctx: {},\n    env: Environment {\n        globals: {\n            \"debug\": minijinja::functions::builtins::debug,\n            \"dict\": minijinja::functions::builtins::dict,\n            \"namespace\": minijinja::functions::builtins::namespace,\n            \"range\": minijinja::functions::builtins::range,\n        },\n        tests: [\n            \"!=\",\n            \"<\",\n            \"<=\",\n            \"==\",\n            \">\",\n            \">=\",\n            \"boolean\",\n            \"defined\",\n            \"divisibleby\",\n            \"endingwith\",\n            \"eq\",\n            \"equalto\",\n            \"escaped\",\n            \"even\",\n            \"false\",\n            \"filter\",\n            \"float\",\n            \"ge\",\n            \"greaterthan\",\n            \"gt\",\n            \"in\",\n            \"int\",\n            \"integer\",\n            \"iterable\",\n            \"le\",\n            \"lessthan\",\n            \"lower\",\n            \"lt\",\n            \"mapping\",\n            \"ne\",\n            \"none\",\n            \"number\",\n            \"odd\",\n            \"safe\",\n            \"sameas\",\n            \"sequence\",\n            \"startingwith\",\n            \"string\",\n            \"test\",\n            \"true\",\n            \"undefined\",\n            \"upper\",\n        ],\n        filters: [\n            \"abs\",\n            \"attr\",\n            \"batch\",\n            \"bool\",\n            \"capitalize\",\n            \"chain\",\n            \"count\",\n            \"d\",\n            \"default\",\n            \"dictsort\",\n            \"e\",\n            \"escape\",\n            \"first\",\n            \"float\",\n            \"format\",\n            \"groupby\",\n            \"indent\",\n            \"int\",\n            \"items\",\n            \"join\",\n            \"last\",\n            \"length\",\n            \"lines\",\n            \"list\",\n            \"lower\",\n            \"map\",\n            \"max\",\n            \"min\",\n            \"pprint\",\n            \"reject\",\n            \"rejectattr\",\n            \"replace\",\n            \"reverse\",\n            \"round\",\n            \"safe\",\n            \"select\",\n            \"selectattr\",\n            \"slice\",\n            \"sort\",\n            \"split\",\n            \"string\",\n            \"sum\",\n            \"title\",\n            \"tojson\",\n            \"trim\",\n            \"unique\",\n            \"upper\",\n            \"zip\",\n        ],\n        templates: [\n            \"corpus.txt\",\n        ],\n    },\n}",
+        "boolean": null
+      }
+    },
+    {
+      "id": "fn/unknown-function",
+      "outcome": {
+        "status": "error",
+        "category": "unknown_function",
+        "kind": "UnknownFunction",
+        "message": "unknown function: nope_function is unknown (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "str/upper-sharp-s-word",
+      "outcome": {
+        "status": "ok",
+        "render": "GRUSSE",
+        "boolean": null
+      }
+    },
+    {
+      "id": "str/lower-dotted-capital-i-word",
+      "outcome": {
+        "status": "ok",
+        "render": "i̇stanbul",
+        "boolean": null
+      }
+    },
+    {
+      "id": "str/upper-ligature-ffi",
+      "outcome": {
+        "status": "ok",
+        "render": "FFI",
+        "boolean": null
+      }
+    },
+    {
+      "id": "str/upper-armenian-ligature",
+      "outcome": {
+        "status": "ok",
+        "render": "ԵՒ",
+        "boolean": null
+      }
+    },
+    {
+      "id": "str/upper-greek-ypogegrammeni",
+      "outcome": {
+        "status": "ok",
+        "render": "ἈΙ",
+        "boolean": null
+      }
+    },
+    {
+      "id": "str/upper-n-preceded-by-apostrophe",
+      "outcome": {
+        "status": "ok",
+        "render": "ʼN",
+        "boolean": null
+      }
+    },
+    {
+      "id": "str/lower-final-sigma",
+      "outcome": {
+        "status": "ok",
+        "render": "ας",
+        "boolean": null
+      }
+    },
+    {
+      "id": "str/lower-medial-sigma",
+      "outcome": {
+        "status": "ok",
+        "render": "ασα",
+        "boolean": null
+      }
+    },
+    {
+      "id": "str/lower-sigma-then-ignorable",
+      "outcome": {
+        "status": "ok",
+        "render": "ας́",
+        "boolean": null
+      }
+    },
+    {
+      "id": "str/lower-lone-sigma",
+      "outcome": {
+        "status": "ok",
+        "render": "σ",
+        "boolean": null
+      }
+    },
+    {
+      "id": "str/title-punctuation",
+      "outcome": {
+        "status": "ok",
+        "render": "A!B",
+        "boolean": null
+      }
+    },
+    {
+      "id": "str/title-sentence",
+      "outcome": {
+        "status": "ok",
+        "render": "The Bird, Is The:Word",
+        "boolean": null
+      }
+    },
+    {
+      "id": "str/title-nbsp",
+      "outcome": {
+        "status": "ok",
+        "render": "A B",
+        "boolean": null
+      }
+    },
+    {
+      "id": "str/title-sharp-s",
+      "outcome": {
+        "status": "ok",
+        "render": "SSx",
+        "boolean": null
+      }
+    },
+    {
+      "id": "str/capitalize-accented",
+      "outcome": {
+        "status": "ok",
+        "render": "École",
+        "boolean": null
+      }
+    },
+    {
+      "id": "str/capitalize-sharp-s",
+      "outcome": {
+        "status": "ok",
+        "render": "SSx",
+        "boolean": null
+      }
+    },
+    {
+      "id": "str/capitalize-sigma-rest",
+      "outcome": {
+        "status": "ok",
+        "render": "Aσ",
+        "boolean": null
+      }
+    },
+    {
+      "id": "str/length-astral",
+      "outcome": {
+        "status": "ok",
+        "render": "1",
+        "boolean": null
+      }
+    },
+    {
+      "id": "syntax/bad-escape-capital-u",
+      "outcome": {
+        "status": "error",
+        "category": "bad_escape",
+        "kind": "BadEscape",
+        "message": "bad string escape (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "syntax/bad-escape-rust-unicode",
+      "outcome": {
+        "status": "error",
+        "category": "bad_escape",
+        "kind": "BadEscape",
+        "message": "bad string escape (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "syntax/escape-hex",
+      "outcome": {
+        "status": "ok",
+        "render": "A",
+        "boolean": null
+      }
+    },
+    {
+      "id": "str/reverse-combining",
+      "outcome": {
+        "status": "ok",
+        "render": "́e",
+        "boolean": null
+      }
+    },
+    {
+      "id": "format/printf-plain",
+      "outcome": {
+        "status": "ok",
+        "render": "hi!",
+        "boolean": null
+      }
+    },
+    {
+      "id": "format/printf-two",
+      "outcome": {
+        "status": "ok",
+        "render": "a b",
+        "boolean": null
+      }
+    },
+    {
+      "id": "format/printf-escape",
+      "outcome": {
+        "status": "ok",
+        "render": "100%",
+        "boolean": null
+      }
+    },
+    {
+      "id": "format/printf-int-d",
+      "outcome": {
+        "status": "ok",
+        "render": "42",
+        "boolean": null
+      }
+    },
+    {
+      "id": "format/printf-int-width",
+      "outcome": {
+        "status": "ok",
+        "render": "   42",
+        "boolean": null
+      }
+    },
+    {
+      "id": "format/printf-int-zero-pad",
+      "outcome": {
+        "status": "ok",
+        "render": "00042",
+        "boolean": null
+      }
+    },
+    {
+      "id": "format/printf-int-left",
+      "outcome": {
+        "status": "ok",
+        "render": "42   |",
+        "boolean": null
+      }
+    },
+    {
+      "id": "format/printf-int-plus",
+      "outcome": {
+        "status": "ok",
+        "render": "+42",
+        "boolean": null
+      }
+    },
+    {
+      "id": "format/printf-int-space",
+      "outcome": {
+        "status": "ok",
+        "render": " 42",
+        "boolean": null
+      }
+    },
+    {
+      "id": "format/printf-int-neg",
+      "outcome": {
+        "status": "ok",
+        "render": "-0042",
+        "boolean": null
+      }
+    },
+    {
+      "id": "format/printf-hex",
+      "outcome": {
+        "status": "ok",
+        "render": "ff",
+        "boolean": null
+      }
+    },
+    {
+      "id": "format/printf-hex-alt",
+      "outcome": {
+        "status": "ok",
+        "render": "0xff",
+        "boolean": null
+      }
+    },
+    {
+      "id": "format/printf-hex-upper",
+      "outcome": {
+        "status": "ok",
+        "render": "FF",
+        "boolean": null
+      }
+    },
+    {
+      "id": "format/printf-octal",
+      "outcome": {
+        "status": "ok",
+        "render": "10",
+        "boolean": null
+      }
+    },
+    {
+      "id": "format/printf-float-f",
+      "outcome": {
+        "status": "ok",
+        "render": "1.500000",
+        "boolean": null
+      }
+    },
+    {
+      "id": "format/printf-float-prec",
+      "outcome": {
+        "status": "ok",
+        "render": "1.00",
+        "boolean": null
+      }
+    },
+    {
+      "id": "format/printf-float-e",
+      "outcome": {
+        "status": "ok",
+        "render": "1.234500e+03",
+        "boolean": null
+      }
+    },
+    {
+      "id": "format/printf-float-E",
+      "outcome": {
+        "status": "ok",
+        "render": "1.234500E+03",
+        "boolean": null
+      }
+    },
+    {
+      "id": "format/printf-float-g",
+      "outcome": {
+        "status": "ok",
+        "render": "1234.5",
+        "boolean": null
+      }
+    },
+    {
+      "id": "format/printf-float-g-small",
+      "outcome": {
+        "status": "ok",
+        "render": "1.234e-05",
+        "boolean": null
+      }
+    },
+    {
+      "id": "format/printf-float-default-int",
+      "outcome": {
+        "status": "ok",
+        "render": "1.0",
+        "boolean": null
+      }
+    },
+    {
+      "id": "format/printf-string-prec",
+      "outcome": {
+        "status": "ok",
+        "render": "ab",
+        "boolean": null
+      }
+    },
+    {
+      "id": "format/printf-string-width",
+      "outcome": {
+        "status": "ok",
+        "render": "    ab|",
+        "boolean": null
+      }
+    },
+    {
+      "id": "format/printf-string-bool",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": null
+      }
+    },
+    {
+      "id": "format/printf-bool-d",
+      "outcome": {
+        "status": "ok",
+        "render": "1",
+        "boolean": null
+      }
+    },
+    {
+      "id": "format/printf-mapping",
+      "outcome": {
+        "status": "ok",
+        "render": "1",
+        "boolean": null
+      }
+    },
+    {
+      "id": "format/printf-mapping-missing",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: missing an argument for format spec at offset '5' (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "format/printf-len-modifier",
+      "outcome": {
+        "status": "ok",
+        "render": "42",
+        "boolean": null
+      }
+    },
+    {
+      "id": "format/printf-nan",
+      "outcome": {
+        "status": "ok",
+        "render": "nan",
+        "boolean": null
+      }
+    },
+    {
+      "id": "format/printf-inf",
+      "outcome": {
+        "status": "ok",
+        "render": "inf",
+        "boolean": null
+      }
+    },
+    {
+      "id": "format/printf-neg-inf",
+      "outcome": {
+        "status": "ok",
+        "render": "-inf",
+        "boolean": null
+      }
+    },
+    {
+      "id": "format/printf-nan-default",
+      "outcome": {
+        "status": "ok",
+        "render": "nan",
+        "boolean": null
+      }
+    },
+    {
+      "id": "format/printf-inf-e",
+      "outcome": {
+        "status": "ok",
+        "render": "inf",
+        "boolean": null
+      }
+    },
+    {
+      "id": "format/printf-nan-E",
+      "outcome": {
+        "status": "ok",
+        "render": "NAN",
+        "boolean": null
+      }
+    },
+    {
+      "id": "format/printf-err-missing-arg",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: missing an argument for format spec at offset '4' (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "format/printf-err-bad-verb",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: invalid conversion type 'q' in format spec at offset 1 (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "format/printf-err-incomplete",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: incomplete format spec at offset 1; missing conversion type (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "format/printf-err-string-to-int",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: invalid format spec at offset 1; 'string' cannot be formatted in decimal format ('d') (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "format/printf-err-float-to-hex",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: invalid format spec at offset 1; 'float' cannot be formatted in hex format ('x') (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "format/printf-err-mapping-not-map",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: format argument must be a mapping (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "format/printf-err-incomplete-key",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: incomplete format key at offset 2; missing closing ')' (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "format/printf-err-nonstring-format",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: value is not a string (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "pycompat/upper",
+      "outcome": {
+        "status": "ok",
+        "render": "HELLO",
+        "boolean": null
+      }
+    },
+    {
+      "id": "pycompat/upper-sharp-s",
+      "outcome": {
+        "status": "ok",
+        "render": "SS",
+        "boolean": null
+      }
+    },
+    {
+      "id": "pycompat/lower",
+      "outcome": {
+        "status": "ok",
+        "render": "hello",
+        "boolean": null
+      }
+    },
+    {
+      "id": "pycompat/lower-final-sigma",
+      "outcome": {
+        "status": "ok",
+        "render": "ας",
+        "boolean": null
+      }
+    },
+    {
+      "id": "pycompat/islower-true",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "pycompat/islower-false",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "pycompat/islower-empty",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "pycompat/islower-modifier-letter",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "pycompat/isupper-true",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "pycompat/isupper-roman",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "pycompat/isspace-true",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "pycompat/isspace-nbsp",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "pycompat/isspace-false",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "pycompat/isdigit-true",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "pycompat/isdigit-superscript",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "pycompat/isnumeric-roman",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "pycompat/isalnum-true",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "pycompat/isalpha-true",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "pycompat/isalpha-combining",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "pycompat/isascii-true",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "pycompat/isascii-false",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "pycompat/strip-default",
+      "outcome": {
+        "status": "ok",
+        "render": "hi",
+        "boolean": null
+      }
+    },
+    {
+      "id": "pycompat/strip-nbsp",
+      "outcome": {
+        "status": "ok",
+        "render": "hi",
+        "boolean": null
+      }
+    },
+    {
+      "id": "pycompat/strip-chars",
+      "outcome": {
+        "status": "ok",
+        "render": "hi",
+        "boolean": null
+      }
+    },
+    {
+      "id": "pycompat/lstrip-default",
+      "outcome": {
+        "status": "ok",
+        "render": "hi  ",
+        "boolean": null
+      }
+    },
+    {
+      "id": "pycompat/lstrip-chars",
+      "outcome": {
+        "status": "ok",
+        "render": "hixx",
+        "boolean": null
+      }
+    },
+    {
+      "id": "pycompat/rstrip-default",
+      "outcome": {
+        "status": "ok",
+        "render": "  hi",
+        "boolean": null
+      }
+    },
+    {
+      "id": "pycompat/rstrip-chars",
+      "outcome": {
+        "status": "ok",
+        "render": "xxhi",
+        "boolean": null
+      }
+    },
+    {
+      "id": "pycompat/replace",
+      "outcome": {
+        "status": "ok",
+        "render": "bbb",
+        "boolean": null
+      }
+    },
+    {
+      "id": "pycompat/replace-count",
+      "outcome": {
+        "status": "ok",
+        "render": "bba",
+        "boolean": null
+      }
+    },
+    {
+      "id": "pycompat/replace-count-zero",
+      "outcome": {
+        "status": "ok",
+        "render": "aaa",
+        "boolean": null
+      }
+    },
+    {
+      "id": "pycompat/replace-count-negative",
+      "outcome": {
+        "status": "ok",
+        "render": "bbb",
+        "boolean": null
+      }
+    },
+    {
+      "id": "pycompat/title",
+      "outcome": {
+        "status": "ok",
+        "render": "Hello World",
+        "boolean": null
+      }
+    },
+    {
+      "id": "pycompat/title-punctuation",
+      "outcome": {
+        "status": "ok",
+        "render": "A!B",
+        "boolean": null
+      }
+    },
+    {
+      "id": "pycompat/capitalize",
+      "outcome": {
+        "status": "ok",
+        "render": "Hello world",
+        "boolean": null
+      }
+    },
+    {
+      "id": "pycompat/split-ws",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"a\", \"b\", \"c\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "pycompat/split-sep",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"a\", \"b\", \"c\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "pycompat/split-maxsplits",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"a\", \"b,c\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "pycompat/split-none-maxsplits",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"a\", \"b c\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "pycompat/splitlines",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"a\", \"b\", \"c\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "pycompat/splitlines-keepends",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"a\\n\", \"b\\n\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "pycompat/splitlines-empty",
+      "outcome": {
+        "status": "ok",
+        "render": "[]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "pycompat/count",
+      "outcome": {
+        "status": "ok",
+        "render": "2",
+        "boolean": null
+      }
+    },
+    {
+      "id": "pycompat/count-missing",
+      "outcome": {
+        "status": "ok",
+        "render": "0",
+        "boolean": null
+      }
+    },
+    {
+      "id": "pycompat/find",
+      "outcome": {
+        "status": "ok",
+        "render": "1",
+        "boolean": null
+      }
+    },
+    {
+      "id": "pycompat/find-missing",
+      "outcome": {
+        "status": "ok",
+        "render": "-1",
+        "boolean": null
+      }
+    },
+    {
+      "id": "pycompat/find-unicode-offset",
+      "outcome": {
+        "status": "ok",
+        "render": "2",
+        "boolean": null
+      }
+    },
+    {
+      "id": "pycompat/rfind",
+      "outcome": {
+        "status": "ok",
+        "render": "3",
+        "boolean": null
+      }
+    },
+    {
+      "id": "pycompat/rfind-missing",
+      "outcome": {
+        "status": "ok",
+        "render": "-1",
+        "boolean": null
+      }
+    },
+    {
+      "id": "pycompat/startswith-string",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "pycompat/startswith-tuple",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "pycompat/startswith-false",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "pycompat/endswith-string",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "pycompat/endswith-tuple",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "pycompat/join",
+      "outcome": {
+        "status": "ok",
+        "render": "a, b",
+        "boolean": null
+      }
+    },
+    {
+      "id": "pycompat/join-ints",
+      "outcome": {
+        "status": "ok",
+        "render": "1-2",
+        "boolean": null
+      }
+    },
+    {
+      "id": "pycompat/join-empty",
+      "outcome": {
+        "status": "ok",
+        "render": "",
+        "boolean": null
+      }
+    },
+    {
+      "id": "pycompat/format-positional",
+      "outcome": {
+        "status": "ok",
+        "render": "a b",
+        "boolean": null
+      }
+    },
+    {
+      "id": "pycompat/format-indexed",
+      "outcome": {
+        "status": "ok",
+        "render": "b a",
+        "boolean": null
+      }
+    },
+    {
+      "id": "pycompat/format-kwarg",
+      "outcome": {
+        "status": "ok",
+        "render": "a!",
+        "boolean": null
+      }
+    },
+    {
+      "id": "pycompat/format-spec-width",
+      "outcome": {
+        "status": "ok",
+        "render": "   ab|",
+        "boolean": null
+      }
+    },
+    {
+      "id": "pycompat/format-spec-fill",
+      "outcome": {
+        "status": "ok",
+        "render": "**ab**|",
+        "boolean": null
+      }
+    },
+    {
+      "id": "pycompat/format-spec-int",
+      "outcome": {
+        "status": "ok",
+        "render": "00042",
+        "boolean": null
+      }
+    },
+    {
+      "id": "pycompat/format-spec-grouping",
+      "outcome": {
+        "status": "ok",
+        "render": "1,234,567",
+        "boolean": null
+      }
+    },
+    {
+      "id": "pycompat/format-spec-underscore",
+      "outcome": {
+        "status": "ok",
+        "render": "1_234_567",
+        "boolean": null
+      }
+    },
+    {
+      "id": "pycompat/format-spec-binary",
+      "outcome": {
+        "status": "ok",
+        "render": "101",
+        "boolean": null
+      }
+    },
+    {
+      "id": "pycompat/format-spec-binary-alt",
+      "outcome": {
+        "status": "ok",
+        "render": "0b101",
+        "boolean": null
+      }
+    },
+    {
+      "id": "pycompat/format-spec-hex-group",
+      "outcome": {
+        "status": "ok",
+        "render": "3_e517",
+        "boolean": null
+      }
+    },
+    {
+      "id": "pycompat/format-spec-float",
+      "outcome": {
+        "status": "ok",
+        "render": "1.00",
+        "boolean": null
+      }
+    },
+    {
+      "id": "pycompat/format-spec-general",
+      "outcome": {
+        "status": "ok",
+        "render": "1234.5",
+        "boolean": null
+      }
+    },
+    {
+      "id": "pycompat/format-spec-exp",
+      "outcome": {
+        "status": "ok",
+        "render": "1.234500e+03",
+        "boolean": null
+      }
+    },
+    {
+      "id": "pycompat/format-spec-percent-like",
+      "outcome": {
+        "status": "ok",
+        "render": "+1.50",
+        "boolean": null
+      }
+    },
+    {
+      "id": "pycompat/format-spec-zero-group",
+      "outcome": {
+        "status": "ok",
+        "render": "0,001,234,567",
+        "boolean": null
+      }
+    },
+    {
+      "id": "pycompat/format-escape",
+      "outcome": {
+        "status": "ok",
+        "render": "{}",
+        "boolean": null
+      }
+    },
+    {
+      "id": "pycompat/format-nested-attr",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"x\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "pycompat/format-default-float",
+      "outcome": {
+        "status": "ok",
+        "render": "1.0",
+        "boolean": null
+      }
+    },
+    {
+      "id": "pycompat/format-default-bool",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": null
+      }
+    },
+    {
+      "id": "pycompat/format-default-none",
+      "outcome": {
+        "status": "ok",
+        "render": "none",
+        "boolean": null
+      }
+    },
+    {
+      "id": "pycompat/map-keys",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"a\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "pycompat/map-values",
+      "outcome": {
+        "status": "ok",
+        "render": "[1]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "pycompat/map-items",
+      "outcome": {
+        "status": "ok",
+        "render": "[[\"a\", 1]]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "pycompat/map-get",
+      "outcome": {
+        "status": "ok",
+        "render": "1",
+        "boolean": null
+      }
+    },
+    {
+      "id": "pycompat/map-get-missing",
+      "outcome": {
+        "status": "ok",
+        "render": "none",
+        "boolean": null
+      }
+    },
+    {
+      "id": "pycompat/map-get-default",
+      "outcome": {
+        "status": "ok",
+        "render": "5",
+        "boolean": null
+      }
+    },
+    {
+      "id": "pycompat/seq-count",
+      "outcome": {
+        "status": "ok",
+        "render": "2",
+        "boolean": null
+      }
+    },
+    {
+      "id": "pycompat/seq-count-missing",
+      "outcome": {
+        "status": "ok",
+        "render": "0",
+        "boolean": null
+      }
+    },
+    {
+      "id": "pycompat/err-unknown-string-method",
+      "outcome": {
+        "status": "error",
+        "category": "unknown_method",
+        "kind": "UnknownMethod",
+        "message": "unknown method: string has no method named nope (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "pycompat/err-unknown-map-method",
+      "outcome": {
+        "status": "error",
+        "category": "unknown_method",
+        "kind": "UnknownMethod",
+        "message": "unknown method: map has no method named nope (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "pycompat/err-unknown-seq-method",
+      "outcome": {
+        "status": "error",
+        "category": "unknown_method",
+        "kind": "UnknownMethod",
+        "message": "unknown method: sequence has no method named nope (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "pycompat/err-int-method",
+      "outcome": {
+        "status": "error",
+        "category": "unknown_method",
+        "kind": "UnknownMethod",
+        "message": "unknown method: number has no method named upper (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "pycompat/err-none-method",
+      "outcome": {
+        "status": "error",
+        "category": "unknown_method",
+        "kind": "UnknownMethod",
+        "message": "unknown method: none has no method named upper (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "pycompat/err-upper-extra-arg",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "pycompat/err-upper-kwarg",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "pycompat/err-find-missing-arg",
+      "outcome": {
+        "status": "error",
+        "category": "missing_argument",
+        "kind": "MissingArgument",
+        "message": "missing argument (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "pycompat/err-find-nonstring",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: value is not a string (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "pycompat/err-replace-missing-arg",
+      "outcome": {
+        "status": "error",
+        "category": "missing_argument",
+        "kind": "MissingArgument",
+        "message": "missing argument (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "pycompat/err-startswith-int",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: startswith argument must be string or a tuple of strings, not number (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "pycompat/err-startswith-tuple-int",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: tuple for startswith must contain only strings, not number (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "pycompat/err-count-nonstring",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: value is not a string (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "pycompat/err-join-missing",
+      "outcome": {
+        "status": "error",
+        "category": "missing_argument",
+        "kind": "MissingArgument",
+        "message": "missing argument (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "pycompat/err-map-get-missing-arg",
+      "outcome": {
+        "status": "error",
+        "category": "missing_argument",
+        "kind": "MissingArgument",
+        "message": "missing argument (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "pycompat/err-seq-count-missing-arg",
+      "outcome": {
+        "status": "error",
+        "category": "missing_argument",
+        "kind": "MissingArgument",
+        "message": "missing argument (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "pycompat/err-format-missing-arg",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: argument not found for format field at offset 3 (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "pycompat/err-format-switch-numbering",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot switch from manual field specification to automatic numbering in field at offset 4 (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "pycompat/err-format-bad-type",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: invalid conversion type 'z' in format spec at offset 2 (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "pycompat/err-format-lone-brace",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: invalid single '}' in format string at offset 0; use escape sequence '}}' (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "pycompat/err-format-unclosed",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: missing closing '}' in format spec at offset 0 (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "pycompat/err-format-string-to-int",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: invalid format spec at offset 2; 'string' cannot be formatted in decimal format ('d') (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "pycompat/err-format-bool-s",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: invalid format spec at offset 2; 'bool' cannot be formatted in string format ('s') (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "pycompat/err-format-comma-hex",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: invalid format spec at offset 2; ',' cannot be specified with hex format ('x') (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "method/no-callback-string",
+      "outcome": {
+        "status": "error",
+        "category": "unknown_method",
+        "kind": "UnknownMethod",
+        "message": "unknown method: string has no method named upper (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "method/no-callback-map",
+      "outcome": {
+        "status": "error",
+        "category": "unknown_method",
+        "kind": "UnknownMethod",
+        "message": "unknown method: map has no method named items (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "method/map-key-not-callable",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: value of type number is not callable (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "str/escape-quote",
+      "outcome": {
+        "status": "ok",
+        "render": "&#x27;",
+        "boolean": null
+      }
+    },
+    {
+      "id": "str/escape-unicode",
+      "outcome": {
+        "status": "ok",
+        "render": "é&lt;",
+        "boolean": null
+      }
+    },
+    {
+      "id": "str/string-none",
+      "outcome": {
+        "status": "ok",
+        "render": "none",
+        "boolean": null
+      }
+    },
+    {
+      "id": "str/string-bool",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": null
+      }
+    }
+  ]
+}

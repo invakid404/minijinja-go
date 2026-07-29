@@ -111,7 +111,7 @@ type IterableObject interface {
 type CallableObject interface {
 	Object
 	// ObjectCall invokes the object itself with the given arguments.
-	ObjectCall(state State, args []Value, kwargs map[string]Value) (Value, error)
+	ObjectCall(state State, args []Value, kwargs *OrderedMap) (Value, error)
 }
 
 // MethodCallable is an object that supports method calls.
@@ -121,8 +121,14 @@ type CallableObject interface {
 type MethodCallable interface {
 	Object
 	// CallMethod invokes a method on the object.
-	// Return ErrUnknownMethod to fall back to GetAttr(name) + call.
-	CallMethod(state State, name string, args []Value, kwargs map[string]Value) (Value, error)
+	//
+	// Implementing it REPLACES the default attribute-as-method dispatch, the
+	// way overriding `Object::call_method` does in the engine
+	// (value/object.rs:241-252). Returning ErrUnknownMethod therefore does NOT
+	// fall back to GetAttr(name) + call: the call goes straight to the
+	// environment's unknown-method callback, and an object that wants
+	// attribute dispatch for some names has to do that lookup itself.
+	CallMethod(state State, name string, args []Value, kwargs *OrderedMap) (Value, error)
 }
 
 // ObjectWithLen provides explicit length for an object.
@@ -172,6 +178,25 @@ type ObjectWithCmp interface {
 	//   - cmp > 0 means this > other
 	//   - ok == false means the objects are incomparable
 	ObjectCmp(other Object) (cmp int, ok bool)
+}
+
+// ObjectWithAttrLookup answers whether an attribute is PRESENT, independently
+// of the value it holds.
+//
+// [Object.GetAttr] returns undefined for an attribute that is missing and for
+// one that is present but holds undefined, which is a distinction the engine
+// makes: its single object hook is `get_value(&Value) -> Option<Value>`
+// (value/object.rs:181), and `Object::call_method` decides between calling the
+// value and reporting an unknown method on the OPTION, not on the value
+// (value/object.rs:241-252). So `{"x": undefined}.x()` is "value of type
+// undefined is not callable" and `{}.x()` is an unknown method.
+//
+// An object that can hold an undefined value implements this; one that cannot
+// does not need to, because for it "undefined" and "absent" are the same answer.
+type ObjectWithAttrLookup interface {
+	Object
+	// LookupAttr returns the attribute and whether it is present at all.
+	LookupAttr(name string) (Value, bool)
 }
 
 // ReversibleObject can provide efficient reverse iteration.
@@ -281,6 +306,38 @@ func IterateObject(obj Object) iter.Seq[Value] {
 	return nil
 }
 
+// iterableNth is the engine's item lookup for an ObjectRepr::Iterable: take the
+// subscript-th step of a fresh iterator (value/mod.rs:1514-1531).
+//
+// A NEGATIVE subscript counts back from the enumerator's exact length, and an
+// iterable that does not know its length cannot answer one at all — which is
+// the same `checked_sub` the engine does, so `keys()[-1]` is the last key while
+// an unsized iterable's `[-1]` is undefined rather than an error.
+func iterableNth(obj Object, idx int64) Value {
+	if idx < 0 {
+		length := GetObjectLen(obj)
+		if length < 0 {
+			return Undefined()
+		}
+		idx += int64(length)
+		if idx < 0 {
+			return Undefined()
+		}
+	}
+	seq := IterateObject(obj)
+	if seq == nil {
+		return Undefined()
+	}
+	var at int64
+	for item := range seq {
+		if at == idx {
+			return item
+		}
+		at++
+	}
+	return Undefined()
+}
+
 // ReverseIterateObject returns a reverse iterator over an object's values.
 // Returns nil if the object cannot be reverse-iterated.
 //
@@ -377,6 +434,51 @@ func (i *iterableObject) String() string {
 //	})
 func MakeIterable(maker func() iter.Seq[Value]) Value {
 	return FromObject(&iterableObject{maker: maker})
+}
+
+// sizedIterableObject is an iterable whose length is known.
+type sizedIterableObject struct {
+	items []Value
+}
+
+func (i *sizedIterableObject) GetAttr(string) Value { return Undefined() }
+
+func (i *sizedIterableObject) ObjectRepr() ObjectRepr { return ObjectReprIterable }
+
+func (i *sizedIterableObject) Iterate() iter.Seq[Value] {
+	return func(yield func(Value) bool) {
+		for _, item := range i.items {
+			if !yield(item) {
+				return
+			}
+		}
+	}
+}
+
+func (i *sizedIterableObject) Len() (int, bool) { return len(i.items), true }
+
+// ObjectLen is the enumerator's exact size.
+//
+// It is what TRUTH answers from, not just what `|length` reports: the engine's
+// default `is_true` is `enumerator_len() != Some(0)` (value/object.rs:216-220),
+// so an iterable whose size is known to be zero is FALSE. Reporting the size
+// only through the legacy [LenGetter] left [GetObjectTruth] on its
+// unknown-length branch, where `{% if dict().keys() %}` took the true arm.
+func (i *sizedIterableObject) ObjectLen() int { return len(i.items) }
+
+// String renders the elements, which is what the engine does for an iterable
+// whose length it knows: it only falls back to `<iterator>` when printing
+// would mean risking an iteration of unknown size (value/object.rs:338-352).
+func (i *sizedIterableObject) String() string { return FromSlice(i.items).String() }
+
+// MakeSizedIterable creates a lazy iterable whose length is known.
+//
+// The distinction from [MakeIterable] is observable in two places: such a value
+// RENDERS as a list rather than as `<iterator>`, and `|length` answers instead
+// of failing. It is still an iterable and not a sequence, so `is sequence` is
+// false — which is what `dict(a=1).keys()` is in the engine.
+func MakeSizedIterable(items []Value) Value {
+	return FromObject(&sizedIterableObject{items: items})
 }
 
 // -----------------------------------------------------------------------------

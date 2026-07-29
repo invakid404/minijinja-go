@@ -29,9 +29,8 @@ var (
 // differently, each with the reason and the slice that owns it. Everything else
 // must match exactly.
 var messageDivergences = map[string]string{
-	"err/unknown-filter":               `filter wording ("filter X is unknown" vs the bare name) — environment surface, slice 5`,
-	"tmpl/filter-block-unknown-filter": `same filter wording, reached through the block form — slice 5`,
-	"tmpl/loop-unknown-method":         `the receiver's kind name: Rust calls the loop object a map, this fork calls it a callable — value-model naming, slice 4`,
+	"tmpl/loop-unknown-method":       `the receiver's kind name: Rust calls the loop object a map, this fork calls it a callable — value-model naming, slice 4`,
+	"syntax/bad-escape-rust-unicode": `the lexers reject ` + "`" + `\u{...}` + "`" + ` under different kinds, so they also word it differently ("bad string escape" vs "invalid unicode escape") — declared in divergences.json, slice 6`,
 }
 
 func messageBody(s string) string {

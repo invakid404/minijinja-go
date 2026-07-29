@@ -4,8 +4,10 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	minijinja "github.com/invakid404/minijinja-go/v2"
+	"github.com/invakid404/minijinja-go/v2/pycompat"
 	"github.com/invakid404/minijinja-go/v2/syntax"
 	"github.com/invakid404/minijinja-go/v2/value"
 )
@@ -119,8 +121,8 @@ func BuildValue(tv TypedValue) (value.Value, error) {
 // The fork still has no counterpart for several Rust kinds (non_primitive,
 // non_key, bad_serialization, write_failure). That asymmetry is real and shows
 // up as a category divergence rather than being smoothed over here.
-// cannot_unpack and unknown_method were two of them until the template slice
-// added them (PATCHES.md #6, #8).
+// cannot_unpack and unknown_method were two of them until the template and
+// builtins slices added them (PATCHES.md #6, #8).
 func errorCategory(kind minijinja.ErrorKind) string {
 	switch kind {
 	case minijinja.ErrSyntax:
@@ -189,11 +191,13 @@ func forkError(err error) Outcome {
 	}
 }
 
-// environmentFor builds the environment a row's profile names. Every profile
-// is engine configuration only, set exactly as the Rust harness sets it; no
-// filter, function or global is registered on either side.
+// environmentFor builds the environment a row's profile names. Every profile is
+// engine configuration only, set exactly as the Rust harness sets it, plus the
+// generic unknown-method module for the pycompat profile; no filter, function
+// or global is registered on either side.
 func environmentFor(profile Profile) (*minijinja.Environment, bool) {
 	ws := syntax.DefaultWhitespace()
+	pycompatMethods := false
 	switch profile {
 	case ProfileStock:
 	case ProfileTrimBlocks:
@@ -205,11 +209,19 @@ func environmentFor(profile Profile) (*minijinja.Environment, bool) {
 		ws.LstripBlocks = true
 	case ProfileKeepTrailingNewline:
 		ws.KeepTrailingNewline = true
+	case ProfilePycompat:
+		// The generic capability the fork exposes, driven by the installable
+		// module BAML installs on its own environment. Nothing else of BAML's
+		// environment is set up here.
+		pycompatMethods = true
 	default:
 		return nil, false
 	}
 	env := minijinja.NewEnvironment()
 	env.SetWhitespace(ws)
+	if pycompatMethods {
+		env.SetUnknownMethodCallback(pycompat.UnknownMethodCallback)
+	}
 	return env, true
 }
 
@@ -219,7 +231,37 @@ func environmentFor(profile Profile) (*minijinja.Environment, bool) {
 // A panic is an outcome, not a crashed test run: the parked evaluator work
 // recorded panics and hangs in this area, and losing them would understate the
 // divergence surface.
-func RunFork(row Row) (out Outcome) {
+// RowTimeout bounds one row's evaluation on the Go side, matching the Rust
+// harness's bound (harness/src/main.rs ROW_TIMEOUT). A row that does not
+// terminate is an outcome, not a hung run.
+//
+// It separates "does not terminate" from "is slow", so it sits far above the
+// slowest real row rather than close to it: every row in the corpus but one
+// finishes in microseconds, and the margin is what makes the differential
+// reliable on a loaded shared runner. Five seconds was not enough margin — CI
+// recorded a timeout on `review/pprint-key-mixed`, a pretty-print of a
+// three-entry map, and failed the merge gate on something that is not a
+// divergence. The one row that always spends the whole budget
+// (`review/pycompat-count-empty-needle`) loops forever on the Rust side, so any
+// finite value still catches it, and a timeout is compared as `timeout` with
+// the number excluded — see [Outcome.Signature].
+const RowTimeout = 30 * time.Second
+
+// RunFork evaluates a row against this fork, bounded in time.
+func RunFork(row Row) Outcome {
+	done := make(chan Outcome, 1)
+	go func() { done <- runForkRow(row) }()
+	select {
+	case out := <-done:
+		return out
+	case <-time.After(RowTimeout):
+		// The goroutine is left behind; the process exits when the run is
+		// done, and a row that hangs is exactly what this reports.
+		return Outcome{Status: StatusTimeout, Seconds: int(RowTimeout / time.Second)}
+	}
+}
+
+func runForkRow(row Row) (out Outcome) {
 	defer func() {
 		if r := recover(); r != nil {
 			out = Outcome{Status: StatusPanic, Message: fmt.Sprint(r)}

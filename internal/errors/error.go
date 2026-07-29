@@ -145,6 +145,11 @@ const (
 	// cannot be called. BAML's engine separates all three, and its pycompat
 	// callback keys off exactly this kind.
 	//
+	// It is also the signal the environment's unknown-method callback uses: the
+	// callback is consulted when a method call fails with this kind, and
+	// returning this kind from the callback means "I do not implement it
+	// either" (environment.go, Environment.SetUnknownMethodCallback).
+	//
 	// Example:
 	//     {{ "text".no_such_method() }}
 	ErrUnknownMethod

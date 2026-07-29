@@ -9,16 +9,21 @@
 //! oracle. It links the exact engine revision BAML builds against with BAML's
 //! exact cargo feature set, but it deliberately does NOT reconstruct BAML's
 //! environment (get_env, pycompat, regex_match/sum, prompt lowering). Corpus
-//! rows therefore declare an engine profile, and today the only profile is
-//! `stock` — stock engine defaults. When the BAML profile lands, it becomes a
-//! second profile here and in the Go runner, and the schema does not change.
+//! rows therefore declare an engine profile: `stock` is stock engine defaults,
+//! and `pycompat` adds the generic unknown-method callback from
+//! minijinja-contrib — an installable module, not BAML's environment. When the
+//! BAML profile lands it becomes a third profile here and in the Go runner,
+//! and the schema does not change.
 //!
-//! Usage:  mj-oracle-harness <corpus.json>   # JSON document on stdout
+//! Usage:  mj-oracle-harness <corpus-dir>   # JSON document on stdout
 
 use std::cmp::Ordering;
 use std::fmt;
 use std::panic::{self, AssertUnwindSafe};
+use std::sync::mpsc;
 use std::sync::Arc;
+use std::thread;
+use std::time::Duration;
 
 use minijinja::value::{DynObject, Object, ObjectRepr, Value};
 use minijinja::{Environment, ErrorKind};
@@ -54,7 +59,27 @@ struct Corpus {
     rows: Vec<Row>,
 }
 
-#[derive(Deserialize)]
+/// How long one row may take before it is recorded as a timeout rather than
+/// hanging the whole run. Only a row that does not terminate waits this long.
+///
+/// The budget separates "does not terminate" from "is slow", so it has to sit
+/// far above the slowest real row and still be finite. Every row in the corpus
+/// but one terminates in microseconds — the whole 1971-row set evaluates in
+/// about 0.2 seconds of CPU here — so the margin is what buys reliability, not
+/// the absolute number. At 5 seconds a shared 2-vCPU CI runner missed it on
+/// `review/pprint-key-mixed`, a pretty-print of a three-entry map, and reddened
+/// the merge gate on a row that is not a divergence at all.
+///
+/// 30 seconds is roughly 150x the entire corpus's evaluation time and 6x the
+/// budget that was observed to flake. The cost is paid by exactly one row —
+/// `review/pycompat-count-empty-needle`, whose reference implementation loops
+/// forever (`pycompat.rs:177-186`), so no finite budget lets it through and a
+/// larger one only makes it wait longer. Its outcome is compared as `timeout`
+/// with the number deliberately excluded, so changing this constant cannot
+/// invalidate a recording or a ledger signature.
+const ROW_TIMEOUT: Duration = Duration::from_secs(30);
+
+#[derive(Deserialize, Clone)]
 struct Row {
     id: String,
     #[serde(default)]
@@ -73,7 +98,7 @@ struct Row {
     notes: String,
 }
 
-#[derive(Deserialize, PartialEq)]
+#[derive(Deserialize, Clone, Copy, PartialEq)]
 #[serde(rename_all = "snake_case")]
 enum Form {
     /// A bare expression. Wrapped as `{{ expr }}`, the same shape BAML uses to
@@ -86,15 +111,16 @@ enum Form {
 /// Engine configuration a row is evaluated under.
 ///
 /// Every variant is *engine configuration only* — the same knobs the Go runner
-/// sets on its side. BAML's environment (get_env, pycompat, regex_match/sum,
-/// prompt lowering, ctx/_/enum globals) is deliberately not here; it arrives as
-/// its own profile in a later slice.
+/// sets on its side, plus the generic unknown-method module BAML installs.
+/// BAML's own environment (get_env, regex_match/sum, prompt lowering,
+/// ctx/_/enum globals) is deliberately not here; it arrives as its own profile
+/// in a later slice.
 ///
 /// The whitespace variants exist because trim_blocks/lstrip_blocks/
 /// keep_trailing_newline cannot be reached from template source. BAML's own
 /// environment sets trim_blocks and lstrip_blocks (jinja_helpers.rs:7-35), so
 /// the machinery they drive has to be compared under them too.
-#[derive(Deserialize, Default, PartialEq)]
+#[derive(Deserialize, Default, Clone, Copy, PartialEq)]
 #[serde(rename_all = "snake_case")]
 enum Profile {
     /// Stock engine defaults. No BAML environment setup.
@@ -108,6 +134,12 @@ enum Profile {
     TrimLstrip,
     /// set_keep_trailing_newline(true)
     KeepTrailingNewline,
+    /// Stock engine defaults plus the Python-compatible unknown-method
+    /// callback from `minijinja-contrib` — the one BAML installs
+    /// (jinja_helpers.rs:34). It is a *generic* engine capability driven by an
+    /// installable module, not BAML's environment: no regex_match, no sum, no
+    /// none-formatter. Those belong to the BAML profile, a later slice.
+    Pycompat,
 }
 
 impl Profile {
@@ -121,11 +153,14 @@ impl Profile {
                 env.set_lstrip_blocks(true);
             }
             Profile::KeepTrailingNewline => env.set_keep_trailing_newline(true),
+            Profile::Pycompat => {
+                env.set_unknown_method_callback(minijinja_contrib::pycompat::unknown_method_callback)
+            }
         }
     }
 }
 
-#[derive(Deserialize, Default, PartialEq)]
+#[derive(Deserialize, Clone, Copy, Default, PartialEq)]
 #[serde(rename_all = "snake_case")]
 enum Expect {
     /// Compare exact rendered bytes.
@@ -137,13 +172,13 @@ enum Expect {
     Error,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone)]
 struct Binding {
     name: String,
     value: TypedValue,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone)]
 struct MapEntry {
     key: String,
     value: TypedValue,
@@ -152,7 +187,7 @@ struct MapEntry {
 /// Explicitly typed corpus inputs. Types are tagged rather than inferred from
 /// JSON so that int/float and map ordering survive the trip through both
 /// runtimes unambiguously.
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 enum TypedValue {
     Int { value: i64 },
@@ -249,6 +284,15 @@ enum Outcome {
     },
     Panic {
         message: String,
+    },
+    /// The row did not terminate within the harness's bound. Like a panic
+    /// this is an OUTCOME, not a crashed run: the reference implementation
+    /// really does loop forever on some inputs (`"abc".count("")` walks the
+    /// string with `find` and never advances), and a differential that could
+    /// not record that would have to leave the case out of the corpus
+    /// entirely.
+    Timeout {
+        seconds: u64,
     },
     /// The harness could not model the row at all. Never a silent pass: the Go
     /// runner labels any mismatch involving this as `harness-incomplete`.
@@ -382,35 +426,105 @@ fn evaluate(row: &Row) -> Outcome {
     }
 }
 
+/// Reads the corpus as an ordered list of (name, bytes) plus the concatenation
+/// the digest is taken over. A single file is still accepted so the harness can
+/// be pointed at one fixture by hand.
+fn read_corpus_bytes(path: &str) -> Result<(Vec<u8>, Vec<(String, Vec<u8>)>), std::io::Error> {
+    let meta = std::fs::metadata(path)?;
+    if !meta.is_dir() {
+        let bytes = std::fs::read(path)?;
+        return Ok((bytes.clone(), vec![(path.to_string(), bytes)]));
+    }
+    let mut names: Vec<_> = std::fs::read_dir(path)?
+        .collect::<Result<Vec<_>, _>>()?
+        .into_iter()
+        .map(|e| e.path())
+        .filter(|p| p.extension().map(|e| e == "json").unwrap_or(false))
+        .collect();
+    names.sort();
+    let mut all = Vec::new();
+    let mut files = Vec::new();
+    for p in names {
+        let bytes = std::fs::read(&p)?;
+        all.extend_from_slice(&bytes);
+        files.push((p.display().to_string(), bytes));
+    }
+    Ok((all, files))
+}
+
+/// Evaluates one row with a time bound, on a worker thread.
+///
+/// A panic is caught and reported; a row that does not terminate is reported
+/// as a timeout and its thread is left behind, which is harmless because the
+/// process exits when the run is done. Without this, one non-terminating input
+/// would hang the whole differential and the case could not be in the corpus
+/// at all.
+fn evaluate_bounded(row: &Row) -> Outcome {
+    let row = row.clone();
+    let (tx, rx) = mpsc::channel();
+    thread::spawn(move || {
+        let outcome = match panic::catch_unwind(AssertUnwindSafe(|| evaluate(&row))) {
+            Ok(o) => o,
+            Err(payload) => {
+                let message = payload
+                    .downcast_ref::<&str>()
+                    .map(|s| (*s).to_string())
+                    .or_else(|| payload.downcast_ref::<String>().cloned())
+                    .unwrap_or_else(|| "panic".into());
+                Outcome::Panic { message }
+            }
+        };
+        let _ = tx.send(outcome);
+    });
+    match rx.recv_timeout(ROW_TIMEOUT) {
+        Ok(outcome) => outcome,
+        Err(_) => Outcome::Timeout {
+            seconds: ROW_TIMEOUT.as_secs(),
+        },
+    }
+}
+
 fn main() {
     let path = match std::env::args().nth(1) {
         Some(p) => p,
         None => {
-            eprintln!("usage: mj-oracle-harness <corpus.json>");
+            eprintln!("usage: mj-oracle-harness <corpus-dir-or-file>");
             std::process::exit(2);
         }
     };
-    let raw = match std::fs::read(&path) {
-        Ok(r) => r,
+    // The corpus is a directory of files, read in sorted order, so that
+    // parallel workstreams add rows without contending for one file. The
+    // digest is taken over the concatenated bytes in that same order, which is
+    // what ties a recording to the exact corpus it was produced from.
+    let (raw, files) = match read_corpus_bytes(&path) {
+        Ok(rv) => rv,
         Err(err) => {
-            eprintln!("cannot read {path}: {err}");
+            eprintln!("cannot read corpus {path}: {err}");
             std::process::exit(2);
         }
     };
-    let corpus: Corpus = match serde_json::from_slice(&raw) {
-        Ok(c) => c,
-        Err(err) => {
-            eprintln!("cannot parse {path}: {err}");
+    let mut rows: Vec<Row> = Vec::new();
+    for (name, bytes) in &files {
+        let corpus: Corpus = match serde_json::from_slice(bytes) {
+            Ok(c) => c,
+            Err(err) => {
+                eprintln!("cannot parse {name}: {err}");
+                std::process::exit(2);
+            }
+        };
+        if corpus.schema_version != SCHEMA_VERSION {
+            eprintln!(
+                "{name}: corpus schema_version {} != harness schema_version {}",
+                corpus.schema_version, SCHEMA_VERSION
+            );
             std::process::exit(2);
         }
-    };
-    if corpus.schema_version != SCHEMA_VERSION {
-        eprintln!(
-            "corpus schema_version {} != harness schema_version {}",
-            corpus.schema_version, SCHEMA_VERSION
-        );
-        std::process::exit(2);
+        rows.extend(corpus.rows);
     }
+    let corpus = Corpus {
+        schema_version: SCHEMA_VERSION,
+        rows,
+    };
 
     let corpus_sha256 = format!("{:x}", Sha256::digest(&raw));
 
@@ -420,22 +534,9 @@ fn main() {
     let results = corpus
         .rows
         .iter()
-        .map(|row| {
-            let outcome = match panic::catch_unwind(AssertUnwindSafe(|| evaluate(row))) {
-                Ok(o) => o,
-                Err(payload) => {
-                    let message = payload
-                        .downcast_ref::<&str>()
-                        .map(|s| (*s).to_string())
-                        .or_else(|| payload.downcast_ref::<String>().cloned())
-                        .unwrap_or_else(|| "panic".into());
-                    Outcome::Panic { message }
-                }
-            };
-            ResultRow {
-                id: row.id.clone(),
-                outcome,
-            }
+        .map(|row| ResultRow {
+            id: row.id.clone(),
+            outcome: evaluate_bounded(row),
         })
         .collect();
     let _ = panic::take_hook();

@@ -143,7 +143,7 @@ type testCallable struct {
 }
 
 func (c *testCallable) GetAttr(name string) Value { return Undefined() }
-func (c *testCallable) ObjectCall(state State, args []Value, kwargs map[string]Value) (Value, error) {
+func (c *testCallable) ObjectCall(state State, args []Value, kwargs *OrderedMap) (Value, error) {
 	count := c.callCount.Add(1)
 	return FromInt(count), nil
 }
@@ -176,7 +176,7 @@ func TestCallableObject(t *testing.T) {
 type testMethodCallable struct{}
 
 func (m *testMethodCallable) GetAttr(name string) Value { return Undefined() }
-func (m *testMethodCallable) CallMethod(state State, name string, args []Value, kwargs map[string]Value) (Value, error) {
+func (m *testMethodCallable) CallMethod(state State, name string, args []Value, kwargs *OrderedMap) (Value, error) {
 	if name == "greet" {
 		if len(args) > 0 {
 			s, _ := args[0].AsString()

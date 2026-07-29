@@ -38,10 +38,11 @@ const (
 // Profile names the environment a row is evaluated in.
 //
 // Every profile below is *engine configuration only*: the same knobs the Rust
-// Environment exposes, set identically on both sides. BAML's environment
-// (get_env, pycompat, regex_match/sum, prompt lowering, ctx/_/enum globals) is
-// deliberately not one of them — it arrives as its own profile in a later
-// slice, without a schema change.
+// Environment exposes, set identically on both sides, plus the generic
+// unknown-method module BAML installs. BAML's own environment (get_env,
+// regex_match/sum, prompt lowering, ctx/_/enum globals) is deliberately not one
+// of them — it arrives as its own profile in a later slice, without a schema
+// change.
 //
 // The whitespace profiles exist because trim_blocks/lstrip_blocks/
 // keep_trailing_newline are not reachable from a template: they are set on the
@@ -63,6 +64,12 @@ const (
 	ProfileTrimLstrip Profile = "trim_lstrip"
 	// ProfileKeepTrailingNewline is set_keep_trailing_newline(true).
 	ProfileKeepTrailingNewline Profile = "keep_trailing_newline"
+	// ProfilePycompat is stock defaults plus the Python-compatible
+	// unknown-method callback — a generic, installable module (the fork's
+	// pycompat package, minijinja-contrib's pycompat on the Rust side), which
+	// is the one BAML installs (jinja_helpers.rs:34). It is deliberately NOT
+	// BAML's environment: no regex_match, no sum, no none-formatter.
+	ProfilePycompat Profile = "pycompat"
 )
 
 // KnownProfiles is the closed set of profiles both sides implement. A corpus
@@ -74,6 +81,7 @@ var KnownProfiles = map[Profile]bool{
 	ProfileLstripBlocks:        true,
 	ProfileTrimLstrip:          true,
 	ProfileKeepTrailingNewline: true,
+	ProfilePycompat:            true,
 }
 
 // Expect declares what the row is primarily asserting. It does not gate the

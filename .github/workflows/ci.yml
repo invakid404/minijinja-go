@@ -59,7 +59,15 @@ jobs:
             value/orderedmap.go \
             value/coercion_fork_test.go \
             value/valuecmp_fork_test.go \
-            value/orderedmap_fork_test.go)"
+            value/orderedmap_fork_test.go \
+            pycompat \
+            internal/unicodecase \
+            internal/pyformat \
+            internal/serdejson \
+            filters/args.go \
+            unknown_method_test.go \
+            value/invalid.go \
+            value/invalid_test.go)"
           if [ -n "$unformatted" ]; then
             echo "these files need gofmt:"
             echo "$unformatted"

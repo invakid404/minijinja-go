@@ -13,6 +13,12 @@ const (
 	StatusOK    Status = "ok"
 	StatusError Status = "error"
 	StatusPanic Status = "panic"
+	// StatusTimeout means evaluation did not terminate within the runner's
+	// bound. Like a panic it is an outcome rather than a crashed run: the
+	// reference implementation loops forever on some inputs, and a
+	// differential that could not record that would have to leave those cases
+	// out of the corpus.
+	StatusTimeout Status = "timeout"
 	// StatusUnsupported means the runtime could not model the row at all. It
 	// is never a silent pass: a mismatch involving it is classified
 	// harness-incomplete rather than as an engine divergence.
@@ -28,6 +34,8 @@ type Outcome struct {
 	Render string `json:"render,omitempty"`
 	// Boolean is the normalized boolean, set only for Expect == boolean.
 	Boolean *bool `json:"boolean,omitempty"`
+	// Seconds is the bound a timed-out row exceeded.
+	Seconds int `json:"seconds,omitempty"`
 
 	// Category is the canonical error category, shared vocabulary across both
 	// implementations. This is what error comparison uses.
@@ -52,6 +60,8 @@ func (o Outcome) Describe() string {
 		return fmt.Sprintf("error category=%s kind=%s", o.Category, o.Kind)
 	case StatusPanic:
 		return fmt.Sprintf("panic %q", o.Message)
+	case StatusTimeout:
+		return fmt.Sprintf("timeout after %ds", o.Seconds)
 	case StatusUnsupported:
 		return fmt.Sprintf("unsupported %q", o.Message)
 	default:
@@ -78,6 +88,16 @@ func (o Outcome) Signature() string {
 		// language runtime's message rather than either engine's. That field is
 		// deliberately not compared here — it is pinned from both sides by
 		// panics_test.go, which also states the contract.
+		//
+		// A timeout reduces to just "timeout" for the same reason, and it is
+		// load-bearing rather than incidental: [Seconds] is the BUDGET the row
+		// exceeded, a property of the runner's configuration, not of the
+		// engine. Comparing it would make the ledger and every recording
+		// depend on the value of RowTimeout, so raising the budget — which is
+		// a reliability decision — would read as a behavioural change. What
+		// the differential asserts is "this row did not terminate within the
+		// bound", which is true at any bound. TestTimeoutSignatureIgnoresTheBudget
+		// pins that.
 		return string(o.Status)
 	}
 }

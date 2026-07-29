@@ -60,6 +60,33 @@ jobs:
           MJ_ORACLE_RECORDED_ONLY: "1"
         run: go test ./...
 
+      # The fork's case mapping and character properties are generated from the
+      # Rust toolchain's Unicode tables (internal/unicodecase). The engine pin
+      # is a revision, not a toolchain, so a Rust release that ships a new
+      # Unicode version silently changes what `|upper` means. This compares the
+      # data — not the toolchain string — so only a real drift fails, and when
+      # it does the fix is to regenerate rather than to guess.
+      - name: the committed Unicode dump still matches this toolchain
+        working-directory: oracle/harness
+        run: |
+          cargo build --release --locked --bin mj-casegen
+          ./target/release/mj-casegen > /tmp/casegen-now.json
+          python3 - <<'PY'
+          import json, sys
+          def data(path):
+              d = json.load(open(path))
+              d.pop("rustc", None)
+              return d
+          now = data("/tmp/casegen-now.json")
+          committed = data("../../internal/unicodecase/testdata/rust-unicode.json")
+          if now != committed:
+              print("The Rust toolchain's Unicode tables differ from the committed dump.")
+              print("Regenerate: oracle/harness/target/release/mj-casegen >")
+              print("  internal/unicodecase/testdata/rust-unicode.json && (cd oracle && go run ./cmd/gentables)")
+              sys.exit(1)
+          print("Unicode tables match the committed dump.")
+          PY
+
       - name: report
         if: always()
         working-directory: oracle

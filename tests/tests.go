@@ -2,14 +2,56 @@
 package tests
 
 import (
-	"fmt"
+	"math"
+	"math/big"
 	"strings"
-	"unicode"
 
 	"github.com/invakid404/minijinja-go/v2/filters"
 	mjerrors "github.com/invakid404/minijinja-go/v2/internal/errors"
+	"github.com/invakid404/minijinja-go/v2/internal/unicodecase"
 	"github.com/invakid404/minijinja-go/v2/value"
 )
+
+// noArgs and oneArg are the tests' side of the engine's `from_args` contract.
+// A test's Rust signature fixes its arity exactly, and keyword arguments reach
+// it as one trailing value, so `1 is defined(2)` and `1 is eq(1, 2)` are
+// argument errors rather than ignored extras.
+// strSubject is the `&str` ArgType: a value that is not a string is a
+// conversion error, not a false answer (value/argtypes.rs:469-480). `42 is
+// lower` fails on both sides.
+func strSubject(val value.Value) (string, error) {
+	s, ok := val.AsString()
+	if !ok {
+		return "", mjerrors.NewError(mjerrors.ErrInvalidOperation, "value is not a string")
+	}
+	return s, nil
+}
+
+// coerceStr is the `Cow<'_, str>` ArgType: a string is taken as is and
+// anything else is stringified (value/argtypes.rs:547-568).
+func coerceStr(val value.Value) string {
+	if s, ok := val.AsString(); ok {
+		return s
+	}
+	return val.String()
+}
+
+func noArgs(args []value.Value) error {
+	if len(args) > 0 {
+		return mjerrors.NewError(mjerrors.ErrTooManyArguments, "too many arguments")
+	}
+	return nil
+}
+
+func oneArg(args []value.Value) error {
+	if len(args) < 1 {
+		return mjerrors.NewError(mjerrors.ErrMissingArgument, "missing argument")
+	}
+	if len(args) > 1 {
+		return mjerrors.NewError(mjerrors.ErrTooManyArguments, "too many arguments")
+	}
+	return nil
+}
 
 type undefinedBehaviorProvider interface {
 	UndefinedBehavior() value.UndefinedBehavior
@@ -39,7 +81,10 @@ func undefinedBehavior(state filters.State) value.UndefinedBehavior {
 //	{% if my_variable is defined %}
 //	  {{ my_variable }}
 //	{% endif %}
-func TestDefined(_ filters.State, val value.Value, _ []value.Value) (bool, error) {
+func TestDefined(_ filters.State, val value.Value, args []value.Value) (bool, error) {
+	if err := noArgs(args); err != nil {
+		return false, err
+	}
 	return !val.IsUndefined(), nil
 }
 
@@ -57,7 +102,10 @@ func TestDefined(_ filters.State, val value.Value, _ []value.Value) (bool, error
 //	{% if my_variable is undefined %}
 //	  Variable not set
 //	{% endif %}
-func TestUndefined(_ filters.State, val value.Value, _ []value.Value) (bool, error) {
+func TestUndefined(_ filters.State, val value.Value, args []value.Value) (bool, error) {
+	if err := noArgs(args); err != nil {
+		return false, err
+	}
 	return val.IsUndefined(), nil
 }
 
@@ -75,7 +123,10 @@ func TestUndefined(_ filters.State, val value.Value, _ []value.Value) (bool, err
 //	{% if value is none %}
 //	  Value is null
 //	{% endif %}
-func TestNone(_ filters.State, val value.Value, _ []value.Value) (bool, error) {
+func TestNone(_ filters.State, val value.Value, args []value.Value) (bool, error) {
+	if err := noArgs(args); err != nil {
+		return false, err
+	}
 	return val.IsNone(), nil
 }
 
@@ -94,7 +145,10 @@ func TestNone(_ filters.State, val value.Value, _ []value.Value) (bool, error) {
 //	{% if value is true %}
 //	  Value is exactly true
 //	{% endif %}
-func TestTrue(_ filters.State, val value.Value, _ []value.Value) (bool, error) {
+func TestTrue(_ filters.State, val value.Value, args []value.Value) (bool, error) {
+	if err := noArgs(args); err != nil {
+		return false, err
+	}
 	if b, ok := val.AsBool(); ok {
 		return b, nil
 	}
@@ -115,7 +169,10 @@ func TestTrue(_ filters.State, val value.Value, _ []value.Value) (bool, error) {
 //	{% if value is false %}
 //	  Value is exactly false
 //	{% endif %}
-func TestFalse(_ filters.State, val value.Value, _ []value.Value) (bool, error) {
+func TestFalse(_ filters.State, val value.Value, args []value.Value) (bool, error) {
+	if err := noArgs(args); err != nil {
+		return false, err
+	}
 	if b, ok := val.AsBool(); ok {
 		return !b, nil
 	}
@@ -142,6 +199,9 @@ func TestFalse(_ filters.State, val value.Value, _ []value.Value) (bool, error) 
 //	{{ 42 is odd }}
 //	  -> false
 func TestOdd(_ filters.State, val value.Value, args []value.Value) (bool, error) {
+	if err := noArgs(args); err != nil {
+		return false, err
+	}
 	if len(args) > 0 {
 		return false, mjerrors.NewError(mjerrors.ErrInvalidOperation, "odd test expects no arguments")
 	}
@@ -176,6 +236,9 @@ func TestOdd(_ filters.State, val value.Value, args []value.Value) (bool, error)
 //	{{ 41 is even }}
 //	  -> false
 func TestEven(_ filters.State, val value.Value, args []value.Value) (bool, error) {
+	if err := noArgs(args); err != nil {
+		return false, err
+	}
 	if len(args) > 0 {
 		return false, mjerrors.NewError(mjerrors.ErrInvalidOperation, "even test expects no arguments")
 	}
@@ -206,12 +269,35 @@ func TestEven(_ filters.State, val value.Value, args []value.Value) (bool, error
 //	{{ 42 is divisibleby(5) }}
 //	  -> false
 func TestDivisibleBy(_ filters.State, val value.Value, args []value.Value) (bool, error) {
-	if len(args) < 1 {
-		return false, fmt.Errorf("divisibleby test requires argument")
+	if err := oneArg(args); err != nil {
+		return false, err
 	}
-	if i, ok := val.AsInt(); ok {
-		if d, ok := args[0].AsInt(); ok && d != 0 {
-			return i%d == 0, nil
+	if len(args) < 1 {
+		return false, mjerrors.NewError(mjerrors.ErrMissingArgument, "missing argument")
+	}
+	// `coerce(v, other)` gives an I128 pair for two integers, so a value past
+	// int64 decides here rather than being truncated to zero: the port ignored
+	// AsInt's success flag and `18446744073709551616 is divisibleby(3)` came
+	// out true. AsBigInt is the engine's own i128 conversion.
+	if lhs, lok := val.AsBigInt(); lok {
+		if rhs, rok := args[0].AsBigInt(); rok {
+			if rhs.Sign() == 0 {
+				// The engine computes `a % b` on integers and panics on a zero
+				// divisor. A panic is not a behaviour worth reproducing, and
+				// answering `false` where the reference implementation aborts
+				// is the dangerous direction, so this refuses instead. Corpus:
+				// test/divisibleby-zero.
+				return false, mjerrors.NewError(mjerrors.ErrInvalidOperation,
+					"cannot check divisibility by zero")
+			}
+			return new(big.Int).Rem(lhs, rhs).Sign() == 0, nil
+		}
+	}
+	// Floats coerce and follow IEEE semantics, where a zero divisor is a NaN
+	// remainder rather than a trap: `6.0 is divisibleby(0.0)` is false.
+	if a, ok := val.AsFloat(); ok {
+		if b, ok := args[0].AsFloat(); ok {
+			return math.Mod(a, b) == 0, nil
 		}
 	}
 	return false, nil
@@ -236,6 +322,9 @@ func TestDivisibleBy(_ filters.State, val value.Value, args []value.Value) (bool
 //	{{ [1, 2, 3]|select("==", 1) }}
 //	  -> [1]
 func TestEq(_ filters.State, val value.Value, args []value.Value) (bool, error) {
+	if err := oneArg(args); err != nil {
+		return false, err
+	}
 	if len(args) < 1 {
 		return false, nil
 	}
@@ -261,6 +350,9 @@ func TestEq(_ filters.State, val value.Value, args []value.Value) (bool, error) 
 //	{{ [1, 2, 3]|select("!=", 1) }}
 //	  -> [2, 3]
 func TestNe(_ filters.State, val value.Value, args []value.Value) (bool, error) {
+	if err := oneArg(args); err != nil {
+		return false, err
+	}
 	if len(args) < 1 {
 		return false, nil
 	}
@@ -286,6 +378,9 @@ func TestNe(_ filters.State, val value.Value, args []value.Value) (bool, error) 
 //	{{ [1, 2, 3]|select("<", 2) }}
 //	  -> [1]
 func TestLt(_ filters.State, val value.Value, args []value.Value) (bool, error) {
+	if err := oneArg(args); err != nil {
+		return false, err
+	}
 	if len(args) < 1 {
 		return false, nil
 	}
@@ -314,6 +409,9 @@ func TestLt(_ filters.State, val value.Value, args []value.Value) (bool, error) 
 //	{{ [1, 2, 3]|select("<=", 2) }}
 //	  -> [1, 2]
 func TestLe(_ filters.State, val value.Value, args []value.Value) (bool, error) {
+	if err := oneArg(args); err != nil {
+		return false, err
+	}
 	if len(args) < 1 {
 		return false, nil
 	}
@@ -342,6 +440,9 @@ func TestLe(_ filters.State, val value.Value, args []value.Value) (bool, error) 
 //	{{ [1, 2, 3]|select(">", 2) }}
 //	  -> [3]
 func TestGt(_ filters.State, val value.Value, args []value.Value) (bool, error) {
+	if err := oneArg(args); err != nil {
+		return false, err
+	}
 	if len(args) < 1 {
 		return false, nil
 	}
@@ -370,6 +471,9 @@ func TestGt(_ filters.State, val value.Value, args []value.Value) (bool, error) 
 //	{{ [1, 2, 3]|select(">=", 2) }}
 //	  -> [2, 3]
 func TestGe(_ filters.State, val value.Value, args []value.Value) (bool, error) {
+	if err := oneArg(args); err != nil {
+		return false, err
+	}
 	if len(args) < 1 {
 		return false, nil
 	}
@@ -396,6 +500,9 @@ func TestGe(_ filters.State, val value.Value, args []value.Value) (bool, error) 
 //	{{ [1, 2, 3]|select("in", [1, 2]) }}
 //	  -> [1, 2]
 func TestIn(state filters.State, val value.Value, args []value.Value) (bool, error) {
+	if err := oneArg(args); err != nil {
+		return false, err
+	}
 	if len(args) < 1 {
 		return false, nil
 	}
@@ -422,7 +529,10 @@ func TestIn(state filters.State, val value.Value, args []value.Value) (bool, err
 //	  -> true
 //	{{ 42 is string }}
 //	  -> false
-func TestString(_ filters.State, val value.Value, _ []value.Value) (bool, error) {
+func TestString(_ filters.State, val value.Value, args []value.Value) (bool, error) {
+	if err := noArgs(args); err != nil {
+		return false, err
+	}
 	return val.Kind() == value.KindString, nil
 }
 
@@ -441,7 +551,10 @@ func TestString(_ filters.State, val value.Value, _ []value.Value) (bool, error)
 //	  -> true
 //	{{ "42" is number }}
 //	  -> false
-func TestNumber(_ filters.State, val value.Value, _ []value.Value) (bool, error) {
+func TestNumber(_ filters.State, val value.Value, args []value.Value) (bool, error) {
+	if err := noArgs(args); err != nil {
+		return false, err
+	}
 	return val.Kind() == value.KindNumber, nil
 }
 
@@ -461,7 +574,10 @@ func TestNumber(_ filters.State, val value.Value, _ []value.Value) (bool, error)
 //	  -> true
 //	{{ 42.0 is integer }}
 //	  -> false
-func TestInteger(_ filters.State, val value.Value, _ []value.Value) (bool, error) {
+func TestInteger(_ filters.State, val value.Value, args []value.Value) (bool, error) {
+	if err := noArgs(args); err != nil {
+		return false, err
+	}
 	// `tests::is_integer` is `v.is_integer()` (tests.rs:179-181), a question
 	// about the PAYLOAD: every integer ValueRepr answers true and nothing else
 	// does. Asking it through a conversion instead made `true is integer` and
@@ -484,7 +600,10 @@ func TestInteger(_ filters.State, val value.Value, _ []value.Value) (bool, error
 //	  -> true
 //	{{ 42 is float }}
 //	  -> false
-func TestFloat(_ filters.State, val value.Value, _ []value.Value) (bool, error) {
+func TestFloat(_ filters.State, val value.Value, args []value.Value) (bool, error) {
+	if err := noArgs(args); err != nil {
+		return false, err
+	}
 	return val.IsActualFloat(), nil
 }
 
@@ -504,7 +623,10 @@ func TestFloat(_ filters.State, val value.Value, _ []value.Value) (bool, error) 
 //	  -> true
 //	{{ 1 is boolean }}
 //	  -> false
-func TestBoolean(_ filters.State, val value.Value, _ []value.Value) (bool, error) {
+func TestBoolean(_ filters.State, val value.Value, args []value.Value) (bool, error) {
+	if err := noArgs(args); err != nil {
+		return false, err
+	}
 	return val.Kind() == value.KindBool, nil
 }
 
@@ -522,7 +644,10 @@ func TestBoolean(_ filters.State, val value.Value, _ []value.Value) (bool, error
 //
 //	{{ "<hello>"|escape is safe }}
 //	  -> true
-func TestSafe(_ filters.State, val value.Value, _ []value.Value) (bool, error) {
+func TestSafe(_ filters.State, val value.Value, args []value.Value) (bool, error) {
+	if err := noArgs(args); err != nil {
+		return false, err
+	}
 	return val.IsSafe(), nil
 }
 
@@ -543,6 +668,9 @@ func TestSafe(_ filters.State, val value.Value, _ []value.Value) (bool, error) {
 //	{{ false is sameas(false) }}
 //	  -> true
 func TestSameAs(_ filters.State, val value.Value, args []value.Value) (bool, error) {
+	if err := oneArg(args); err != nil {
+		return false, err
+	}
 	if len(args) < 1 {
 		return false, nil
 	}
@@ -564,13 +692,19 @@ func TestSameAs(_ filters.State, val value.Value, args []value.Value) (bool, err
 //	  -> true
 //	{{ "Foo" is lower }}
 //	  -> false
-func TestLower(_ filters.State, val value.Value, _ []value.Value) (bool, error) {
-	s, ok := val.AsString()
-	if !ok {
-		return false, nil
+func TestLower(_ filters.State, val value.Value, args []value.Value) (bool, error) {
+	if err := noArgs(args); err != nil {
+		return false, err
 	}
+	s, err := strSubject(val)
+	if err != nil {
+		return false, err
+	}
+	// `name.chars().all(char::is_lowercase)` (tests.rs:...): EVERY character
+	// must be lowercase, so a digit or a punctuation mark makes it false —
+	// the port skipped non-letters and answered true for "a1".
 	for _, r := range s {
-		if !unicode.IsLower(r) && unicode.IsLetter(r) {
+		if !unicodecase.IsLower(r) {
 			return false, nil
 		}
 	}
@@ -592,13 +726,16 @@ func TestLower(_ filters.State, val value.Value, _ []value.Value) (bool, error) 
 //	  -> true
 //	{{ "Foo" is upper }}
 //	  -> false
-func TestUpper(_ filters.State, val value.Value, _ []value.Value) (bool, error) {
-	s, ok := val.AsString()
-	if !ok {
-		return false, nil
+func TestUpper(_ filters.State, val value.Value, args []value.Value) (bool, error) {
+	if err := noArgs(args); err != nil {
+		return false, err
+	}
+	s, err := strSubject(val)
+	if err != nil {
+		return false, err
 	}
 	for _, r := range s {
-		if !unicode.IsUpper(r) && unicode.IsLetter(r) {
+		if !unicodecase.IsUpper(r) {
 			return false, nil
 		}
 	}
@@ -619,10 +756,13 @@ func TestUpper(_ filters.State, val value.Value, _ []value.Value) (bool, error) 
 //	{% if "tojson" is filter %}
 //	  JSON serialization available
 //	{% endif %}
-func TestFilter(state filters.State, val value.Value, _ []value.Value) (bool, error) {
-	name, ok := val.AsString()
-	if !ok {
-		return false, nil
+func TestFilter(state filters.State, val value.Value, args []value.Value) (bool, error) {
+	if err := noArgs(args); err != nil {
+		return false, err
+	}
+	name, err := strSubject(val)
+	if err != nil {
+		return false, err
 	}
 	_, exists := state.GetFilter(name)
 	return exists, nil
@@ -642,10 +782,13 @@ func TestFilter(state filters.State, val value.Value, _ []value.Value) (bool, er
 //	{% if "greaterthan" is test %}
 //	  Comparison tests available
 //	{% endif %}
-func TestTest(state filters.State, val value.Value, _ []value.Value) (bool, error) {
-	name, ok := val.AsString()
-	if !ok {
-		return false, nil
+func TestTest(state filters.State, val value.Value, args []value.Value) (bool, error) {
+	if err := noArgs(args); err != nil {
+		return false, err
+	}
+	name, err := strSubject(val)
+	if err != nil {
+		return false, err
 	}
 	_, exists := state.GetTest(name)
 	return exists, nil
@@ -666,7 +809,10 @@ func TestTest(state filters.State, val value.Value, _ []value.Value) (bool, erro
 //	  -> true
 //	{{ 42 is sequence }}
 //	  -> false
-func TestSequence(_ filters.State, val value.Value, _ []value.Value) (bool, error) {
+func TestSequence(_ filters.State, val value.Value, args []value.Value) (bool, error) {
+	if err := noArgs(args); err != nil {
+		return false, err
+	}
 	return val.Kind() == value.KindSeq, nil
 }
 
@@ -685,7 +831,10 @@ func TestSequence(_ filters.State, val value.Value, _ []value.Value) (bool, erro
 //	  -> true
 //	{{ [1, 2, 3] is mapping }}
 //	  -> false
-func TestMapping(_ filters.State, val value.Value, _ []value.Value) (bool, error) {
+func TestMapping(_ filters.State, val value.Value, args []value.Value) (bool, error) {
+	if err := noArgs(args); err != nil {
+		return false, err
+	}
 	return val.Kind() == value.KindMap, nil
 }
 
@@ -704,8 +853,19 @@ func TestMapping(_ filters.State, val value.Value, _ []value.Value) (bool, error
 //	  -> true
 //	{{ 42 is iterable }}
 //	  -> false
-func TestIterable(_ filters.State, val value.Value, _ []value.Value) (bool, error) {
-	return val.Iter() != nil, nil
+func TestIterable(_ filters.State, val value.Value, args []value.Value) (bool, error) {
+	if err := noArgs(args); err != nil {
+		return false, err
+	}
+	// `v.try_iter().is_ok()` (tests.rs:223-225): none and undefined iterate as
+	// empty and are therefore iterable, while a number is not.
+	switch val.Kind() {
+	case value.KindSeq, value.KindMap, value.KindIterable, value.KindString,
+		value.KindNone, value.KindUndefined:
+		return true, nil
+	default:
+		return val.Iter() != nil, nil
+	}
 }
 
 // TestStartingWith checks if a string starts with a given prefix.
@@ -724,15 +884,15 @@ func TestIterable(_ filters.State, val value.Value, _ []value.Value) (bool, erro
 //	{{ "foobar" is startingwith("bar") }}
 //	  -> false
 func TestStartingWith(_ filters.State, val value.Value, args []value.Value) (bool, error) {
+	if err := oneArg(args); err != nil {
+		return false, err
+	}
 	if len(args) < 1 {
 		return false, nil
 	}
-	if s, ok := val.AsString(); ok {
-		if prefix, ok := args[0].AsString(); ok {
-			return strings.HasPrefix(s, prefix), nil
-		}
-	}
-	return false, nil
+	// Both sides are `Cow<'_, str>`, which stringifies a non-string value
+	// rather than refusing it: `42 is startingwith(4)` is true.
+	return strings.HasPrefix(coerceStr(val), coerceStr(args[0])), nil
 }
 
 // TestEndingWith checks if a string ends with a given suffix.
@@ -751,15 +911,13 @@ func TestStartingWith(_ filters.State, val value.Value, args []value.Value) (boo
 //	{{ "foobar" is endingwith("foo") }}
 //	  -> false
 func TestEndingWith(_ filters.State, val value.Value, args []value.Value) (bool, error) {
+	if err := oneArg(args); err != nil {
+		return false, err
+	}
 	if len(args) < 1 {
 		return false, nil
 	}
-	if s, ok := val.AsString(); ok {
-		if suffix, ok := args[0].AsString(); ok {
-			return strings.HasSuffix(s, suffix), nil
-		}
-	}
-	return false, nil
+	return strings.HasSuffix(coerceStr(val), coerceStr(args[0])), nil
 }
 
 // TestContaining checks if a value contains another value.
@@ -779,6 +937,9 @@ func TestEndingWith(_ filters.State, val value.Value, args []value.Value) (bool,
 //	{{ [1, 2, 3] is containing(2) }}
 //	  -> true
 func TestContaining(_ filters.State, val value.Value, args []value.Value) (bool, error) {
+	if err := oneArg(args); err != nil {
+		return false, err
+	}
 	if len(args) < 1 {
 		return false, nil
 	}

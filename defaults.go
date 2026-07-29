@@ -6,10 +6,33 @@ import (
 	"strings"
 
 	"github.com/invakid404/minijinja-go/v2/filters"
+	"github.com/invakid404/minijinja-go/v2/internal/unicodecase"
 	"github.com/invakid404/minijinja-go/v2/tests"
 	"github.com/invakid404/minijinja-go/v2/value"
 )
 
+// The default registry is exactly the builtin set BAML's engine build enables.
+//
+// BAML compiles minijinja with `default-features = false` plus `macros,
+// builtins, debug, preserve_order, adjacent_loop_items, unicode, json,
+// unstable_machinery, custom_syntax, deserialization, serde`
+// (BoundaryML/baml@85247f45 engine/Cargo.toml:99-115), so the engine's
+// registry is `defaults.rs:64-236` under that feature set. Diffing it against
+// the Go port's original defaults left exactly five names the port had and the
+// engine does not, and they are deliberately **not** registered here:
+//
+//	filter    urlencode    gated behind the engine's `urlencode` feature, which BAML does not enable
+//	test      containing   not in minijinja 2.16.0 at all
+//	function  cycler       idem
+//	function  joiner       idem
+//	function  lipsum       idem
+//
+// Answering them would be the dangerous direction: a template BAML rejects
+// outright would silently render here. Leaving them unregistered produces the
+// engine's own unknown-filter/test/function error instead.
+// filters.FilterUrlencode and tests.TestContaining remain exported for callers
+// who opt in explicitly; nothing reaches them by default. The three functions
+// had no exported form and are gone. Corpus: `err/go-only-*`.
 func registerDefaultFilters(env *Environment) {
 	// String filters
 	env.AddFilter("upper", filters.FilterUpper)
@@ -68,9 +91,8 @@ func registerDefaultFilters(env *Environment) {
 	env.AddFilter("indent", filters.FilterIndent)
 	env.AddFilter("pprint", filters.FilterPprint)
 
-	// JSON and URL filters
+	// JSON filters
 	env.AddFilter("tojson", filters.FilterTojson)
-	env.AddFilter("urlencode", filters.FilterUrlencode)
 }
 
 func registerDefaultTests(env *Environment) {
@@ -109,7 +131,6 @@ func registerDefaultTests(env *Environment) {
 	env.AddTest("iterable", tests.TestIterable)
 	env.AddTest("startingwith", tests.TestStartingWith)
 	env.AddTest("endingwith", tests.TestEndingWith)
-	env.AddTest("containing", tests.TestContaining)
 	env.AddTest("safe", tests.TestSafe)
 	env.AddTest("escaped", tests.TestSafe) // alias
 	env.AddTest("sameas", tests.TestSameAs)
@@ -119,226 +140,257 @@ func registerDefaultTests(env *Environment) {
 	env.AddTest("test", tests.TestTest)
 }
 
+// registerDefaultFunctions registers the engine's four globals
+// (defaults.rs:211-236). `cycler`, `joiner` and `lipsum` are Go-port additions
+// and are withdrawn; see the note on registerDefaultFilters.
 func registerDefaultFunctions(env *Environment) {
 	env.AddFunction("range", fnRange)
 	env.AddFunction("dict", fnDict)
-	env.AddFunction("cycler", fnCycler)
-	env.AddFunction("joiner", fnJoiner)
 	env.AddFunction("namespace", fnNamespace)
 	env.AddFunction("debug", fnDebug)
-	env.AddFunction("lipsum", fnLipsum)
 }
 
 // --- Functions ---
 
-// rangeArg is the engine's `isize` ArgType conversion for a range bound
-// (functions.rs:326, value/argtypes.rs:410-435). A bound that does not convert
-// is an error, not a silent zero: `range(1.5)` and `range(9e99)` both fail
-// where the port previously produced an empty or wrong range.
-func rangeArg(v value.Value) (int64, error) {
-	i, ok := v.AsInt()
-	if !ok {
-		return 0, NewError(ErrInvalidOperation,
-			fmt.Sprintf("cannot convert %s to isize", v.Kind()))
+// prettyRepr is Rust's alternate debug format, `{:#?}`: a container is printed
+// one element per line, indented four spaces per level, with a trailing comma
+// on every element. A scalar prints the same as its compact debug form.
+//
+// The renderer is selected the way the engine selects it (value/object.rs:327-353),
+// the same way `pprint` does — `debug(x)` is literally `format!("{x:#?}")`
+// (functions.rs:430-439), the same formatting `{x:#?}` that `pprint` is. A
+// sequence OR an iterable is a `debug_list`, but only when its enumerator has
+// an EXACT length: the engine will not risk iterating an unsized object just
+// to print it, and falls back to the object's own debug form. So
+// `debug(42|chain([1]))` is `<iterator>`, not a materialized list — and
+// materializing it was also evaluating an iteration the engine never performs.
+func prettyRepr(val value.Value, depth int) string {
+	pad := strings.Repeat("    ", depth)
+	inner := pad + "    "
+
+	switch val.Kind() {
+	case value.KindSeq, value.KindIterable:
+		if _, sized := val.Len(); !sized {
+			return val.Repr()
+		}
+		items := val.Iter()
+		if len(items) == 0 {
+			return "[]"
+		}
+		var b strings.Builder
+		b.WriteString("[\n")
+		for _, item := range items {
+			b.WriteString(inner)
+			b.WriteString(prettyRepr(item, depth+1))
+			b.WriteString(",\n")
+		}
+		b.WriteString(pad)
+		b.WriteString("]")
+		return b.String()
+	case value.KindMap:
+		keys, _ := val.MapKeys()
+		if len(keys) == 0 {
+			return "{}"
+		}
+		ordered, hasOrder := val.AsOrderedMap()
+		var b strings.Builder
+		b.WriteString("{\n")
+		for _, key := range keys {
+			b.WriteString(inner)
+			if hasOrder {
+				b.WriteString(ordered.KeyRepr(key))
+			} else {
+				b.WriteString(value.FromString(key).Repr())
+			}
+			b.WriteString(": ")
+			b.WriteString(prettyRepr(val.GetItem(value.FromString(key)), depth+1))
+			b.WriteString(",\n")
+		}
+		b.WriteString(pad)
+		b.WriteString("}")
+		return b.String()
+	default:
+		return val.Repr()
 	}
-	return i, nil
 }
 
-func fnRange(_ *State, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
-	var start, stop, step int64 = 0, 0, 1
+// mappingEntries copies a value the engine would accept as a mapping. That is
+// wider than "a plain map": the loop object and an imported module are mappings
+// too (`ObjectRepr::Map`), which is what `dict(loop, extra=2)` relies on.
+// sortedNames is the deterministic order for a mapping with no order of its
+// own.
+func sortedNames(m map[string]value.Value) []string {
+	names := make([]string, 0, len(m))
+	for name := range m {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	return names
+}
 
-	// Arguments go through the engine's primitive integer conversion, so a bool
-	// is an argument (range(true) is range(1)) and an integral float is an
-	// argument. A value that does not convert is an error: range(1.5) and
-	// range('2') must not quietly become an empty range.
-	if len(args) >= 1 && len(args) <= 3 {
-		bounds := make([]int64, len(args))
-		for i, arg := range args {
-			n, err := rangeArg(arg)
-			if err != nil {
-				return value.Undefined(), err
-			}
-			bounds[i] = n
+func mappingEntries(val value.Value, present bool) (*value.OrderedMap, error) {
+	rv := value.NewOrderedMap(0)
+	if !present {
+		return rv, nil
+	}
+	// An ordered mapping is copied entry by entry so each key keeps how it was
+	// SPELLED: `dict({8: 8})` renders `{8: 8}` and not `{"8": 8}`, because the
+	// engine collects the source's key VALUES (`obj.try_iter_pairs().collect()`,
+	// functions.rs:397-400) rather than their string forms.
+	if src, ok := val.AsOrderedMap(); ok {
+		for _, name := range src.Keys() {
+			rv.CopyEntryFrom(src, name)
 		}
-		switch len(bounds) {
-		case 1:
-			stop = bounds[0]
-		case 2:
-			start, stop = bounds[0], bounds[1]
-		case 3:
-			start, stop, step = bounds[0], bounds[1], bounds[2]
+		return rv, nil
+	}
+	// Through MapKeys so the copy keeps the source's own order. It also
+	// accepts the mapping-shaped objects the engine does — the loop object and
+	// an imported module — which is what `dict(loop, extra=2)` relies on.
+	if keys, ok := val.MapKeys(); ok {
+		for _, name := range keys {
+			rv.Set(name, val.GetAttr(name))
 		}
-	} else {
-		return value.FromIterator(value.NewIterator("range", nil)), nil
+		return rv, nil
+	}
+	if m, ok := val.AsMap(); ok {
+		for _, name := range sortedNames(m) {
+			rv.Set(name, m[name])
+		}
+		return rv, nil
+	}
+	return nil, fmt.Errorf("not a mapping")
+}
+
+func fnRange(_ *State, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
+	// `range(lower: isize, upper: Option<isize>, step: Option<isize>)`
+	// (functions.rs:326-360). There is no Kwargs parameter, so a keyword
+	// argument arrives as a trailing value and lands in the next integer slot,
+	// where a map is not an integer.
+	a := filters.NewArgs(args, kwargs)
+	lower, err := a.Int("isize")
+	if err != nil {
+		return value.Undefined(), err
+	}
+	upper, hasUpper, err := a.OptInt("isize")
+	if err != nil {
+		return value.Undefined(), err
+	}
+	step, hasStep, err := a.OptInt("isize")
+	if err != nil {
+		return value.Undefined(), err
+	}
+	if err := a.Done(); err != nil {
+		return value.Undefined(), err
 	}
 
+	start, stop := int64(0), lower
+	if hasUpper {
+		start, stop = lower, upper
+	}
+	if !hasStep {
+		step = 1
+	}
 	if step == 0 {
 		return value.Undefined(), NewError(ErrInvalidOperation, "cannot create range with step of 0")
 	}
 
-	length := int64(0)
-	if step > 0 {
-		if stop > start {
-			length = (stop - start + step - 1) / step
-		}
-	} else {
-		if stop < start {
-			negStep := -step
-			length = (start - stop + negStep - 1) / negStep
-		}
-	}
-	if length > 100000 {
+	// The cardinality is computed in UNSIGNED arithmetic and the loop then runs
+	// a checked number of times. Computing `stop - start` in int64 overflows
+	// near the boundaries — `range(MaxInt64-1, MaxInt64, 2)` produced a length
+	// of one but a loop whose first increment wrapped to MinInt64 and never
+	// reached the odd stop again, so it allocated forever. Two's-complement
+	// subtraction gives the true distance whenever the endpoints are ordered,
+	// so the count is exact at both ends of the range.
+	count := rangeCount(start, stop, step)
+	if count > 100000 {
 		return value.Undefined(), NewError(ErrInvalidOperation, "range has too many elements")
 	}
 
-	var result []value.Value
-	if step > 0 {
-		for i := start; i < stop; i += step {
-			result = append(result, value.FromInt(i))
-		}
-	} else {
-		for i := start; i > stop; i += step {
-			result = append(result, value.FromInt(i))
+	result := make([]value.Value, 0, count)
+	i := start
+	for n := uint64(0); n < count; n++ {
+		result = append(result, value.FromInt(i))
+		if n+1 < count {
+			// Only advance while another element is coming: the step past the
+			// last one could overflow, and nothing would read it.
+			i += step
 		}
 	}
 	return value.FromIterator(value.NewIterator("range", result)), nil
 }
 
-func fnDict(_ *State, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
-	result := make(map[string]value.Value)
-
-	// First, copy from first positional argument if it's a map
-	if len(args) > 0 {
-		if m, ok := args[0].AsMap(); ok {
-			for k, v := range m {
-				result[k] = v
-			}
-		} else {
-			// Try to iterate as items
-			items := args[0].Iter()
-			if items != nil {
-				for _, item := range items {
-					if pair, ok := item.AsSlice(); ok && len(pair) == 2 {
-						if k, ok := pair[0].AsString(); ok {
-							result[k] = pair[1]
-						}
-					}
-				}
-			}
+// rangeCount is how many values `range(start, stop, step)` yields, computed
+// without signed overflow.
+func rangeCount(start, stop, step int64) uint64 {
+	var span, magnitude uint64
+	if step > 0 {
+		if stop <= start {
+			return 0
 		}
-	}
-
-	// Then apply kwargs (overwriting)
-	for k, v := range kwargs {
-		result[k] = v
-	}
-	return value.FromMap(result), nil
-}
-
-func fnCycler(_ *State, args []value.Value, _ map[string]value.Value) (value.Value, error) {
-	return value.FromObject(&cyclerObject{
-		items: args,
-		index: 0,
-	}), nil
-}
-
-// cyclerObject implements a cycler that cycles through values
-type cyclerObject struct {
-	items []value.Value
-	index int
-}
-
-func (c *cyclerObject) GetAttr(name string) value.Value {
-	switch name {
-	case "next":
-		return value.FromCallable(&cyclerNextCallable{cycler: c})
-	case "current":
-		if len(c.items) == 0 {
-			return value.Undefined()
+		span = uint64(stop) - uint64(start)
+		magnitude = uint64(step)
+	} else {
+		if stop >= start {
+			return 0
 		}
-		idx := c.index
-		if idx == 0 {
-			idx = len(c.items)
-		}
-		return c.items[idx-1]
-	case "reset":
-		return value.FromCallable(&cyclerResetCallable{cycler: c})
+		span = uint64(start) - uint64(stop)
+		// -step overflows for MinInt64; the magnitude is exact in unsigned.
+		magnitude = -uint64(step)
 	}
-	return value.Undefined()
-}
-
-type cyclerNextCallable struct {
-	cycler *cyclerObject
-}
-
-func (c *cyclerNextCallable) Call(state value.State, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
-	_ = state
-	if len(c.cycler.items) == 0 {
-		return value.Undefined(), nil
+	count := span / magnitude
+	if span%magnitude != 0 {
+		count++
 	}
-	result := c.cycler.items[c.cycler.index]
-	c.cycler.index = (c.cycler.index + 1) % len(c.cycler.items)
-	return result, nil
+	return count
 }
 
-type cyclerResetCallable struct {
-	cycler *cyclerObject
-}
-
-func (c *cyclerResetCallable) Call(state value.State, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
-	_ = state
-	c.cycler.index = 0
-	return value.Undefined(), nil
-}
-
-func fnJoiner(_ *State, args []value.Value, _ map[string]value.Value) (value.Value, error) {
-	sep := ", "
-	if len(args) > 0 {
-		if s, ok := args[0].AsString(); ok {
-			sep = s
-		}
+func fnDict(_ *State, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
+	// `dict(value: Option<Value>, update_with: Kwargs)` (functions.rs:394-414):
+	// the keyword arguments are taken first, then the optional positional
+	// value, which must be a mapping if it is given at all.
+	a := filters.NewArgs(args, kwargs).KwargsAll()
+	base, hasBase, err := a.OptValue()
+	if err != nil {
+		return value.Undefined(), err
 	}
-	return value.FromCallable(&joinerCallable{
-		sep:   sep,
-		first: true,
-	}), nil
-}
-
-// joinerCallable implements a joiner that returns separator after first call
-type joinerCallable struct {
-	sep   string
-	first bool
-}
-
-func (j *joinerCallable) Call(state value.State, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
-	_ = state
-	if j.first {
-		j.first = false
-		return value.FromString(""), nil
-	}
-	return value.FromString(j.sep), nil
-}
-
-func fnNamespace(_ *State, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
-	ns := &namespaceValue{
-		data: make(map[string]value.Value),
+	if err := a.Done(); err != nil {
+		return value.Undefined(), err
 	}
 
-	// If first argument is a map, copy from it
-	if len(args) > 0 {
-		if m, ok := args[0].AsMap(); ok {
-			for k, v := range m {
-				ns.data[k] = v
-			}
-		} else if !args[0].IsUndefined() && !args[0].IsNone() {
-			return value.Undefined(), NewError(ErrInvalidOperation, "namespace expects a mapping")
-		}
+	result, err := mappingEntries(base, hasBase)
+	if err != nil {
+		return value.Undefined(), NewError(ErrInvalidOperation, "invalid operation")
+	}
+	// CopyEntryFrom, not Set: an entry splatted out of `**{8: 8}` reached the
+	// kwargs map with its key SPELLING intact, and copying only the string form
+	// would render it back as `{"8": 8}` where the engine renders `{8: 8}`.
+	// The spelling travels with the entry all the way to the result.
+	for _, k := range kwargs.Keys() {
+		result.CopyEntryFrom(kwargs, k)
+	}
+	return value.FromOrderedMap(result), nil
+}
+
+func fnNamespace(_ *State, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
+	// `namespace(defaults: Option<Value>)` (functions.rs:452-475). There is no
+	// Kwargs parameter: `namespace(count=0)` works because the keyword
+	// arguments arrive as a map and land in `defaults`. A second positional
+	// argument is therefore one too many.
+	a := filters.NewArgs(args, kwargs)
+	defaults, hasDefaults, err := a.OptValue()
+	if err != nil {
+		return value.Undefined(), err
+	}
+	if err := a.Done(); err != nil {
+		return value.Undefined(), err
 	}
 
-	// Apply kwargs
-	for k, v := range kwargs {
-		ns.data[k] = v
+	data, err := mappingEntries(defaults, hasDefaults)
+	if err != nil {
+		return value.Undefined(), NewError(ErrInvalidOperation,
+			fmt.Sprintf("expected object or keyword arguments, got %s", defaults.Kind()))
 	}
+	ns := &namespaceValue{data: data.Map()}
 	return value.FromObject(ns), nil
 }
 
@@ -354,6 +406,17 @@ func (n *namespaceValue) GetAttr(name string) value.Value {
 	return value.Undefined()
 }
 
+// LookupAttr reports presence separately from the value, so a namespace entry
+// holding undefined is still an entry: `namespace(x=missing).x()` is "value of
+// type undefined is not callable", not an unknown method.
+func (n *namespaceValue) LookupAttr(name string) (value.Value, bool) {
+	v, ok := n.data[name]
+	if !ok {
+		return value.Undefined(), false
+	}
+	return v, true
+}
+
 func (n *namespaceValue) SetAttr(name string, val value.Value) {
 	n.data[name] = val
 }
@@ -367,7 +430,7 @@ func (n *namespaceValue) String() string {
 
 	parts := make([]string, 0, len(keys))
 	for _, k := range keys {
-		parts = append(parts, fmt.Sprintf("%q: %s", k, n.data[k].Repr()))
+		parts = append(parts, fmt.Sprintf("%s: %s", unicodecase.QuoteDebug(k), n.data[k].Repr()))
 	}
 	return "{" + strings.Join(parts, ", ") + "}"
 }
@@ -376,20 +439,27 @@ func (n *namespaceValue) Map() map[string]value.Value {
 	return n.data
 }
 
-func fnDebug(state *State, args []value.Value, _ map[string]value.Value) (value.Value, error) {
-	// If arguments provided, debug those values
-	if len(args) > 0 {
-		var parts []string
-		for _, arg := range args {
-			parts = append(parts, arg.Repr())
-		}
-		return value.FromString(strings.Join(parts, ", ")), nil
+func fnDebug(state *State, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
+	// `debug(state, args: Rest<Value>)` (functions.rs:430-450): keyword
+	// arguments are part of the debugged list, as one trailing map, so
+	// `debug(foo=1)` is not the same call as `debug()`.
+	args = filters.NewArgs(args, kwargs).Rest()
+
+	// One argument is pretty-debugged on its own; several are pretty-debugged
+	// as the argument SLICE (functions.rs:431-439). The port joined the
+	// compact forms with ", ", so `debug(1, 2)` was `1, 2` where the engine
+	// prints a multi-line list.
+	if len(args) == 1 {
+		return value.FromString(prettyRepr(args[0], 0)), nil
+	}
+	if len(args) > 1 {
+		return value.FromString(prettyRepr(value.FromSlice(args), 0)), nil
 	}
 
 	// Otherwise debug the current state
 	var parts []string
 	parts = append(parts, fmt.Sprintf("State {"))
-	parts = append(parts, fmt.Sprintf("  name: %q,", state.name))
+	parts = append(parts, fmt.Sprintf("  name: %s,", unicodecase.QuoteDebug(state.name)))
 	parts = append(parts, "  current variables: {")
 
 	// Collect variables from scopes
@@ -418,31 +488,4 @@ func fnDebug(state *State, args []value.Value, _ map[string]value.Value) (value.
 	parts = append(parts, "}")
 
 	return value.FromString(strings.Join(parts, "\n")), nil
-}
-
-func fnLipsum(_ *State, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
-	n := int64(5)
-	if len(args) > 0 {
-		if nn, ok := args[0].AsInt(); ok {
-			n = nn
-		}
-	}
-	if nn, ok := kwargs["n"]; ok {
-		if nnn, ok := nn.AsInt(); ok {
-			n = nnn
-		}
-	}
-
-	lorem := "Lorem ipsum dolor sit amet, consectetur adipiscing elit. " +
-		"Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. " +
-		"Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris. "
-
-	var result strings.Builder
-	for i := int64(0); i < n; i++ {
-		if i > 0 {
-			result.WriteString("\n\n")
-		}
-		result.WriteString(lorem)
-	}
-	return value.FromSafeString("<p>" + result.String() + "</p>"), nil
 }

@@ -13,6 +13,12 @@ description = "Differential-oracle harness: runs a corpus row through BAML's Rus
 name = "mj-oracle-harness"
 path = "src/main.rs"
 
+# Dumps the Rust Unicode tables the fork's string builtins must agree with.
+# See src/casegen.rs and internal/unicodecase.
+[[bin]]
+name = "mj-casegen"
+path = "src/casegen.rs"
+
 [dependencies]
 # BAML's engine fork, pinned to the exact revision BAML v0.223 builds against.
 # Its sole delta over upstream minijinja 2.16.0 is the generic `value_cmp`
@@ -34,6 +40,17 @@ minijinja = { git = "https://github.com/boundaryml/minijinja.git", rev = "8cfc77
   "deserialization",
   "serde",
 ] }
+# The Python-compatible method surface BAML installs on its environment
+# (jinja_helpers.rs:34). It is a separate crate in the same pinned tree, so it
+# resolves against the exact same engine build rather than a second copy.
+minijinja-contrib = { git = "https://github.com/boundaryml/minijinja.git", rev = "8cfc770a5dffeda2de5b910d2b9f870d7edeff7c", default-features = false, features = [
+  "pycompat",
+] }
+# The case-insensitive comparison the engine's `sort` and `groupby` use under
+# the `unicode` feature (filters.rs:284-300). It is already in this build as a
+# transitive dependency of minijinja; naming it directly is what lets mj-casegen
+# dump its fold table for internal/unicodecase.
+unicase = "2.9"
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["preserve_order"] }
 sha2 = "0.10"

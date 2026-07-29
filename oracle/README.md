@@ -8,11 +8,11 @@ oracle/corpus/*.json ──┬──> oracle/harness (Rust)  ─> boundaryml/min
                        └──> oracle (Go)            ─> this fork                     ─┘
 ```
 
-The corpus is split by lane — `seed.json`, `template.json`, `numeric.json` — and each file is
-recorded independently as `recorded/rust-8cfc770-<lane>.json`. Adding rows to
-one lane therefore never invalidates another lane's recording. Row ids are
-unique across the whole set, because the ledger and `PATCHES.md` are keyed by
-them.
+The corpus is split by lane — `seed.json`, `template.json`, `numeric.json`,
+`coercion.json`, `builtins.json`, `argcontract.json`, `reviewfixes.json` — and
+each file is recorded independently as `recorded/rust-8cfc770-<lane>.json`. Adding rows to one lane therefore never
+invalidates another lane's recording. Row ids are unique across the whole set,
+because the ledger and `PATCHES.md` are keyed by them.
 
 The Rust harness links **the exact engine revision BAML v0.223 builds against**
 (`boundaryml/minijinja`, branch `value-cmp`, rev `8cfc770a5dffeda2de5b910d2b9f870d7edeff7c`)
@@ -40,9 +40,14 @@ lane lands, a three-way result becomes diagnostic:
 | no | no | this fork's engine (`class: engine`) |
 | all three differ | | the harness is incomplete or the fixture is wrong (`class: harness-incomplete`) |
 
-That is why corpus rows carry a `profile` field even though `stock` is the only
-value today: the BAML profile arrives as a second profile on both sides without
-a schema change.
+That is why corpus rows carry a `profile` field. Two exist today:
+
+| profile | environment |
+| --- | --- |
+| `stock` | stock engine defaults |
+| `pycompat` | stock defaults plus the Python-compatible unknown-method callback — `minijinja-contrib::pycompat` on the Rust side, this fork's `pycompat` package on the Go side. It is a *generic* engine capability driven by an installable module, which is why it is not the BAML profile: no `regex_match`, no `sum`, no none-formatter. |
+
+The BAML v0.223 profile arrives as a third value without a schema change.
 
 ## Running it
 
@@ -60,6 +65,13 @@ go test ./...
 
 # Refresh the recording after changing the corpus or the harness.
 ./record.sh
+
+# Regenerate internal/unicodecase from the Rust toolchain's Unicode tables and
+# the pinned unicase crate's fold table. MJ_RUSTC_VERSION is read by option_env!,
+# so it has to be set when the generator is COMPILED, not when it is run.
+(cd harness && MJ_RUSTC_VERSION="$(rustc --version)" cargo build --release --bin mj-casegen)
+./harness/target/release/mj-casegen > ../internal/unicodecase/testdata/rust-unicode.json
+go run ./cmd/gentables
 ```
 
 Each `recorded/rust-8cfc770-<lane>.json` is a committed run of the harness. It
@@ -104,6 +116,85 @@ contract. A row that starts or stops faulting fails, a change to either
 diagnostic fails, and a new panic row anywhere in the corpus fails until it is
 pinned deliberately. So a claim of byte-exactness means byte-exact on the
 compared signature, with the one field outside it pinned rather than ignored.
+
+Four rows pin that diagnostic by CONTENT rather than by wording, and the reason
+is the toolchain rather than the contract. Rust std's message for a
+not-a-char-boundary abort is not a stable API; two rustc releases word the same
+fault as
+
+```text
+byte index 1 is not a char boundary; it is inside '日' (bytes 0..3) of `日`
+end byte index 1 is not a char boundary; it is inside '日' (bytes 0..3 of string)
+```
+
+Pinning either verbatim pins the machine that recorded it, and the differential
+then goes red on a runner whose rustc words it the other way — which is exactly
+what happened. So `review/pyformat-precision-char-boundary` and its three
+siblings pin the offset, the scalar and its byte range, read out of whichever
+wording the toolchain produced. All three ARE the fault, so a cut that moves
+still fails, and a message that is not this fault at all still fails. This is
+the same discipline the generated Unicode tables use: compare the DATA the
+toolchain carries, never the toolchain's own prose.
+`TestCharBoundaryAbortCoreIsIndependentOfRustcWording` carries both wordings so
+neither is left untested by the machine that happens to be running.
+
+### The row budget
+
+Both sides evaluate every row under a wall-clock bound — `ROW_TIMEOUT` in
+`harness/src/main.rs`, `RowTimeout` in `fork.go` — and report `timeout` as an
+outcome. Without it a single non-terminating input could not be in the corpus at
+all; with it, `review/pycompat-count-empty-needle` is a row with a ledger entry.
+
+The bound separates **does not terminate** from **is slow**, so it is set far
+above the slowest real row rather than close to it. Measured at this tip:
+
+| | all 1972 rows, excluding the one deliberate timeout | slowest single row |
+| --- | --- | --- |
+| Rust harness | ~0.5 s total | well under 0.1 s |
+| Go runner | 80 ms total | 6.4 ms (`arity/join-extra`) |
+
+It is **30 seconds**, about 150x the whole corpus's evaluation time. It used to
+be 5 seconds, and 5 was not enough margin on a shared CI runner: the ubuntu job
+recorded a timeout on `review/pprint-key-mixed` — a pretty-print of a
+three-entry map — while the macos job passed the same row, reddening the merge
+gate on something that is not a divergence. A timed-out row's worker is left
+behind spinning until its process exits, which is one more reason the budget
+wants headroom rather than precision.
+
+The cost is paid by exactly one row. `review/pycompat-count-empty-needle` loops
+forever in the reference module, so no finite bound lets it through and a larger
+one only makes it wait longer; the live differential therefore spends ~30 s in
+the `reviewfixes` lane and microseconds everywhere else. `LoadHarnessOutcomes`
+memoizes the harness per corpus for the life of the process so that a `go test
+./...` sweeping the corpus four times pays that once, not four times.
+
+**The memo is keyed by what its inputs CONTAIN, not by what they are called.**
+Both inputs move under a stable name: `cargo build --release` rewrites the
+harness at the path it already had, and `record.sh` rewrites a recording at the
+path it already had. So the key carries a SHA-256 of the harness binary or
+recording file as it is at that moment, beside the corpus digest — recomputed
+per load, never itself cached by path. For that digest to be about the harness
+that runs, the name has to be resolved to a file first: a bare
+`MJ_ORACLE_HARNESS` means one thing to `exec` (a PATH search) and another to the
+digest's `os.Open` (the working directory), so the PATH lookup happens once, up
+front, and both halves use its answer. A source that cannot be digested at all
+gets no entry rather than a wrong one, so a missing harness or absent recording
+still fails in the load path's own words. Without this, a process that rebuilds
+its Rust reference and compares again is answered from the reference it
+replaced, which is a green differential against an engine that is no longer on
+disk. `harness_cache_test.go` replaces each input in place, holding every name
+fixed, and requires the next load to see it — for a harness named by path and
+for one named bare on PATH, the latter with an unchanging same-named file in the
+working directory to catch a key that describes the wrong file.
+
+**A timeout is compared as `timeout`, with the number excluded.** The seconds
+field is the bound the row exceeded — a property of how the runner is
+configured, not of what the engine did — so comparing it would pin every
+recording and the ledger to whatever the budget happens to be, and raising the
+budget after a flake would read as a divergence that changed shape.
+`TestTimeoutSignatureIgnoresTheBudget` pins that, and it is why this change
+moved exactly one line of recorded output (`"seconds": 5` -> `"seconds": 30`)
+and no ledger signature at all.
 
 ## The ledger
 
@@ -163,6 +254,18 @@ Running the *Rust harness* on both architectures is what surfaced that: it
 disagreed with itself on exactly those two rows. A defect in the fixture, not in
 either engine.
 
+**And run-deterministic, which is the same rule one layer down.** A map literal
+must not hold two keys the engine compares EQUAL but hashes apart, because the
+engine's map is an `IndexMap` seeded per process: the two keys usually land in
+different buckets and stay separate, and on the seeds where they collide the
+equality check collapses them. `{1: 'a', 'b': 2, true: 3}` is such a map —
+`1 == true` — and it rendered `{1: 3, "b": 2}` in 3 runs out of 200 here. It
+reddened the merge gate on ubuntu while macos passed the same row, and it was
+retired (patch #100) in favour of one map with an int key beside a string and
+one with a bool key beside a string. The collapse itself can never be a corpus
+row: an outcome that depends on a random seed has no recording to compare
+against.
+
 **`coercion.json`** — 256 rows for the coercion, comparison, container and VM
 class: equality, ordering and containment over a cross-product of typed operands
 **in both operand orders**; truthiness, `and`/`or`/`not`, ternaries, `~` and `is`
@@ -173,24 +276,111 @@ float boundary); `range`; and the display form of every container shape. The row
 the fork agrees on are as load-bearing as the red ones: they are what makes a
 regression in this class fail.
 
+**`builtins.json`** — 395 rows: every filter, test and function BAML's engine
+build enables, each with valid input, bad input and the exact error; the whole
+`minijinja-contrib::pycompat` dispatch table, run on the `pycompat` profile;
+printf and `str.format` specs; Unicode casing, whitespace and digit edges; JSON
+and float formatting; and the five Go-only names (`urlencode`, `containing`,
+`cycler`, `joiner`, `lipsum`) that must be *rejected* with the engine's own
+unknown-filter/test/function error.
+
+**`argcontract.json`** — 440 rows: the engine's `from_args` contract itself.
+Arity and keyword handling for all 94 registered names, the invalid-value
+boundary (`ValueRepr::Invalid` and the engine's four validation points), call
+dispatch (`unknown_function` for an unresolved name versus `invalid_operation`
+for a resolved non-callable), bare-call evaluation order, and macro lifetime
+and `{% call %}` semantics.
+
 ### Engine profiles
 
 `trim_blocks`, `lstrip_blocks` and `keep_trailing_newline` cannot be reached
 from template source — they are environment settings — so a row can name one of
-five profiles, and both sides configure the environment identically:
+six profiles, and both sides configure the environment identically:
 `stock`, `trim_blocks`, `lstrip_blocks`, `trim_lstrip` (the pair BAML's own
-environment sets) and `keep_trailing_newline`. Every profile is *engine
-configuration only*; BAML's environment (globals, filters, pycompat) is not
-here and arrives as its own profile in a later slice.
+environment sets), `keep_trailing_newline`, and `pycompat`, which installs the
+Python-compatible unknown-method module BAML installs on its own environment
+(`minijinja-contrib::pycompat` on the Rust side, this fork's `pycompat` package
+on the Go side). Every profile is *engine configuration only*; BAML's
+environment (globals, `regex_match`/`sum`, the none-formatter, prompt lowering)
+is not here and arrives as its own profile in a later slice.
+
+**`reviewfixes.json`** — 518 rows: the cases five rounds of cold review found by
+probing the pinned engine directly rather than by reading the corpus. `range`
+cardinality at the i64 boundary; integer ArgTypes at their declared widths,
+including `usize` at its real 64-bit one; integers past i64 through the tests
+and the formatters; the string tests' typing; composite sort and select paths;
+the pycompat view objects' kind, indexing and truth; `debug()`'s exact bytes;
+whether a macro accepts the synthetic `caller` keyword, decided the way the
+compiler decides it; `dict()`'s key spellings; the engine's one case-insensitive
+comparator across `sort`, `groupby` and `dictsort`; `groupby`'s two observable
+kinds; and the debug form of a string, which every container rendering goes
+through. The fourth round added 202 more: method dispatch on an attribute that is
+PRESENT but undefined; the reverse order the compiler emits macro parameter
+defaults in; `unique`'s `BTreeSet<Value>` memo, which routes host objects through
+the generic comparison hook; the attribute-path grammar — empty comma fields, a
+complete `usize` parse, an empty attribute that is still a path — across all six
+consumers; `chain`'s newest-first mapping lookup; the formatter's `i128`-then-`u128`
+cast; `indent`'s terminal line ending; `items` and `zip` as iterable objects; and
+`pprint`'s alternate debug layout. The fifth round added 28 more: two about
+ORDER — that a macro rejects an unused keyword before a parameter default can run
+and mask the error, and that `debug()` selects its renderer by whether the
+enumerator has an exact length, the same selection `pprint` already made — and
+then `pprint`'s map KEYS, which were quoted unconditionally where the engine
+spells each key by its own debug form. That last one was found by probing the
+engine for a claim about the two renderers rather than by suspecting the code,
+and it was invisible to the differential until its row existed. A row here is a
+repro that was RED against the engine before it was a row.
 
 ### Where the corpus stands
 
-363 rows: 353 agree, 10 diverge and every one of the 10 is declared — none of
-them in the template lane or the numeric lane, whose rows all agree with the
-engine. The `value_cmp` rows are the generic form of BAML's #597 enum fence: a
-host object with a canonical comparison identity (`RED`) and a different display
-(`Red`). Its display row agrees on both engines, which is what isolates the
-remaining four rows to comparison dispatch rather than to the fixture.
+1972 rows: 1956 agree, 16 diverge and every one of the 16 is declared. None is
+in the template, numeric, coercion or argument-contract lane, whose rows all
+agree with the engine. Fourteen of the sixteen are deliberate and permanent
+rather than pending:
+
+- `test/divisibleby-zero` — the engine PANICS on a zero divisor and the fork
+  refuses with an error instead.
+- `review/usize-batch-u64-upper`, `review/usize-slice-u64-upper`,
+  `review/usize-indent-u64-upper`, `review/usize-tojson-u64-upper`,
+  `review/usize-batch-u64-max`, `review/usize-batch-float-u64-upper`,
+  `review/usize-batch-i64-max` — the same disposition one layer up. A `usize`
+  argument that sizes an allocation converts on both sides; the engine then
+  reserves that much memory and aborts with a capacity overflow, and the fork
+  refuses. That the CONVERSION agrees is proven separately and greenly by
+  `review/usize-*-too-many`, where the value converts and the call fails on its
+  arity instead.
+- `review/pycompat-count-empty-needle` — `"abc".count("")` does not terminate in
+  the reference module; the outcome is recorded as a timeout rather than the row
+  being left out. See [the row budget](#the-row-budget) for what "timeout" is
+  compared as.
+- `fn/debug-state-dump` — `debug()` with no arguments prints the host language's
+  debug rendering of the environment, Rust type paths included.
+- `review/pyformat-precision-char-boundary`, `-printf`, `-combining`,
+  `-mid-string` — a format precision is a BYTE count, and the engine applies it
+  by slicing the Rust string with it. When the cut is not a UTF-8 character
+  boundary, `&text[..p]` aborts, so there is no successful outcome to reproduce;
+  Go's own slicing would hand back invalid UTF-8 the engine never produces, so
+  the fork refuses. That the RULE is byte-exact is proven separately and greenly
+  by the `review/pyformat-precision-*` rows beside them, where the cut lands on
+  a boundary.
+
+Two are pending, and both belong to the error surface:
+
+- `syntax/bad-escape-capital-u`, `syntax/bad-escape-rust-unicode` — the lexer's
+  string escapes, owned by slice 6. Both sit in the builtins lane because that
+  is where they were found, not because they are builtins.
+
+`container/dict-function-kwargs-order` used to be here and is gone: the callable
+signature now carries an ordered keyword mapping (`value.Callable`,
+`value.MethodCallable`, `value.CallableObject`, `filters.FilterFunc`,
+`FunctionFunc` all take a `*value.OrderedMap`), so `dict(b=1, a=2)` keeps its
+order and an unknown-keyword error names the first one written. See PATCHES.md
+#69 and #81.
+
+Error TEXT is checked as well as error category: `messages_test.go` compares the
+message both engines produce for every row that fails on both sides, and carries
+two declared wording exceptions, one owned by slice 4's value model and one by
+the error surface.
 
 `arith/int-mul-i64-edge` used to be **architecture-dependent**: the fork rendered
 `9223372036854775807` on darwin/arm64 and `-9223372036854775808` on linux/amd64
@@ -212,6 +402,26 @@ undeclared numeric mismatch fails the first; declaring it fails the second. The
 class is the whole `numeric` lane plus every row with surface `arithmetic`, so a
 numeric regression cannot escape into the seed lane. A later slice adds its own
 lane the same way as it lands.
+
+**The builtins lane does not have that gate, and the omission is deliberate.**
+Its three lanes (`builtins`, `argcontract`, `reviewfixes`) hold fourteen ledger
+entries and none of them is a decline being hidden:
+
+| Row | Why it is not a numeric-style failure |
+| --- | --- |
+| `test/divisibleby-zero` | The engine PANICS; the fork errors. A gate demanding byte-exactness here would demand reproducing a panic. |
+| `review/usize-*` (7 rows) | The same: the engine reserves an unallocatable amount of memory and aborts. A gate here would demand that a Go library abort, or exhaust its memory, on template input. The conversion those rows are really about IS gated, by the green `review/usize-*-too-many` rows beside them. |
+| `review/pycompat-count-empty-needle` | The reference module does not terminate. A gate would demand reproducing a non-terminating loop. |
+| `review/pyformat-precision-char-boundary` (4 rows) | Rust's `str` slicing ABORTS at a cut that is not a character boundary. A gate here would demand returning invalid UTF-8 that the engine never produces. The RULE — a precision counts bytes and cuts there — IS gated, by the green `review/pyformat-precision-*` rows beside them. |
+| `fn/debug-state-dump` | The engine's bytes are Rust type paths. A gate would demand hard-coding them into a Go engine. |
+| `syntax/bad-escape-capital-u`, `syntax/bad-escape-rust-unicode` | Lexer rows that merely live in this lane; the error surface owns them. |
+
+Every one of those is a SAFETY or host-language decision, and every one of them
+is a row that runs on both sides on every run — not an omission. So the builtins
+gate is stated rather than automated: **every row that is about a builtin agrees
+byte for byte, including its error text.** A reviewer checking that claim should
+read the ledger, not a passing test — which is exactly why the entries above are
+enumerated here.
 
 ## Rust is test-only
 

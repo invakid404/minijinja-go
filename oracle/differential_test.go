@@ -303,3 +303,49 @@ func TestTemplateCorpusExercisesEveryProfile(t *testing.T) {
 		}
 	}
 }
+
+// TestTimeoutSignatureIgnoresTheBudget pins the one thing that lets the row
+// budget be a reliability knob rather than part of the contract.
+//
+// Seconds is the BOUND a row exceeded, a property of how the runner is
+// configured, not of what the engine did. If it were compared, every recording
+// and the ledger signature for review/pycompat-count-empty-needle would be
+// pinned to whatever RowTimeout happened to be, and raising the budget after a
+// CI flake — which changes no behaviour at all — would read as a divergence
+// that changed shape. What is asserted is "did not terminate within the bound",
+// and that holds at any bound.
+func TestTimeoutSignatureIgnoresTheBudget(t *testing.T) {
+	five := Outcome{Status: StatusTimeout, Seconds: 5}
+	thirty := Outcome{Status: StatusTimeout, Seconds: 30}
+	none := Outcome{Status: StatusTimeout}
+
+	if got := thirty.Signature(); got != "timeout" {
+		t.Errorf("timeout signature = %q, want %q", got, "timeout")
+	}
+	for _, pair := range []struct {
+		name string
+		a, b Outcome
+	}{
+		{"recorded at 5s vs run at 30s", five, thirty},
+		{"budget recorded vs absent", thirty, none},
+	} {
+		if !pair.a.Equivalent(pair.b) {
+			t.Errorf("%s: %q and %q are not equivalent", pair.name, pair.a.Describe(), pair.b.Describe())
+		}
+	}
+
+	// The budget is still reported, because a reader of the table wants to know
+	// how long the row was given before it was called non-terminating.
+	if got := thirty.Describe(); got != "timeout after 30s" {
+		t.Errorf("Describe() = %q, want %q", got, "timeout after 30s")
+	}
+
+	// And a timeout is not equivalent to any other status: making the seconds
+	// invisible must not make the outcome itself invisible.
+	if thirty.Equivalent(Outcome{Status: StatusPanic}) {
+		t.Error("a timeout compares equal to a panic")
+	}
+	if thirty.Equivalent(Outcome{Status: StatusOK, Render: "4"}) {
+		t.Error("a timeout compares equal to a rendered value")
+	}
+}

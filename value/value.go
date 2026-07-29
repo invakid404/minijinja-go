@@ -61,6 +61,8 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+
+	"github.com/invakid404/minijinja-go/v2/internal/unicodecase"
 )
 
 // Callable is an interface for callable objects like functions and macros.
@@ -72,7 +74,7 @@ import (
 //
 //	type myCallable struct{}
 //
-//	func (m *myCallable) Call(state State, args []Value, kwargs map[string]Value) (Value, error) {
+//	func (m *myCallable) Call(state State, args []Value, kwargs *OrderedMap) (Value, error) {
 //	    // Process positional arguments
 //	    if len(args) > 0 {
 //	        fmt.Println("First arg:", args[0].String())
@@ -88,10 +90,14 @@ type Callable interface {
 	//
 	// The state provides access to the template rendering context.
 	// The args slice contains positional arguments in order.
-	// The kwargs map contains keyword arguments by name.
+	// The kwargs mapping contains keyword arguments IN THE ORDER THEY WERE
+	// WRITTEN: the engine passes keyword arguments as one ordered map, and
+	// that order is observable — `dict(b=1, a=2)` renders `{"b": 1, "a": 2}`,
+	// and the first unused keyword is the one an argument error names. It may
+	// be nil, which is the same as empty.
 	//
 	// Returns the result value and any error that occurred.
-	Call(state State, args []Value, kwargs map[string]Value) (Value, error)
+	Call(state State, args []Value, kwargs *OrderedMap) (Value, error)
 }
 
 // Object is an interface for custom objects with attribute access.
@@ -336,7 +342,7 @@ type Value struct {
 }
 
 // internal marker types for special values
-type undefinedType struct{
+type undefinedType struct {
 	silent bool
 }
 type noneType struct{}
@@ -617,7 +623,7 @@ func FromMap(v map[string]Value) Value {
 // Example usage:
 //
 //	type MyFunc struct{}
-//	func (f *MyFunc) Call(args []Value, kwargs map[string]Value) (Value, error) {
+//	func (f *MyFunc) Call(args []Value, kwargs *OrderedMap) (Value, error) {
 //	    return FromString("Hello!"), nil
 //	}
 //
@@ -824,6 +830,11 @@ func (v Value) Kind() ValueKind {
 	case Callable:
 		return KindCallable
 	case Object:
+		if _, ok := d.(*invalidObject); ok {
+			// An error travelling as a value has its own kind, which is what
+			// the engine reports for it (value/mod.rs:1110).
+			return KindInvalid
+		}
 		// Check ObjectRepr to determine the appropriate kind
 		switch GetObjectRepr(d) {
 		case ObjectReprSeq:
@@ -860,7 +871,7 @@ type callableObjectWrapper struct {
 	obj CallableObject
 }
 
-func (w *callableObjectWrapper) Call(state State, args []Value, kwargs map[string]Value) (Value, error) {
+func (w *callableObjectWrapper) Call(state State, args []Value, kwargs *OrderedMap) (Value, error) {
 	return w.obj.ObjectCall(state, args, kwargs)
 }
 
@@ -1045,9 +1056,14 @@ func (v Value) Repr() string {
 		// arm builds, with the ".0" already forced on an integral value.
 		return formatFloat(d)
 	case string:
-		return fmt.Sprintf("%q", d)
+		// `Debug for str`, not Go's %q: the escape syntax differs and Rust
+		// escapes every grapheme-extended scalar, so `['e' + U+0301]` renders
+		// `["e\u{301}"]`. See [unicodecase.QuoteDebug].
+		return unicodecase.QuoteDebug(d)
 	case safeString:
-		return fmt.Sprintf("%q", string(d))
+		// A safe string is a string to the debug formatter; the marker only
+		// affects auto-escaping.
+		return unicodecase.QuoteDebug(string(d))
 	case []byte:
 		return fmt.Sprintf("b%q", d)
 	case []Value:
@@ -1370,17 +1386,29 @@ func (v Value) GetItem(key Value) Value {
 	case ItemGetter:
 		return d.GetItem(key)
 	case Object:
-		// Check for SeqObject for index access
-		if idx, ok := key.AsInt(); ok {
-			if so, ok := d.(SeqObject); ok {
-				length := so.SeqLen()
-				if idx < 0 {
-					idx = int64(length) + idx
+		// How an object is subscripted follows its REPRESENTATION, exactly as
+		// `get_item_opt` dispatches on `obj.repr()` (value/mod.rs:1504-1541).
+		switch GetObjectRepr(d) {
+		case ObjectReprSeq:
+			if idx, ok := key.AsInt(); ok {
+				if so, ok := d.(SeqObject); ok {
+					length := so.SeqLen()
+					if idx < 0 {
+						idx = int64(length) + idx
+					}
+					if idx >= 0 && idx < int64(length) {
+						return so.SeqItem(int(idx))
+					}
+					return Undefined()
 				}
-				if idx >= 0 && idx < int64(length) {
-					return so.SeqItem(int(idx))
-				}
-				return Undefined()
+			}
+		case ObjectReprIterable:
+			// An iterable has no indexing of its own, so the engine falls back
+			// to `nth()` on a fresh iterator — "this lets one slice an array and
+			// then index into it". That fallback is why `dict(a=1).keys()[0]`
+			// answers even though the view is not a sequence.
+			if idx, ok := key.AsInt(); ok {
+				return iterableNth(d, idx)
 			}
 		}
 		// Fall through to attribute access for string keys
@@ -1407,6 +1435,40 @@ func (v Value) GetAttr(name string) Value {
 		return d.GetAttr(name)
 	}
 	return Undefined()
+}
+
+// LookupAttr is [Value.GetAttr] with the engine's presence answer kept: the
+// second result reports whether the attribute EXISTS, which for a mapping is
+// not the same question as whether its value is undefined.
+//
+// It is `get_value(&Value::from(key)) -> Option<Value>` (value/object.rs:181),
+// the hook `Object::call_method` branches on when it decides between calling
+// the attribute and reporting an unknown method.
+func (v Value) LookupAttr(name string) (Value, bool) {
+	switch d := v.data.(type) {
+	case map[string]Value:
+		val, ok := d[name]
+		return orUndefined(val, ok), ok
+	case *OrderedMap:
+		val, ok := d.Get(name)
+		return orUndefined(val, ok), ok
+	case Object:
+		if l, ok := d.(ObjectWithAttrLookup); ok {
+			return l.LookupAttr(name)
+		}
+		// Without the optional hook an object cannot tell the two apart, and
+		// an undefined answer is the absent one.
+		val := d.GetAttr(name)
+		return val, !val.IsUndefined()
+	}
+	return Undefined(), false
+}
+
+func orUndefined(v Value, ok bool) Value {
+	if !ok {
+		return Undefined()
+	}
+	return v
 }
 
 // AsObject returns the Object if this value wraps one.

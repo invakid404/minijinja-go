@@ -42,9 +42,10 @@ func (q *Query) clone() *Query {
 	return clone
 }
 
-func (q *Query) Filter(kwargs map[string]value.Value) *Query {
+func (q *Query) Filter(kwargs *value.OrderedMap) *Query {
 	rv := q.clone()
-	for key, val := range kwargs {
+	for _, key := range kwargs.Keys() {
+		val, _ := kwargs.Get(key)
 		rv.filters[key] = val
 	}
 	return rv
@@ -66,7 +67,7 @@ func (q *Query) GetAttr(name string) value.Value {
 	return value.Undefined()
 }
 
-func (q *Query) CallMethod(state value.State, name string, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
+func (q *Query) CallMethod(state value.State, name string, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
 	switch name {
 	case "filter":
 		if len(args) > 0 {
@@ -112,7 +113,7 @@ func asQuery(val value.Value) (*Query, bool) {
 func main() {
 	env := minijinja.NewEnvironment()
 
-	env.AddFunction("query", func(state *minijinja.State, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
+	env.AddFunction("query", func(state *minijinja.State, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
 		if len(args) != 1 {
 			return value.Undefined(), fmt.Errorf("query expects one table name")
 		}
@@ -123,7 +124,7 @@ func main() {
 		return value.FromObject(NewQuery(table)), nil
 	})
 
-	env.AddFilter("filter", func(state minijinja.FilterState, val value.Value, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
+	env.AddFilter("filter", func(state minijinja.FilterState, val value.Value, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
 		q, ok := asQuery(val)
 		if !ok {
 			return value.Undefined(), fmt.Errorf("filter expects a query object")
@@ -131,7 +132,7 @@ func main() {
 		return value.FromObject(q.Filter(kwargs)), nil
 	})
 
-	env.AddFilter("limit", func(state minijinja.FilterState, val value.Value, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
+	env.AddFilter("limit", func(state minijinja.FilterState, val value.Value, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
 		q, ok := asQuery(val)
 		if !ok {
 			return value.Undefined(), fmt.Errorf("limit expects a query object")
@@ -146,7 +147,7 @@ func main() {
 		return value.FromObject(q.Limit(count)), nil
 	})
 
-	env.AddFilter("offset", func(state minijinja.FilterState, val value.Value, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
+	env.AddFilter("offset", func(state minijinja.FilterState, val value.Value, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
 		q, ok := asQuery(val)
 		if !ok {
 			return value.Undefined(), fmt.Errorf("offset expects a query object")

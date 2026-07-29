@@ -5,8 +5,12 @@
 #
 # It re-downloads the pinned upstream commit, replays the declared mechanical
 # transform (module-path rewrite + vendored-fixture path constants), and diffs
-# the result against this working tree.  Anything else — any semantic delta —
-# shows up as a diff and fails the check.
+# the result against this working tree.
+#
+# Two kinds of difference are allowed and no others: the mechanical transform,
+# and the files listed in SEMANTIC_DELTA below, each of which carries a PATCHES.md row
+# and a differential corpus ID.  An undeclared modified file, or a fork-only
+# file that is not in FORK_ADDED, still fails the check.
 #
 # Files that are legitimately fork-only (provenance, CI, oracle) are declared in
 # FORK_ADDED below; the script also fails if a fork-only file appears that is
@@ -14,10 +18,8 @@
 #
 # Usage: scripts/verify-seed.sh [--allow-semantic-delta]
 #
-#   --allow-semantic-delta  report differences but exit 0.  Use this once
-#                           intentional semantic patches start landing (they are
-#                           logged in PATCHES.md); until then the check is
-#                           expected to be exactly clean.
+#   --allow-semantic-delta  report undeclared differences but exit 0.  Declared
+#                           patches never need it.
 
 set -euo pipefail
 
@@ -68,6 +70,27 @@ FORK_ADDED=(
   "value/coercion_fork_test.go"
   "value/valuecmp_fork_test.go"
   "value/orderedmap_fork_test.go"
+  # Slice 5 (builtins + pycompat).  Each is a new module or fixture, not a
+  # change to a derived file, and each is logged in PATCHES.md #45-#68.
+  "pycompat/"
+  "internal/unicodecase/"
+  "internal/pyformat/"
+  "internal/serdejson/"
+  "testdata/inputs/"
+  "testdata/snapshots/filters.txt.snap"
+  "filters/args.go"
+  "unknown_method_test.go"
+  # Round-2 review fixes: whether a macro accepts the synthetic `caller`
+  # keyword is the engine's compile-time free-variable analysis, ported as its
+  # own file rather than grown inside the evaluator.  PATCHES.md #80.
+  "macro_closure.go"
+  "macro_closure_test.go"
+  # Round-4 review fixes: the generic-object proof that `unique` deduplicates
+  # through the value model's comparison hook rather than through a rendered
+  # string.  PATCHES.md #88.
+  "value_cmp_builtins_test.go"
+  "value/invalid.go"
+  "value/invalid_test.go"
 )
 
 # Derived files this fork intentionally modifies, each with the PATCHES.md entry
@@ -78,18 +101,39 @@ SEMANTIC_DELTA=(
   "internal/parser/parser.go"       # #2 statement gate, #8 message wording
   "internal/parser/parser_test.go"  # #2 gated corpus entries are asserted
   "internal/lexer/lexer.go"         # #3 Unicode whitespace trimming
-  "internal/errors/error.go"        # #6 ErrCannotUnpack, #8 ErrUnknownMethod, #31 empty detail
-  "internal_helpers.go"             # #6, #8 re-exports of the new kinds
-  "state.go"                        # #2, #4-#8; #13, #14, #17, #18, #22
-  "minijinja_test.go"               # #2 tests of removed statements
+  "internal/errors/error.go"        # #6 ErrCannotUnpack, #8/#55 ErrUnknownMethod, #31 empty detail
+  "internal_helpers.go"             # #6, #8, #55 re-exports of the new kinds
+  "state.go"                        # #2, #4-#8; #13, #14, #17, #18, #22; #55, #65-#68, #86, #87
+  "minijinja_test.go"               # #2 tests of removed statements, #45 the withdrawal's regression test
   "template_test.go"                # #2 inherited corpus asserts the gate
   "template_state_test.go"          # #2 block-based state tests
   "environment_api_test.go"         # #2 include-based tests
+  "environment.go"                  # #55 SetUnknownMethodCallback
   "value/ops.go"                    # #10-#16, #18, #21 operators; #32-#35, #40, #44 comparison, containment, repetition
-  "value/value.go"                  # #17, #19, #20 conversions and payloads; #36-#38, #42, #44 mapping, truthiness, subscripts
-  "defaults.go"                     # #24 range argument conversion; #41 range error class
-  "filters/filters.go"              # #23 int/abs payload dispatch; #36, #43 ordered mappings, reverse
-  "tests/tests.go"                  # #25 odd/even/integer at i128 width
+  "value/value.go"                  # ... and #86 Value.LookupAttr
+  # Slice 5, keyword-argument order (PATCHES.md #25): the callable, method and
+  # object-call signatures carry an ORDERED keyword mapping, so every
+  # implementation of them moves with the interface.
+  "value/object.go"                 # ... and #86 ObjectWithAttrLookup
+  "value/object_test.go"
+  "undefined_behavior_test.go"
+  "examples/call_block_function/main.go"
+  "examples/context/main.go"
+  "examples/custom_filters/main.go"
+  "examples/dsl/main.go"
+  "examples/dynamic_objects/main.go"
+  "examples/load_resource/main.go"
+  "examples/none_as_undefined/main.go"
+  "examples/state_temps/main.go"
+  "testdata/snapshots/debug.txt.snap"                  # #17, #19, #20 conversions and payloads; #36-#38, #42, #44 mapping, truthiness, subscripts; #64 KindInvalid
+  "defaults.go"                     # #24 range argument conversion; #41 range error class; #45 withdrawn Go-only builtins; #86 namespace attribute presence
+  "filters/filters.go"              # #23 int/abs payload dispatch; #36, #43 ordered mappings, reverse; #46, #48-#53, #58-#63; #88, #90-#95
+  "tests/tests.go"                  # #25 odd/even/integer at i128 width; #47, #54, #56
+  # Slice 5 round 4 (PATCHES.md #91): `chain` over mappings is the engine's
+  # MergeDict, which searches newest-first, skips undefined and enumerates
+  # sorted — so the merged map grew a Display and a constructor that does not
+  # short-circuit a single source.
+  "value/merge_maps.go"
 )
 
 ALLOW_SEMANTIC_DELTA=0

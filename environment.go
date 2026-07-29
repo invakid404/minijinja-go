@@ -142,7 +142,7 @@ type TestState = filters.State
 //
 // Example filter that converts to uppercase:
 //
-//	env.AddFilter("upper", func(state FilterState, val value.Value, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
+//	env.AddFilter("upper", func(state FilterState, val value.Value, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
 //	    s, err := val.AsString()
 //	    if err != nil {
 //	        return value.Undefined(), err
@@ -176,7 +176,7 @@ type TestFunc = filters.TestFunc
 //
 // Example function that returns a range:
 //
-//	env.AddFunction("range", func(state *State, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
+//	env.AddFunction("range", func(state *State, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
 //	    if len(args) != 1 {
 //	        return value.Undefined(), errors.New("range expects 1 argument")
 //	    }
@@ -190,7 +190,7 @@ type TestFunc = filters.TestFunc
 //	    }
 //	    return value.FromSlice(result), nil
 //	})
-type FunctionFunc func(state *State, args []value.Value, kwargs map[string]value.Value) (value.Value, error)
+type FunctionFunc func(state *State, args []value.Value, kwargs *value.OrderedMap) (value.Value, error)
 
 // LoaderFunc is a function that loads template source by name.
 //
@@ -265,6 +265,15 @@ type PathJoinFunc func(name, parent string) string
 //	})
 type AutoEscapeFunc func(name string) AutoEscape
 
+// UnknownMethodFunc is the signature for the environment's unknown-method
+// callback. See Environment.SetUnknownMethodCallback.
+//
+// It receives the state, the value the method was called on, the method name
+// and the call's arguments. Returning an error of kind ErrUnknownMethod means
+// "not implemented here" and lets the engine report its own unknown-method
+// error; any other error is reported to the caller as-is.
+type UnknownMethodFunc func(state *State, val value.Value, method string, args []value.Value, kwargs *value.OrderedMap) (value.Value, error)
+
 // Environment holds the engine configuration.
 //
 // This object holds the central configuration state for templates. It is also
@@ -288,6 +297,7 @@ type Environment struct {
 	loader            LoaderFunc
 	autoEscapeFunc    AutoEscapeFunc
 	pathJoinCallback  PathJoinFunc
+	unknownMethod     UnknownMethodFunc
 	syntaxConfig      syntax.SyntaxConfig
 	wsConfig          syntax.WhitespaceConfig
 	undefinedBehavior UndefinedBehavior
@@ -580,7 +590,7 @@ func (e *Environment) Templates() map[string]*Template {
 // Example:
 //
 //	env := NewEnvironment()
-//	env.AddFilter("shout", func(state FilterState, val value.Value, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
+//	env.AddFilter("shout", func(state FilterState, val value.Value, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
 //	    s, err := val.AsString()
 //	    if err != nil {
 //	        return value.Undefined(), err
@@ -623,7 +633,7 @@ func (e *Environment) AddTest(name string, f TestFunc) {
 // Example:
 //
 //	env := NewEnvironment()
-//	env.AddFunction("greet", func(state *State, args []value.Value, kwargs map[string]value.Value) (value.Value, error) {
+//	env.AddFunction("greet", func(state *State, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
 //	    if len(args) != 1 {
 //	        return value.Undefined(), errors.New("greet expects 1 argument")
 //	    }
@@ -680,6 +690,32 @@ func (e *Environment) SetAutoEscapeFunc(f AutoEscapeFunc) {
 // This is used to implement relative template resolution for include/extends.
 func (e *Environment) SetPathJoinCallback(f PathJoinFunc) {
 	e.pathJoinCallback = f
+}
+
+// SetUnknownMethodCallback sets a callback invoked for unknown methods.
+//
+// The callback is invoked when calling a method on a value fails with
+// ErrUnknownMethod — that is, after the value itself has had its chance to
+// answer. It receives the state, the value, the method name and the call
+// arguments, and it can either return a value or an error:
+//
+//   - an error of kind ErrUnknownMethod means "I do not implement this
+//     either", and the engine's own unknown-method error is reported;
+//   - any other error is reported to the caller unchanged, which is how a
+//     callback signals a bad argument to a method it does implement.
+//
+// This is the seam Python-compatible method surfaces attach to; the pycompat
+// package implements the one BAML installs:
+//
+//	env := minijinja.NewEnvironment()
+//	env.SetUnknownMethodCallback(pycompat.UnknownMethodCallback)
+//	// {{ "Hello".upper() }} now renders "HELLO"
+//
+// Nothing is installed by default. This mirrors the engine, where the
+// callback is a host decision rather than an engine builtin
+// (minijinja environment.rs:304-337, value/mod.rs:1611-1643).
+func (e *Environment) SetUnknownMethodCallback(f UnknownMethodFunc) {
+	e.unknownMethod = f
 }
 
 // SetSyntax sets the syntax configuration for the environment.

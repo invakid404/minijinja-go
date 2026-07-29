@@ -5,10 +5,11 @@
 > success/error behaviour.
 >
 > The baseline tag `v2.16.0-baml.2` is upstream `minijinja-go/v2.16.0`
-> (commit `b9afca42`) with **no semantic changes at all** — only a module-path
-> rewrite and vendored test corpora, proven mechanically by
-> [`scripts/verify-seed.sh`](scripts/verify-seed.sh). (`-baml.0` and `-baml.1`
-> are retained but superseded; see [Releases](UPSTREAM.md#releases).)
+> (commit `b9afca42`) with no semantic changes at all. Since then the fork
+> carries the deltas logged in [PATCHES.md](PATCHES.md), each pinned by a
+> differential corpus row; [`scripts/verify-seed.sh`](scripts/verify-seed.sh)
+> proves that nothing else has changed. (`-baml.0` and `-baml.1` are retained
+> but superseded; see [Releases](UPSTREAM.md#releases).)
 >
 > Semantic patches land on top of that baseline, each one declared and pinned to
 > a differential corpus row. **The statements `block`, `extends`, `include`,
@@ -19,6 +20,15 @@
 > - [UPSTREAM.md](UPSTREAM.md) — pins, ownership boundary, upstream merge procedure
 > - [PATCHES.md](PATCHES.md) — every intentional semantic delta
 > - [oracle/](oracle/) — the differential oracle against BAML's Rust engine
+> - [pycompat/](pycompat/) — Python methods on primitives, the module BAML
+>   installs on its environment. Opt in with
+>   `env.SetUnknownMethodCallback(pycompat.UnknownMethodCallback)`; nothing
+>   installs it for you.
+>
+> The default filter/test/function registry is exactly the set BAML's engine
+> build enables. Five names the Go port shipped — `urlencode`, `containing`,
+> `cycler`, `joiner`, `lipsum` — are deliberately **not** registered, because
+> BAML rejects them.
 >
 > If you are not targeting BAML, use upstream. The README below is upstream's,
 > with the module path rewritten.
