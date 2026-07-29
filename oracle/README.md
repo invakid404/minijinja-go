@@ -117,6 +117,27 @@ diagnostic fails, and a new panic row anywhere in the corpus fails until it is
 pinned deliberately. So a claim of byte-exactness means byte-exact on the
 compared signature, with the one field outside it pinned rather than ignored.
 
+Four rows pin that diagnostic by CONTENT rather than by wording, and the reason
+is the toolchain rather than the contract. Rust std's message for a
+not-a-char-boundary abort is not a stable API; two rustc releases word the same
+fault as
+
+```text
+byte index 1 is not a char boundary; it is inside '日' (bytes 0..3) of `日`
+end byte index 1 is not a char boundary; it is inside '日' (bytes 0..3 of string)
+```
+
+Pinning either verbatim pins the machine that recorded it, and the differential
+then goes red on a runner whose rustc words it the other way — which is exactly
+what happened. So `review/pyformat-precision-char-boundary` and its three
+siblings pin the offset, the scalar and its byte range, read out of whichever
+wording the toolchain produced. All three ARE the fault, so a cut that moves
+still fails, and a message that is not this fault at all still fails. This is
+the same discipline the generated Unicode tables use: compare the DATA the
+toolchain carries, never the toolchain's own prose.
+`TestCharBoundaryAbortCoreIsIndependentOfRustcWording` carries both wordings so
+neither is left untested by the machine that happens to be running.
+
 ## The ledger
 
 `divergences.json` is the permanent record of known differences. The test fails
