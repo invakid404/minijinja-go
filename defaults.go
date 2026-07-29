@@ -394,6 +394,17 @@ func (n *namespaceValue) GetAttr(name string) value.Value {
 	return value.Undefined()
 }
 
+// LookupAttr reports presence separately from the value, so a namespace entry
+// holding undefined is still an entry: `namespace(x=missing).x()` is "value of
+// type undefined is not callable", not an unknown method.
+func (n *namespaceValue) LookupAttr(name string) (value.Value, bool) {
+	v, ok := n.data[name]
+	if !ok {
+		return value.Undefined(), false
+	}
+	return v, true
+}
+
 func (n *namespaceValue) SetAttr(name string, val value.Value) {
 	n.data[name] = val
 }

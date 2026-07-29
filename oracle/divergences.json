@@ -144,6 +144,54 @@
         "error|invalid_operation"
       ],
       "slice": "5 builtins and pycompat (deliberate, permanent)"
+    },
+    {
+      "id": "review/pyformat-precision-char-boundary",
+      "class": "engine",
+      "summary": "`'{:.1}'.format('日')` cuts one byte into a three-byte scalar. A `str.format`/printf PRECISION is a BYTE count, and the engine applies it by SLICING the Rust string with it (format_utils.rs:227-231). When the cut is not a UTF-8 character boundary, `&text[..p]` ABORTS — Rust's own `byte index N is not a char boundary` — so there is no successful outcome to reproduce. Go would slice happily and return the truncated encoding, which is bytes the engine never produces and is not valid UTF-8, so the fork REFUSES with an invalid operation instead. Deliberate and permanent, the same disposition as test/divisibleby-zero and the allocation rows: refusing is the safe direction, answering with invalid bytes is not. The RULE itself — that the precision counts bytes and cuts there — is proven byte-exact by the green review/pyformat-precision-* rows beside these.",
+      "rust_signatures": [
+        "panic"
+      ],
+      "go_signatures": [
+        "error|invalid_operation"
+      ],
+      "slice": "5 builtins and pycompat (deliberate, permanent)"
+    },
+    {
+      "id": "review/pyformat-precision-char-boundary-printf",
+      "class": "engine",
+      "summary": "The same slice reached through printf style rather than `str.format`; both spellings share `format_str`. A `str.format`/printf PRECISION is a BYTE count, and the engine applies it by SLICING the Rust string with it (format_utils.rs:227-231). When the cut is not a UTF-8 character boundary, `&text[..p]` ABORTS — Rust's own `byte index N is not a char boundary` — so there is no successful outcome to reproduce. Go would slice happily and return the truncated encoding, which is bytes the engine never produces and is not valid UTF-8, so the fork REFUSES with an invalid operation instead. Deliberate and permanent, the same disposition as test/divisibleby-zero and the allocation rows: refusing is the safe direction, answering with invalid bytes is not. The RULE itself — that the precision counts bytes and cuts there — is proven byte-exact by the green review/pyformat-precision-* rows beside these.",
+      "rust_signatures": [
+        "panic"
+      ],
+      "go_signatures": [
+        "error|invalid_operation"
+      ],
+      "slice": "5 builtins and pycompat (deliberate, permanent)"
+    },
+    {
+      "id": "review/pyformat-precision-char-boundary-combining",
+      "class": "engine",
+      "summary": "The cut falls inside a COMBINING MARK (e + U+0301) rather than inside the base character, which is a different boundary and a different diagnostic. A `str.format`/printf PRECISION is a BYTE count, and the engine applies it by SLICING the Rust string with it (format_utils.rs:227-231). When the cut is not a UTF-8 character boundary, `&text[..p]` ABORTS — Rust's own `byte index N is not a char boundary` — so there is no successful outcome to reproduce. Go would slice happily and return the truncated encoding, which is bytes the engine never produces and is not valid UTF-8, so the fork REFUSES with an invalid operation instead. Deliberate and permanent, the same disposition as test/divisibleby-zero and the allocation rows: refusing is the safe direction, answering with invalid bytes is not. The RULE itself — that the precision counts bytes and cuts there — is proven byte-exact by the green review/pyformat-precision-* rows beside these.",
+      "rust_signatures": [
+        "panic"
+      ],
+      "go_signatures": [
+        "error|invalid_operation"
+      ],
+      "slice": "5 builtins and pycompat (deliberate, permanent)"
+    },
+    {
+      "id": "review/pyformat-precision-char-boundary-mid-string",
+      "class": "engine",
+      "summary": "And a boundary that is not at offset zero: the first scalar is copied whole and the second is split. A `str.format`/printf PRECISION is a BYTE count, and the engine applies it by SLICING the Rust string with it (format_utils.rs:227-231). When the cut is not a UTF-8 character boundary, `&text[..p]` ABORTS — Rust's own `byte index N is not a char boundary` — so there is no successful outcome to reproduce. Go would slice happily and return the truncated encoding, which is bytes the engine never produces and is not valid UTF-8, so the fork REFUSES with an invalid operation instead. Deliberate and permanent, the same disposition as test/divisibleby-zero and the allocation rows: refusing is the safe direction, answering with invalid bytes is not. The RULE itself — that the precision counts bytes and cuts there — is proven byte-exact by the green review/pyformat-precision-* rows beside these.",
+      "rust_signatures": [
+        "panic"
+      ],
+      "go_signatures": [
+        "error|invalid_operation"
+      ],
+      "slice": "5 builtins and pycompat (deliberate, permanent)"
     }
   ]
 }

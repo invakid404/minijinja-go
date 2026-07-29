@@ -85,6 +85,10 @@ FORK_ADDED=(
   # own file rather than grown inside the evaluator.  PATCHES.md #80.
   "macro_closure.go"
   "macro_closure_test.go"
+  # Round-4 review fixes: the generic-object proof that `unique` deduplicates
+  # through the value model's comparison hook rather than through a rendered
+  # string.  PATCHES.md #88.
+  "value_cmp_builtins_test.go"
   "value/invalid.go"
   "value/invalid_test.go"
 )
@@ -99,18 +103,18 @@ SEMANTIC_DELTA=(
   "internal/lexer/lexer.go"         # #3 Unicode whitespace trimming
   "internal/errors/error.go"        # #6 ErrCannotUnpack, #8/#55 ErrUnknownMethod, #31 empty detail
   "internal_helpers.go"             # #6, #8, #55 re-exports of the new kinds
-  "state.go"                        # #2, #4-#8; #13, #14, #17, #18, #22; #55, #65-#68
+  "state.go"                        # #2, #4-#8; #13, #14, #17, #18, #22; #55, #65-#68, #86, #87
   "minijinja_test.go"               # #2 tests of removed statements, #45 the withdrawal's regression test
   "template_test.go"                # #2 inherited corpus asserts the gate
   "template_state_test.go"          # #2 block-based state tests
   "environment_api_test.go"         # #2 include-based tests
   "environment.go"                  # #55 SetUnknownMethodCallback
   "value/ops.go"                    # #10-#16, #18, #21 operators; #32-#35, #40, #44 comparison, containment, repetition
-  "value/value.go"
+  "value/value.go"                  # ... and #86 Value.LookupAttr
   # Slice 5, keyword-argument order (PATCHES.md #25): the callable, method and
   # object-call signatures carry an ORDERED keyword mapping, so every
   # implementation of them moves with the interface.
-  "value/object.go"
+  "value/object.go"                 # ... and #86 ObjectWithAttrLookup
   "value/object_test.go"
   "undefined_behavior_test.go"
   "examples/call_block_function/main.go"
@@ -122,9 +126,14 @@ SEMANTIC_DELTA=(
   "examples/none_as_undefined/main.go"
   "examples/state_temps/main.go"
   "testdata/snapshots/debug.txt.snap"                  # #17, #19, #20 conversions and payloads; #36-#38, #42, #44 mapping, truthiness, subscripts; #64 KindInvalid
-  "defaults.go"                     # #24 range argument conversion; #41 range error class; #45 withdrawn Go-only builtins
-  "filters/filters.go"              # #23 int/abs payload dispatch; #36, #43 ordered mappings, reverse; #46, #48-#53, #58-#63
+  "defaults.go"                     # #24 range argument conversion; #41 range error class; #45 withdrawn Go-only builtins; #86 namespace attribute presence
+  "filters/filters.go"              # #23 int/abs payload dispatch; #36, #43 ordered mappings, reverse; #46, #48-#53, #58-#63; #88, #90-#95
   "tests/tests.go"                  # #25 odd/even/integer at i128 width; #47, #54, #56
+  # Slice 5 round 4 (PATCHES.md #91): `chain` over mappings is the engine's
+  # MergeDict, which searches newest-first, skips undefined and enumerates
+  # sorted — so the merged map grew a Display and a constructor that does not
+  # short-circuit a single source.
+  "value/merge_maps.go"
 )
 
 ALLOW_SEMANTIC_DELTA=0

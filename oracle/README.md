@@ -213,7 +213,7 @@ on the Go side). Every profile is *engine configuration only*; BAML's
 environment (globals, `regex_match`/`sum`, the none-formatter, prompt lowering)
 is not here and arrives as its own profile in a later slice.
 
-**`reviewfixes.json`** — 287 rows: the cases three rounds of cold review found by
+**`reviewfixes.json`** — 489 rows: the cases four rounds of cold review found by
 probing the pinned engine directly rather than by reading the corpus. `range`
 cardinality at the i64 boundary; integer ArgTypes at their declared widths,
 including `usize` at its real 64-bit one; integers past i64 through the tests
@@ -223,15 +223,22 @@ whether a macro accepts the synthetic `caller` keyword, decided the way the
 compiler decides it; `dict()`'s key spellings; the engine's one case-insensitive
 comparator across `sort`, `groupby` and `dictsort`; `groupby`'s two observable
 kinds; and the debug form of a string, which every container rendering goes
-through. A row here is a repro that was RED against the engine
-before it was a row.
+through. The fourth round added 202 more: method dispatch on an attribute that is
+PRESENT but undefined; the reverse order the compiler emits macro parameter
+defaults in; `unique`'s `BTreeSet<Value>` memo, which routes host objects through
+the generic comparison hook; the attribute-path grammar — empty comma fields, a
+complete `usize` parse, an empty attribute that is still a path — across all six
+consumers; `chain`'s newest-first mapping lookup; the formatter's `i128`-then-`u128`
+cast; `indent`'s terminal line ending; `items` and `zip` as iterable objects; and
+`pprint`'s alternate debug layout. A row here is a repro that was RED against the
+engine before it was a row.
 
 ### Where the corpus stands
 
-1741 rows: 1729 agree, 12 diverge and every one of the 12 is declared. None is
+1943 rows: 1927 agree, 16 diverge and every one of the 16 is declared. None is
 in the template, numeric, coercion or argument-contract lane, whose rows all
-agree with the engine. Ten of the twelve are deliberate and permanent rather
-than pending:
+agree with the engine. Fourteen of the sixteen are deliberate and permanent
+rather than pending:
 
 - `test/divisibleby-zero` — the engine PANICS on a zero divisor and the fork
   refuses with an error instead.
@@ -249,6 +256,14 @@ than pending:
   being left out.
 - `fn/debug-state-dump` — `debug()` with no arguments prints the host language's
   debug rendering of the environment, Rust type paths included.
+- `review/pyformat-precision-char-boundary`, `-printf`, `-combining`,
+  `-mid-string` — a format precision is a BYTE count, and the engine applies it
+  by slicing the Rust string with it. When the cut is not a UTF-8 character
+  boundary, `&text[..p]` aborts, so there is no successful outcome to reproduce;
+  Go's own slicing would hand back invalid UTF-8 the engine never produces, so
+  the fork refuses. That the RULE is byte-exact is proven separately and greenly
+  by the `review/pyformat-precision-*` rows beside them, where the cut lands on
+  a boundary.
 
 Two are pending, and both belong to the error surface:
 
@@ -290,7 +305,7 @@ numeric regression cannot escape into the seed lane. A later slice adds its own
 lane the same way as it lands.
 
 **The builtins lane does not have that gate, and the omission is deliberate.**
-Its three lanes (`builtins`, `argcontract`, `reviewfixes`) hold ten ledger
+Its three lanes (`builtins`, `argcontract`, `reviewfixes`) hold fourteen ledger
 entries and none of them is a decline being hidden:
 
 | Row | Why it is not a numeric-style failure |
@@ -298,6 +313,7 @@ entries and none of them is a decline being hidden:
 | `test/divisibleby-zero` | The engine PANICS; the fork errors. A gate demanding byte-exactness here would demand reproducing a panic. |
 | `review/usize-*` (7 rows) | The same: the engine reserves an unallocatable amount of memory and aborts. A gate here would demand that a Go library abort, or exhaust its memory, on template input. The conversion those rows are really about IS gated, by the green `review/usize-*-too-many` rows beside them. |
 | `review/pycompat-count-empty-needle` | The reference module does not terminate. A gate would demand reproducing a non-terminating loop. |
+| `review/pyformat-precision-char-boundary` (4 rows) | Rust's `str` slicing ABORTS at a cut that is not a character boundary. A gate here would demand returning invalid UTF-8 that the engine never produces. The RULE — a precision counts bytes and cuts there — IS gated, by the green `review/pyformat-precision-*` rows beside them. |
 | `fn/debug-state-dump` | The engine's bytes are Rust type paths. A gate would demand hard-coding them into a Go engine. |
 | `syntax/bad-escape-capital-u`, `syntax/bad-escape-rust-unicode` | Lexer rows that merely live in this lane; the error surface owns them. |
 

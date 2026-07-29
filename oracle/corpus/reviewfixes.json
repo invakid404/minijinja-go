@@ -15055,6 +15055,1437 @@
       "form": "expression",
       "source": "dict(**{'i̇': 1}).keys()|list",
       "profile": "pycompat"
+    },
+    {
+      "id": "review/method-present-undefined-value",
+      "surface": "control",
+      "form": "expression",
+      "source": "dict(x=missing).x()",
+      "expect": "error",
+      "notes": "`Object::call_method` looks the name up with `get_value`, which answers an OPTION, and calls whatever it got (value/object.rs:241-252). A mapping entry holding undefined is still an entry, so this is `undefined is not callable` and not an unknown method."
+    },
+    {
+      "id": "review/method-absent-attribute",
+      "surface": "control",
+      "form": "expression",
+      "source": "dict().x()",
+      "expect": "error",
+      "notes": "The control for the row above: a name that is genuinely absent IS an unknown method."
+    },
+    {
+      "id": "review/method-present-undefined-pycompat",
+      "surface": "control",
+      "form": "expression",
+      "source": "dict(x=missing).x()",
+      "profile": "pycompat",
+      "expect": "error",
+      "notes": "The unknown-method callback only runs after an UnknownMethod (value/mod.rs:1616-1643), so a present entry never reaches it whatever it holds."
+    },
+    {
+      "id": "review/method-present-undefined-namespace",
+      "surface": "control",
+      "form": "template",
+      "source": "{% set ns = namespace(x=missing) %}{{ ns.x() }}",
+      "expect": "error",
+      "notes": "The same question through a host object rather than a mapping."
+    },
+    {
+      "id": "review/method-present-undefined-nested",
+      "surface": "control",
+      "form": "expression",
+      "source": "dict(a=dict(b=missing)).a.b()",
+      "expect": "error"
+    },
+    {
+      "id": "review/method-present-none",
+      "surface": "control",
+      "form": "expression",
+      "source": "dict(x=none).x()",
+      "expect": "error"
+    },
+    {
+      "id": "review/method-present-int",
+      "surface": "control",
+      "form": "expression",
+      "source": "dict(x=1).x()",
+      "expect": "error"
+    },
+    {
+      "id": "review/method-shadowed-pycompat-undefined",
+      "surface": "control",
+      "form": "expression",
+      "source": "dict(items=missing).items()",
+      "profile": "pycompat",
+      "expect": "error",
+      "notes": "An entry named after a pycompat method shadows it even when it holds undefined: the view is never built."
+    },
+    {
+      "id": "review/method-shadowed-pycompat-int",
+      "surface": "control",
+      "form": "expression",
+      "source": "dict(items=1).items()",
+      "profile": "pycompat",
+      "expect": "error"
+    },
+    {
+      "id": "review/method-unshadowed-pycompat",
+      "surface": "control",
+      "form": "expression",
+      "source": "dict(a=1).keys()|list|join",
+      "profile": "pycompat",
+      "notes": "And an unshadowed name still reaches the module."
+    },
+    {
+      "id": "review/method-absent-seq",
+      "surface": "control",
+      "form": "expression",
+      "source": "[1,2].x()",
+      "expect": "error"
+    },
+    {
+      "id": "review/method-absent-string-pycompat",
+      "surface": "control",
+      "form": "expression",
+      "source": "'abc'.x()",
+      "profile": "pycompat",
+      "expect": "error"
+    },
+    {
+      "id": "review/method-absent-object",
+      "surface": "control",
+      "form": "expression",
+      "source": "c.x()",
+      "inputs": [
+        {
+          "name": "c",
+          "value": {
+            "kind": "cmp_object",
+            "canonical": "A",
+            "display": "A"
+          }
+        }
+      ],
+      "expect": "error"
+    },
+    {
+      "id": "review/macro-default-sees-later-param",
+      "surface": "control",
+      "form": "template",
+      "source": "{% macro f(a=b,b=2) %}{{ a|default('U') }}|{{ b }}{% endmacro %}{{ f() }}",
+      "notes": "The compiler emits the defaults for `args.iter().rev()` (compiler/codegen.rs:419-430), so the LAST parameter is defaulted and assigned first. `a`'s default therefore sees `b`."
+    },
+    {
+      "id": "review/macro-default-not-earlier-param",
+      "surface": "control",
+      "form": "template",
+      "source": "{% macro f(a=1,b=a) %}{{ a }}|{{ b|default('U') }}{% endmacro %}{{ f() }}",
+      "notes": "And the opposite direction does not work: `b`'s default runs before `a` is assigned."
+    },
+    {
+      "id": "review/macro-default-three-params",
+      "surface": "control",
+      "form": "template",
+      "source": "{% macro f(a=b,b=c,c=3) %}{{ a }}|{{ b }}|{{ c }}{% endmacro %}{{ f() }}"
+    },
+    {
+      "id": "review/macro-default-positional-assigned-last",
+      "surface": "control",
+      "form": "template",
+      "source": "{% macro f(a,b=a,c=b) %}{{ b }}|{{ c }}{% endmacro %}{{ f(1) }}",
+      "notes": "A parameter with no default is still assigned in the same reverse pass, so a positional argument is not visible to any default."
+    },
+    {
+      "id": "review/macro-default-shadows-outer",
+      "surface": "control",
+      "form": "template",
+      "source": "{% set b = 9 %}{% macro f(a=b,b=2) %}{{ a }}|{{ b }}{% endmacro %}{{ f() }}",
+      "notes": "`b` is a declared parameter, so it is not free and not in the closure; by the time `a`'s default runs it is already bound to 2 and the outer 9 is unreachable."
+    },
+    {
+      "id": "review/macro-default-explicit-undefined-positional",
+      "surface": "control",
+      "form": "template",
+      "source": "{% macro f(a=1) %}{{ a }}{% endmacro %}{{ f(missing) }}",
+      "notes": "`DupTop; IsUndefined` tests the VALUE on the stack, so an explicitly undefined argument takes the default too."
+    },
+    {
+      "id": "review/macro-default-explicit-undefined-keyword",
+      "surface": "control",
+      "form": "template",
+      "source": "{% macro f(a=1) %}{{ a }}{% endmacro %}{{ f(a=missing) }}"
+    },
+    {
+      "id": "review/macro-default-keyword-fills-later",
+      "surface": "control",
+      "form": "template",
+      "source": "{% macro f(a=b,b=2) %}{{ a }}|{{ b }}{% endmacro %}{{ f(b=7) }}"
+    },
+    {
+      "id": "review/macro-default-self-reference",
+      "surface": "control",
+      "form": "template",
+      "source": "{% macro f(a=a) %}{{ a|default('U') }}{% endmacro %}{{ f() }}"
+    },
+    {
+      "id": "review/macro-default-self-reference-outer",
+      "surface": "control",
+      "form": "template",
+      "source": "{% set a = 5 %}{% macro f(a=a) %}{{ a }}{% endmacro %}{{ f() }}",
+      "notes": "A macro body runs against its closure alone, and a declared parameter is never in it, so a default naming its own parameter gets undefined rather than the outer binding."
+    },
+    {
+      "id": "review/macro-default-through-filter",
+      "surface": "control",
+      "form": "template",
+      "source": "{% macro f(a=b|default('D'),b='B') %}{{ a }}|{{ b }}{% endmacro %}{{ f() }}"
+    },
+    {
+      "id": "review/macro-default-caller-target",
+      "surface": "control",
+      "form": "template",
+      "source": "{% macro f(a=caller,b=2) %}{{ a }}{% endmacro %}{% call f() %}C{% endcall %}",
+      "notes": "`caller` is stored before the macro's instructions run, so it is visible to a default whatever order the defaults themselves take."
+    },
+    {
+      "id": "review/macro-default-none-is-not-undefined",
+      "surface": "control",
+      "form": "template",
+      "source": "{% macro f(a=1) %}{{ a }}{% endmacro %}{{ f(none) }}"
+    },
+    {
+      "id": "review/macro-default-only-missing",
+      "surface": "control",
+      "form": "template",
+      "source": "{% macro f(a=1,b=2) %}{{ a }}{{ b }}{% endmacro %}{{ f(9) }}"
+    },
+    {
+      "id": "review/macro-default-param-shadows-body",
+      "surface": "control",
+      "form": "template",
+      "source": "{% set a = 5 %}{% macro f(a) %}{{ a|default('U') }}{% endmacro %}{{ f() }}"
+    },
+    {
+      "id": "review/macro-default-outer-name",
+      "surface": "control",
+      "form": "template",
+      "source": "{% set a = 5 %}{% set b = 6 %}{% macro f(a=b) %}{{ a }}{% endmacro %}{{ f() }}",
+      "notes": "`b` is free here, so it IS enclosed and the default reads it."
+    },
+    {
+      "id": "review/macro-default-nested-macro",
+      "surface": "control",
+      "form": "template",
+      "source": "{% macro outer(x=1) %}{% macro inner(y=x) %}{{ y }}{% endmacro %}{{ inner() }}{% endmacro %}{{ outer() }}"
+    },
+    {
+      "id": "review/macro-default-loop-var",
+      "surface": "control",
+      "form": "template",
+      "source": "{% for i in [1] %}{% macro f(a=i) %}{{ a }}{% endmacro %}{{ f() }}{% endfor %}"
+    },
+    {
+      "id": "review/macro-default-no-default-earlier",
+      "surface": "control",
+      "form": "template",
+      "source": "{% macro f(a,b=a) %}{{ b|default('U') }}{% endmacro %}{{ f() }}"
+    },
+    {
+      "id": "review/unique-objects-same-display",
+      "surface": "value_cmp",
+      "form": "expression",
+      "source": "[a,b]|unique|length",
+      "inputs": [
+        {
+          "name": "a",
+          "value": {
+            "kind": "cmp_object",
+            "canonical": "A",
+            "display": "same"
+          }
+        },
+        {
+          "name": "b",
+          "value": {
+            "kind": "cmp_object",
+            "canonical": "B",
+            "display": "same"
+          }
+        }
+      ],
+      "notes": "`unique` remembers values in a `BTreeSet<Value>` (filters.rs:1500-1531), so membership goes through the value model's ORDER and hence the generic comparison hook. Two host objects that merely render alike are two values; keying by the rendered string collapsed them."
+    },
+    {
+      "id": "review/unique-objects-same-canonical",
+      "surface": "value_cmp",
+      "form": "expression",
+      "source": "[a,b]|unique|length",
+      "inputs": [
+        {
+          "name": "a",
+          "value": {
+            "kind": "cmp_object",
+            "canonical": "A",
+            "display": "same"
+          }
+        },
+        {
+          "name": "b",
+          "value": {
+            "kind": "cmp_object",
+            "canonical": "A",
+            "display": "other"
+          }
+        }
+      ],
+      "notes": "And the converse: two objects the hook orders EQUAL are one value however differently they render."
+    },
+    {
+      "id": "review/unique-objects-repeat",
+      "surface": "value_cmp",
+      "form": "expression",
+      "source": "[a,b,a]|unique|length",
+      "inputs": [
+        {
+          "name": "a",
+          "value": {
+            "kind": "cmp_object",
+            "canonical": "A",
+            "display": "same"
+          }
+        },
+        {
+          "name": "b",
+          "value": {
+            "kind": "cmp_object",
+            "canonical": "B",
+            "display": "same"
+          }
+        }
+      ]
+    },
+    {
+      "id": "review/unique-attr-objects",
+      "surface": "value_cmp",
+      "form": "expression",
+      "source": "[dict(k=a),dict(k=b)]|unique(attribute='k')|length",
+      "inputs": [
+        {
+          "name": "a",
+          "value": {
+            "kind": "cmp_object",
+            "canonical": "A",
+            "display": "same"
+          }
+        },
+        {
+          "name": "b",
+          "value": {
+            "kind": "cmp_object",
+            "canonical": "B",
+            "display": "same"
+          }
+        }
+      ]
+    },
+    {
+      "id": "review/unique-objects-case-sensitive",
+      "surface": "value_cmp",
+      "form": "expression",
+      "source": "[a,b]|unique(case_sensitive=true)|length",
+      "inputs": [
+        {
+          "name": "a",
+          "value": {
+            "kind": "cmp_object",
+            "canonical": "A",
+            "display": "same"
+          }
+        },
+        {
+          "name": "b",
+          "value": {
+            "kind": "cmp_object",
+            "canonical": "B",
+            "display": "same"
+          }
+        }
+      ]
+    },
+    {
+      "id": "review/unique-object-vs-string",
+      "surface": "value_cmp",
+      "form": "expression",
+      "source": "[a,'A']|unique|length",
+      "inputs": [
+        {
+          "name": "a",
+          "value": {
+            "kind": "cmp_object",
+            "canonical": "A",
+            "display": "Alpha"
+          }
+        }
+      ]
+    },
+    {
+      "id": "review/unique-int-float-bool",
+      "surface": "container",
+      "form": "expression",
+      "source": "[1,1.0,true]|unique|tojson",
+      "notes": "Ordering is what decides membership, so 1 and 1.0 coerce to one entry while true keeps its own kind."
+    },
+    {
+      "id": "review/unique-u64max-vs-float",
+      "surface": "container",
+      "form": "expression",
+      "source": "[18446744073709551615, 18446744073709551615.0]|unique|length"
+    },
+    {
+      "id": "review/unique-nested-lists",
+      "surface": "container",
+      "form": "expression",
+      "source": "[[1],[1],[2]]|unique|length"
+    },
+    {
+      "id": "review/unique-maps",
+      "surface": "container",
+      "form": "expression",
+      "source": "[dict(a=1),dict(a=1),dict(a=2)]|unique|length"
+    },
+    {
+      "id": "review/unique-none-undefined",
+      "surface": "container",
+      "form": "expression",
+      "source": "[none,missing,none,missing]|unique|length"
+    },
+    {
+      "id": "review/unique-neg-zero",
+      "surface": "container",
+      "form": "expression",
+      "source": "[0.0,-0.0]|unique|length",
+      "notes": "`f64_total_cmp` orders -0.0 below 0.0, so they are two entries even though they are equal."
+    },
+    {
+      "id": "review/unique-nan",
+      "surface": "container",
+      "form": "expression",
+      "source": "['nan'|float,'nan'|float]|unique|length"
+    },
+    {
+      "id": "review/unique-mixed-kinds",
+      "surface": "container",
+      "form": "expression",
+      "source": "[1,'a',[1],dict(a=1),none,true]|unique|length"
+    },
+    {
+      "id": "review/unique-strings-case",
+      "surface": "string",
+      "form": "expression",
+      "source": "['CA','NY','ca']|unique|join(',')"
+    },
+    {
+      "id": "review/unique-turkish-fold",
+      "surface": "string",
+      "form": "expression",
+      "source": "['İ','i̇']|unique|length",
+      "notes": "Only an ACTUAL string is memoized case-folded, and the folding is Rust's full `to_lowercase`."
+    },
+    {
+      "id": "review/unique-order-preserved",
+      "surface": "string",
+      "form": "expression",
+      "source": "['b','a','B','A']|unique|join(',')"
+    },
+    {
+      "id": "review/sort-attr-empty-fields-literal",
+      "surface": "container",
+      "form": "expression",
+      "source": "[dict(**{'':2, ',':1}, id='x'), dict(**{'':1, ',':2}, id='y')]|sort(attribute=',')|map(attribute='id')|join",
+      "notes": "`sort` drops EMPTY comma-separated fields and, when none is left, falls back to the literal attribute (filters.rs:786-813). So `attribute=','` reads the key ',' rather than composing two empty paths."
+    },
+    {
+      "id": "review/sort-attr-empty-string",
+      "surface": "container",
+      "form": "expression",
+      "source": "[dict(**{'':2}, id='x'), dict(**{'':1}, id='y')]|sort(attribute='')|map(attribute='id')|join",
+      "notes": "`Option<&str>`: an attribute that was GIVEN is a path even when it is empty."
+    },
+    {
+      "id": "review/sort-attr-empty-tiebreak",
+      "surface": "container",
+      "form": "expression",
+      "source": "[dict(**{'':1}, z=1, id='x'), dict(**{'':1}, a=2, id='y')]|sort(attribute='')|map(attribute='id')|join",
+      "notes": "The pair that distinguishes `attribute=''` from no attribute at all: the empty key ties, so the order is the input's rather than the whole mappings'."
+    },
+    {
+      "id": "review/sort-no-attr-tiebreak",
+      "surface": "container",
+      "form": "expression",
+      "source": "[dict(**{'':1}, z=1, id='x'), dict(**{'':1}, a=2, id='y')]|sort|map(attribute='id')|join",
+      "notes": "The control: no attribute really does order the whole values."
+    },
+    {
+      "id": "review/sort-attr-space-field",
+      "surface": "container",
+      "form": "expression",
+      "source": "[dict(**{'':2}, id='x'), dict(**{'':1}, id='y')]|sort(attribute=' ')|map(attribute='id')|join",
+      "notes": "The emptiness test is on the RAW field and the kept value is the TRIMMED one, so a field of spaces survives as the empty path."
+    },
+    {
+      "id": "review/sort-attr-trailing-comma",
+      "surface": "container",
+      "form": "expression",
+      "source": "[dict(a=2,id='x'),dict(a=1,id='y')]|sort(attribute='a,')|map(attribute='id')|join"
+    },
+    {
+      "id": "review/sort-attr-leading-comma",
+      "surface": "container",
+      "form": "expression",
+      "source": "[dict(a=2,id='x'),dict(a=1,id='y')]|sort(attribute=',a')|map(attribute='id')|join"
+    },
+    {
+      "id": "review/sort-attr-two-keys-spaces",
+      "surface": "container",
+      "form": "expression",
+      "source": "[dict(a=1,b=2,id='x'),dict(a=1,b=1,id='y')]|sort(attribute='a, b')|map(attribute='id')|join"
+    },
+    {
+      "id": "review/sort-attr-negative-index",
+      "surface": "container",
+      "form": "expression",
+      "source": "[[2,'z'],[1,'a']]|sort(attribute='-1')|map(attribute='0')|join",
+      "notes": "A path component is an index only when it parses COMPLETELY as a `usize` (value/mod.rs:1654-1660). `-1` is a signed literal, so it is an attribute NAME, it is missing on a sequence, and the comparison is a tie."
+    },
+    {
+      "id": "review/sort-attr-plus-index",
+      "surface": "container",
+      "form": "expression",
+      "source": "[[2,'z'],[1,'a']]|sort(attribute='+1')|map(attribute='0')|join",
+      "notes": "Rust's unsigned `from_str` does accept a leading `+`, so this one IS an index."
+    },
+    {
+      "id": "review/sort-attr-space-index",
+      "surface": "container",
+      "form": "expression",
+      "source": "[[2,'z'],[1,'a']]|sort(attribute=' 1 ')|map(attribute='0')|join",
+      "notes": "`sort` trims the field before it becomes a path, so the spaces never reach the parse."
+    },
+    {
+      "id": "review/sort-attr-leading-zero-index",
+      "surface": "container",
+      "form": "expression",
+      "source": "[[2,'z'],[1,'a']]|sort(attribute='01')|map(attribute='0')|join"
+    },
+    {
+      "id": "review/sort-attr-numeric-prefix",
+      "surface": "container",
+      "form": "expression",
+      "source": "[dict(**{'1x':'z'}, id='x'), dict(**{'1x':'a'}, id='y')]|sort(attribute='1x')|map(attribute='id')|join",
+      "notes": "A numeric PREFIX is not a parse: `1x` is the whole key's name."
+    },
+    {
+      "id": "review/sort-attr-index-on-seq",
+      "surface": "container",
+      "form": "expression",
+      "source": "[[2,'z'],[1,'a']]|sort(attribute='1')|map(attribute='0')|join"
+    },
+    {
+      "id": "review/sort-attr-usize-max",
+      "surface": "container",
+      "form": "expression",
+      "source": "[[2,'z'],[1,'a']]|sort(attribute='18446744073709551615')|map(attribute='0')|join",
+      "notes": "A `usize` is 64 bits, so u64::MAX parses; the index is simply out of bounds."
+    },
+    {
+      "id": "review/sort-attr-usize-overflow",
+      "surface": "container",
+      "form": "expression",
+      "source": "[[2,'z'],[1,'a']]|sort(attribute='18446744073709551616')|map(attribute='0')|join",
+      "notes": "One past it does not parse at all, so it is a name."
+    },
+    {
+      "id": "review/sort-attr-huge-index",
+      "surface": "container",
+      "form": "expression",
+      "source": "[[2,'z'],[1,'a']]|sort(attribute='99999999999999999999999')|map(attribute='0')|join"
+    },
+    {
+      "id": "review/sort-attr-missing-path",
+      "surface": "container",
+      "form": "expression",
+      "source": "[dict(id='x'),dict(id='y')]|sort(attribute='p.q')|map(attribute='id')|join",
+      "notes": "`get_path` walking through an undefined component is an ERROR, and the single-key comparator reads a failed lookup as a TIE (filters.rs:814-819) rather than as undefined."
+    },
+    {
+      "id": "review/sort-attr-missing-path-two-keys",
+      "surface": "container",
+      "form": "expression",
+      "source": "[dict(id='x'),dict(id='y')]|sort(attribute='p.q,id')|map(attribute='id')|join",
+      "notes": "The composite path uses `get_path_or_default` instead, where a failure IS undefined."
+    },
+    {
+      "id": "review/sort-attr-dotted-index",
+      "surface": "container",
+      "form": "expression",
+      "source": "[dict(p=[3,'z'],id='x'),dict(p=[3,'a'],id='y')]|sort(attribute='p.1')|map(attribute='id')|join"
+    },
+    {
+      "id": "review/sort-attr-dotted-negative",
+      "surface": "container",
+      "form": "expression",
+      "source": "[dict(p=[3,'z'],id='x'),dict(p=[3,'a'],id='y')]|sort(attribute='p.-1')|map(attribute='id')|join"
+    },
+    {
+      "id": "review/sort-attr-none-kwarg",
+      "surface": "container",
+      "form": "expression",
+      "source": "[dict(a=2,id='x'),dict(a=1,id='y')]|sort(attribute=none)|map(attribute='id')|join"
+    },
+    {
+      "id": "review/groupby-attr-empty",
+      "surface": "container",
+      "form": "expression",
+      "source": "[dict(**{'':1}, id='x'), dict(**{'':1}, id='y')]|groupby('')|length"
+    },
+    {
+      "id": "review/groupby-attr-empty-kwarg",
+      "surface": "container",
+      "form": "expression",
+      "source": "[dict(**{'':1}, id='x')]|groupby(attribute='')|length"
+    },
+    {
+      "id": "review/selectattr-attr-empty",
+      "surface": "container",
+      "form": "expression",
+      "source": "[dict(**{'':1}, id='x'), dict(**{'':0}, id='y')]|selectattr('')|map(attribute='id')|join"
+    },
+    {
+      "id": "review/selectattr-attr-negative",
+      "surface": "container",
+      "form": "expression",
+      "source": "[[0,1]]|selectattr('-1')|length"
+    },
+    {
+      "id": "review/rejectattr-attr-negative",
+      "surface": "container",
+      "form": "expression",
+      "source": "[[0,1]]|rejectattr('-1')|length"
+    },
+    {
+      "id": "review/map-attr-empty",
+      "surface": "container",
+      "form": "expression",
+      "source": "[dict(**{'':1}, id='x')]|map(attribute='')|join"
+    },
+    {
+      "id": "review/map-attr-numeric-prefix",
+      "surface": "container",
+      "form": "expression",
+      "source": "[dict(**{'1x':'z'})]|map(attribute='1x')|join"
+    },
+    {
+      "id": "review/map-attr-underscore-index",
+      "surface": "container",
+      "form": "expression",
+      "source": "[[1,2]]|map(attribute='1_0')|join",
+      "notes": "Rust's integer `from_str` has no digit separators, so `1_0` is a name."
+    },
+    {
+      "id": "review/unique-attr-empty-path",
+      "surface": "container",
+      "form": "expression",
+      "source": "[dict(**{'':1}, id='x'), dict(**{'':1}, id='y')]|unique(attribute='')|map(attribute='id')|join",
+      "notes": "`unique`'s attribute is `Option<&str>` too, so `Some(\"\")` is a real path and not \"no attribute\"."
+    },
+    {
+      "id": "review/unique-attr-empty-distinct",
+      "surface": "container",
+      "form": "expression",
+      "source": "[dict(**{'':1}, id='x'), dict(**{'':2}, id='y')]|unique(attribute='')|map(attribute='id')|join"
+    },
+    {
+      "id": "review/unique-attr-none-kwarg",
+      "surface": "container",
+      "form": "expression",
+      "source": "[dict(a=1,id='x'),dict(a=1,id='y')]|unique(attribute=none)|map(attribute='id')|join"
+    },
+    {
+      "id": "review/chain-map-undefined-skipped",
+      "surface": "container",
+      "form": "expression",
+      "source": "(dict(a=1)|chain(dict(a=missing)))['a']|default('U')",
+      "notes": "`MergeDict` searches its sources NEWEST FIRST and skips an undefined answer (value/merge_object.rs:21-31), so a later undefined does not hide an earlier defined value."
+    },
+    {
+      "id": "review/chain-map-undefined-attr",
+      "surface": "container",
+      "form": "expression",
+      "source": "(dict(a=1)|chain(dict(a=missing))).a|default('U')"
+    },
+    {
+      "id": "review/chain-map-undefined-three",
+      "surface": "container",
+      "form": "expression",
+      "source": "(dict(a=1)|chain(dict(a=missing),dict(a=missing)))['a']|default('U')"
+    },
+    {
+      "id": "review/chain-map-undefined-tojson",
+      "surface": "container",
+      "form": "expression",
+      "source": "(dict(a=1,b=2)|chain(dict(a=missing,b=3)))|tojson"
+    },
+    {
+      "id": "review/chain-map-undefined-items",
+      "surface": "container",
+      "form": "expression",
+      "source": "(dict(a=1)|chain(dict(a=missing)))|items|tojson"
+    },
+    {
+      "id": "review/chain-map-undefined-enumerated",
+      "surface": "container",
+      "form": "expression",
+      "source": "(dict(a=1)|chain(dict(a=missing)))|list|join(',')",
+      "notes": "The key is still enumerated; only the lookup skips."
+    },
+    {
+      "id": "review/chain-map-only-undefined",
+      "surface": "container",
+      "form": "expression",
+      "source": "(dict(a=missing)|chain(dict(b=1)))['a']|default('U')",
+      "notes": "And when NOTHING defines it, the answer is undefined."
+    },
+    {
+      "id": "review/chain-map-key-order",
+      "surface": "container",
+      "form": "expression",
+      "source": "(dict(b=1)|chain(dict(a=2)))|list|join(',')",
+      "notes": "`enumerate` collects the keys into a `BTreeSet<Value>`, so a merged mapping iterates SORTED."
+    },
+    {
+      "id": "review/chain-map-single-key-order",
+      "surface": "container",
+      "form": "expression",
+      "source": "(dict(b=1,a=2)|chain())|list|join(',')",
+      "notes": "Which is true of one operand as well: `chain` always builds the merged object."
+    },
+    {
+      "id": "review/chain-map-later-wins",
+      "surface": "container",
+      "form": "expression",
+      "source": "(dict(a=1)|chain(dict(a=2)))['a']"
+    },
+    {
+      "id": "review/chain-map-length",
+      "surface": "container",
+      "form": "expression",
+      "source": "(dict(a=1)|chain(dict(b=2)))|length"
+    },
+    {
+      "id": "review/chain-map-is-mapping",
+      "surface": "container",
+      "form": "expression",
+      "source": "(dict(a=1)|chain(dict(b=2))) is mapping",
+      "expect": "boolean"
+    },
+    {
+      "id": "review/chain-map-display",
+      "surface": "container",
+      "form": "expression",
+      "source": "dict(b=1)|chain(dict(a=2))",
+      "notes": "A merged mapping displays as any other mapping does — the default `Object::render` for a map representation."
+    },
+    {
+      "id": "review/chain-map-pprint",
+      "surface": "container",
+      "form": "expression",
+      "source": "(dict(b=1)|chain(dict(a=2)))|pprint"
+    },
+    {
+      "id": "review/chain-map-dictsort",
+      "surface": "container",
+      "form": "expression",
+      "source": "(dict(b=1)|chain(dict(a=2)))|dictsort|tojson"
+    },
+    {
+      "id": "review/chain-map-missing-key",
+      "surface": "container",
+      "form": "expression",
+      "source": "(dict(a=1)|chain(dict(b=2)))['c']|default('U')"
+    },
+    {
+      "id": "review/chain-map-getattr-later",
+      "surface": "container",
+      "form": "expression",
+      "source": "(dict(a=1)|chain(dict(b=2))).b"
+    },
+    {
+      "id": "review/pyformat-u128-decimal-printf",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "'%d'|format(340282366920938463463374607431768211455)",
+      "notes": "`cast_to_abs_integer` tries `i128` and THEN `u128` (format_utils.rs:172-184). Without the second try a u128 above i128::MAX is not an integer to the formatter at all and falls through to floating point, which is a different number."
+    },
+    {
+      "id": "review/pyformat-u128-decimal-strformat",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "'{:d}'.format(340282366920938463463374607431768211455)",
+      "profile": "pycompat"
+    },
+    {
+      "id": "review/pyformat-u128-hex",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "'%x'|format(340282366920938463463374607431768211455)"
+    },
+    {
+      "id": "review/pyformat-u128-octal",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "'%o'|format(340282366920938463463374607431768211455)"
+    },
+    {
+      "id": "review/pyformat-u128-binary",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "'{:b}'.format(340282366920938463463374607431768211455)",
+      "profile": "pycompat"
+    },
+    {
+      "id": "review/pyformat-u128-string-printf",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "'%s'|format(340282366920938463463374607431768211455)"
+    },
+    {
+      "id": "review/pyformat-u128-string-strformat",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "'{:s}'.format(340282366920938463463374607431768211455)",
+      "profile": "pycompat",
+      "expect": "error",
+      "notes": "And it must be refused AS AN INTEGER: the message names the value's type."
+    },
+    {
+      "id": "review/pyformat-u128-grouped",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "'{:,d}'.format(340282366920938463463374607431768211455)",
+      "profile": "pycompat"
+    },
+    {
+      "id": "review/pyformat-u128-plus",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "'%+d'|format(340282366920938463463374607431768211455)"
+    },
+    {
+      "id": "review/pyformat-u128-width",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "'%45d'|format(340282366920938463463374607431768211455)"
+    },
+    {
+      "id": "review/pyformat-u128-float",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "'%f'|format(340282366920938463463374607431768211455)",
+      "notes": "Even `%f` goes through the integer path, which is why the digits are exact rather than the nearest double's."
+    },
+    {
+      "id": "review/pyformat-u128-exponent",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "'%e'|format(340282366920938463463374607431768211455)"
+    },
+    {
+      "id": "review/pyformat-u128-general",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "'%g'|format(340282366920938463463374607431768211455)"
+    },
+    {
+      "id": "review/pyformat-u128-negated-literal",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "'%d'|format(-170141183460469231731687303715884105728)"
+    },
+    {
+      "id": "review/pyformat-i128-min-computed",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "'%d'|format(0 - 170141183460469231731687303715884105727)",
+      "notes": "A genuinely negative i128 still carries its sign."
+    },
+    {
+      "id": "review/pyformat-u64max-string",
+      "surface": "arithmetic",
+      "form": "expression",
+      "source": "'%s'|format(18446744073709551615)"
+    },
+    {
+      "id": "review/pyformat-precision-char-boundary",
+      "surface": "string",
+      "form": "expression",
+      "source": "'{:.1}'.format('日')",
+      "profile": "pycompat",
+      "notes": "A precision is a BYTE count and the engine slices the string with it (format_utils.rs:227-231). At a cut that is not a UTF-8 character boundary Rust's `str` indexing ABORTS. The fork refuses rather than hand back the truncated encoding: a DECLARED divergence, same disposition as the zero divisor."
+    },
+    {
+      "id": "review/pyformat-precision-char-boundary-printf",
+      "surface": "string",
+      "form": "expression",
+      "source": "'%.1s'|format('日')",
+      "notes": "The same slice reached through printf style, which shares the code."
+    },
+    {
+      "id": "review/pyformat-precision-char-boundary-combining",
+      "surface": "string",
+      "form": "expression",
+      "source": "'{:.2}'.format('é')",
+      "profile": "pycompat",
+      "notes": "e + U+0301: the cut falls inside the combining mark, not the base."
+    },
+    {
+      "id": "review/pyformat-precision-char-boundary-mid-string",
+      "surface": "string",
+      "form": "expression",
+      "source": "'{:.4}'.format('日本')",
+      "profile": "pycompat",
+      "notes": "And a boundary that is not at offset zero."
+    },
+    {
+      "id": "review/pyformat-precision-whole-char",
+      "surface": "string",
+      "form": "expression",
+      "source": "'{:.3}'.format('日')",
+      "profile": "pycompat",
+      "notes": "The green neighbours that prove the RULE is byte-exact: a precision landing on a boundary cuts there."
+    },
+    {
+      "id": "review/pyformat-precision-two-byte-whole",
+      "surface": "string",
+      "form": "expression",
+      "source": "'{:.2}'.format('é')",
+      "profile": "pycompat"
+    },
+    {
+      "id": "review/pyformat-precision-zero",
+      "surface": "string",
+      "form": "expression",
+      "source": "'{:.0}'.format('日')",
+      "profile": "pycompat"
+    },
+    {
+      "id": "review/pyformat-precision-past-end",
+      "surface": "string",
+      "form": "expression",
+      "source": "'{:.9}'.format('日')",
+      "profile": "pycompat"
+    },
+    {
+      "id": "review/pyformat-precision-ascii",
+      "surface": "string",
+      "form": "expression",
+      "source": "'{:.2}'.format('abc')",
+      "profile": "pycompat"
+    },
+    {
+      "id": "review/pyformat-precision-nonstring",
+      "surface": "string",
+      "form": "expression",
+      "source": "'{:.1}'.format(none)",
+      "profile": "pycompat"
+    },
+    {
+      "id": "review/pyformat-precision-map-display",
+      "surface": "string",
+      "form": "expression",
+      "source": "'%.1s'|format(dict(a='日'))"
+    },
+    {
+      "id": "review/indent-terminal-lf",
+      "surface": "string",
+      "form": "expression",
+      "source": "'a\\n'|indent(2)|tojson",
+      "notes": "`strip_trailing_newline` runs BEFORE indenting and again after (filters.rs:1067-1099), so a terminal line ending is not part of the result. Each pass removes one '\\n' and then one '\\r'."
+    },
+    {
+      "id": "review/indent-terminal-crlf",
+      "surface": "string",
+      "form": "expression",
+      "source": "'a\\r\\n'|indent(2)|tojson"
+    },
+    {
+      "id": "review/indent-blank-tail",
+      "surface": "string",
+      "form": "expression",
+      "source": "'a\\n\\n'|indent(2)|tojson"
+    },
+    {
+      "id": "review/indent-double-lf-tail",
+      "surface": "string",
+      "form": "expression",
+      "source": "'a\\n\\n\\n'|indent(2)|tojson"
+    },
+    {
+      "id": "review/indent-only-lf",
+      "surface": "string",
+      "form": "expression",
+      "source": "'\\n'|indent(2)|tojson"
+    },
+    {
+      "id": "review/indent-empty",
+      "surface": "string",
+      "form": "expression",
+      "source": "''|indent(2)|tojson"
+    },
+    {
+      "id": "review/indent-cr-only",
+      "surface": "string",
+      "form": "expression",
+      "source": "'a\\r'|indent(2)|tojson",
+      "notes": "The CR strip is independent of the LF one, so a lone trailing CR goes too."
+    },
+    {
+      "id": "review/indent-multi-lf",
+      "surface": "string",
+      "form": "expression",
+      "source": "'a\\nb\\n'|indent(2)|tojson"
+    },
+    {
+      "id": "review/indent-first-true",
+      "surface": "string",
+      "form": "expression",
+      "source": "'a\\nb\\n'|indent(2,true)|tojson"
+    },
+    {
+      "id": "review/indent-blank-true",
+      "surface": "string",
+      "form": "expression",
+      "source": "'a\\n\\nb\\n'|indent(2,false,true)|tojson"
+    },
+    {
+      "id": "review/indent-crlf-mid",
+      "surface": "string",
+      "form": "expression",
+      "source": "'a\\r\\nb\\r\\n'|indent(2)|tojson"
+    },
+    {
+      "id": "review/items-is-not-sequence",
+      "surface": "container",
+      "form": "expression",
+      "source": "dict(a=1)|items is sequence",
+      "expect": "boolean",
+      "notes": "`items` is `make_object_iterable` (filters.rs:362-379), so its KIND is iterable. Materializing a sequence instead answered the wrong kind."
+    },
+    {
+      "id": "review/items-is-iterable",
+      "surface": "container",
+      "form": "expression",
+      "source": "dict(a=1)|items is iterable",
+      "expect": "boolean"
+    },
+    {
+      "id": "review/items-length",
+      "surface": "container",
+      "form": "expression",
+      "source": "dict(a=1)|items|length",
+      "notes": "Its enumerator has an exact size, which is what still gives it a length and an index."
+    },
+    {
+      "id": "review/items-empty-is-not-sequence",
+      "surface": "container",
+      "form": "expression",
+      "source": "dict()|items is sequence",
+      "expect": "boolean"
+    },
+    {
+      "id": "review/items-empty-truth",
+      "surface": "container",
+      "form": "expression",
+      "source": "'T' if dict()|items else 'F'"
+    },
+    {
+      "id": "review/items-index",
+      "surface": "container",
+      "form": "expression",
+      "source": "(dict(a=1,b=2)|items)[1]|join(',')"
+    },
+    {
+      "id": "review/items-negative-index",
+      "surface": "container",
+      "form": "expression",
+      "source": "(dict(a=1,b=2)|items)[-1]|join(',')"
+    },
+    {
+      "id": "review/items-slice",
+      "surface": "container",
+      "form": "expression",
+      "source": "(dict(a=1,b=2)|items)[0:1]|tojson"
+    },
+    {
+      "id": "review/items-tojson",
+      "surface": "container",
+      "form": "expression",
+      "source": "dict(a=1,b=2)|items|tojson"
+    },
+    {
+      "id": "review/items-display",
+      "surface": "container",
+      "form": "expression",
+      "source": "dict(a=1)|items|string"
+    },
+    {
+      "id": "review/items-reverse",
+      "surface": "container",
+      "form": "expression",
+      "source": "dict(a=1,b=2)|items|reverse|list|tojson"
+    },
+    {
+      "id": "review/items-attr-miss",
+      "surface": "container",
+      "form": "expression",
+      "source": "(dict(a=1)|items).x is undefined",
+      "expect": "boolean"
+    },
+    {
+      "id": "review/items-unpacking-loop",
+      "surface": "container",
+      "form": "template",
+      "source": "{% for k, v in dict(a=1,b=2)|items %}{{ k }}{{ v }}{% endfor %}"
+    },
+    {
+      "id": "review/items-listed-is-sequence",
+      "surface": "container",
+      "form": "expression",
+      "source": "dict(a=1)|items|list is sequence",
+      "expect": "boolean",
+      "notes": "`list` of it is a sequence again."
+    },
+    {
+      "id": "review/items-first",
+      "surface": "container",
+      "form": "expression",
+      "source": "dict(a=1)|items|first|tojson"
+    },
+    {
+      "id": "review/items-nonmap",
+      "surface": "container",
+      "form": "expression",
+      "source": "[1]|items",
+      "expect": "error"
+    },
+    {
+      "id": "review/items-undefined",
+      "surface": "container",
+      "form": "expression",
+      "source": "missing|items",
+      "expect": "error"
+    },
+    {
+      "id": "review/zip-is-not-sequence",
+      "surface": "container",
+      "form": "expression",
+      "source": "[1]|zip([2]) is sequence",
+      "expect": "boolean",
+      "notes": "`zip` is `make_object_iterable` too (filters.rs:1629-1659)."
+    },
+    {
+      "id": "review/zip-is-iterable",
+      "surface": "container",
+      "form": "expression",
+      "source": "[1]|zip([2]) is iterable",
+      "expect": "boolean"
+    },
+    {
+      "id": "review/zip-length",
+      "surface": "container",
+      "form": "expression",
+      "source": "[1]|zip([2])|length",
+      "notes": "It carries a length only when EVERY operand has one, and then it is their minimum."
+    },
+    {
+      "id": "review/zip-empty-is-not-sequence",
+      "surface": "container",
+      "form": "expression",
+      "source": "[]|zip([]) is sequence",
+      "expect": "boolean"
+    },
+    {
+      "id": "review/zip-empty-truth",
+      "surface": "container",
+      "form": "expression",
+      "source": "'T' if []|zip([]) else 'F'"
+    },
+    {
+      "id": "review/zip-unsized-operand",
+      "surface": "container",
+      "form": "expression",
+      "source": "[1]|zip(missing)",
+      "notes": "An operand with no known length takes the zip's length away entirely, which is what makes this an unsized iterable rather than an empty sequence."
+    },
+    {
+      "id": "review/zip-of-zip-length",
+      "surface": "container",
+      "form": "expression",
+      "source": "[1,2]|zip([1,2]|zip([3,4]))|length",
+      "notes": "And a sized zip is itself a sized operand."
+    },
+    {
+      "id": "review/zip-index",
+      "surface": "container",
+      "form": "expression",
+      "source": "([1,2]|zip([3,4]))[0]|join(',')"
+    },
+    {
+      "id": "review/zip-negative-index",
+      "surface": "container",
+      "form": "expression",
+      "source": "([1,2]|zip([3,4]))[-1]|join(',')"
+    },
+    {
+      "id": "review/zip-slice",
+      "surface": "container",
+      "form": "expression",
+      "source": "([1,2]|zip([3,4]))[0:1]|tojson"
+    },
+    {
+      "id": "review/zip-tojson",
+      "surface": "container",
+      "form": "expression",
+      "source": "[1,2]|zip([3,4])|tojson"
+    },
+    {
+      "id": "review/zip-display",
+      "surface": "container",
+      "form": "expression",
+      "source": "[1,2]|zip([3,4])|string"
+    },
+    {
+      "id": "review/zip-reverse",
+      "surface": "container",
+      "form": "expression",
+      "source": "[1,2]|zip([3,4])|reverse|list|tojson"
+    },
+    {
+      "id": "review/zip-batch",
+      "surface": "container",
+      "form": "expression",
+      "source": "[1,2]|zip([3,4])|batch(1)|tojson"
+    },
+    {
+      "id": "review/zip-last",
+      "surface": "container",
+      "form": "expression",
+      "source": "[1,2]|zip([3,4])|last|tojson"
+    },
+    {
+      "id": "review/zip-select",
+      "surface": "container",
+      "form": "expression",
+      "source": "[1,2]|zip([3,4])|select|list|tojson"
+    },
+    {
+      "id": "review/zip-string-operands",
+      "surface": "container",
+      "form": "expression",
+      "source": "'ab'|zip('cd')|list|tojson"
+    },
+    {
+      "id": "review/zip-map-operand",
+      "surface": "container",
+      "form": "expression",
+      "source": "dict(a=1,b=2)|zip([1,2])|tojson"
+    },
+    {
+      "id": "review/zip-map-operand-length",
+      "surface": "container",
+      "form": "expression",
+      "source": "dict(a=1)|zip([1])|length"
+    },
+    {
+      "id": "review/zip-single-operand",
+      "surface": "container",
+      "form": "expression",
+      "source": "[1,2]|zip()|list|tojson"
+    },
+    {
+      "id": "review/zip-noniterable",
+      "surface": "container",
+      "form": "expression",
+      "source": "[1]|zip(1)",
+      "expect": "error"
+    },
+    {
+      "id": "review/pprint-iterable-alternate",
+      "surface": "string",
+      "form": "expression",
+      "source": "dict(a='i̇').keys()|pprint",
+      "profile": "pycompat",
+      "notes": "`pprint` is `{value:#?}` (filters.rs:1665-1667) and the object renderer emits a `debug_list` for a sequence OR an ITERABLE whose enumerator has an exact length (value/object.rs:339-348). Falling back to the compact form for iterables lost the layout."
+    },
+    {
+      "id": "review/pprint-iterable-empty",
+      "surface": "string",
+      "form": "expression",
+      "source": "dict().keys()|pprint",
+      "profile": "pycompat"
+    },
+    {
+      "id": "review/pprint-keys-multi",
+      "surface": "string",
+      "form": "expression",
+      "source": "dict(a=1,b=2).keys()|pprint",
+      "profile": "pycompat"
+    },
+    {
+      "id": "review/pprint-values",
+      "surface": "string",
+      "form": "expression",
+      "source": "dict(a=1,b=2).values()|pprint",
+      "profile": "pycompat"
+    },
+    {
+      "id": "review/pprint-items-method",
+      "surface": "string",
+      "form": "expression",
+      "source": "dict(a=1).items()|pprint",
+      "profile": "pycompat"
+    },
+    {
+      "id": "review/pprint-items-filter",
+      "surface": "string",
+      "form": "expression",
+      "source": "dict(a=1)|items|pprint"
+    },
+    {
+      "id": "review/pprint-zip",
+      "surface": "string",
+      "form": "expression",
+      "source": "[1]|zip([2])|pprint"
+    },
+    {
+      "id": "review/pprint-range",
+      "surface": "string",
+      "form": "expression",
+      "source": "range(2)|pprint"
+    },
+    {
+      "id": "review/pprint-select",
+      "surface": "string",
+      "form": "expression",
+      "source": "[1,2,3]|select('odd')|pprint"
+    },
+    {
+      "id": "review/pprint-unsized-iterable",
+      "surface": "string",
+      "form": "expression",
+      "source": "([1]|chain(dict(a=2)))|pprint",
+      "notes": "Without an exact length the engine will not iterate to print, and the object's own debug form is what comes out."
+    },
+    {
+      "id": "review/pprint-groupby-record",
+      "surface": "string",
+      "form": "expression",
+      "source": "[dict(k=1,v='a')]|groupby('k')|first|pprint",
+      "notes": "A `groupby` record is a two-element SEQUENCE object, so it is a debug list and not the empty one a Go-slice-only renderer produced."
+    },
+    {
+      "id": "review/pprint-groupby-record-list",
+      "surface": "string",
+      "form": "expression",
+      "source": "[dict(k=1,v='a'),dict(k=1,v='b')]|groupby('k')|first|last|pprint"
+    },
+    {
+      "id": "review/pprint-groupby-list-attr",
+      "surface": "string",
+      "form": "expression",
+      "source": "[dict(k=1,v='a')]|groupby('k')|first|attr('list')|pprint"
+    },
+    {
+      "id": "review/pprint-groupby-list",
+      "surface": "string",
+      "form": "expression",
+      "source": "[dict(k=1,v='a'),dict(k=1,v='b')]|groupby('k')|list|pprint"
+    },
+    {
+      "id": "review/pprint-groupby-deep",
+      "surface": "string",
+      "form": "expression",
+      "source": "[dict(k=1,v='a'),dict(k=2,v='b')]|groupby('k')|list|pprint"
+    },
+    {
+      "id": "review/pprint-groupby-all",
+      "surface": "string",
+      "form": "expression",
+      "source": "[dict(k=1,v='a')]|groupby('k')|pprint"
+    },
+    {
+      "id": "review/pprint-chain-seq",
+      "surface": "string",
+      "form": "expression",
+      "source": "([1]|chain([2]))|pprint"
+    },
+    {
+      "id": "review/pprint-nested-map-in-seq",
+      "surface": "string",
+      "form": "expression",
+      "source": "[dict(a=1)]|pprint"
+    },
+    {
+      "id": "review/pprint-nested-list",
+      "surface": "string",
+      "form": "expression",
+      "source": "[[1,[2]]]|pprint"
+    },
+    {
+      "id": "review/pprint-map-in-map",
+      "surface": "string",
+      "form": "expression",
+      "source": "dict(a=dict(b=1))|pprint"
+    },
+    {
+      "id": "review/pprint-empty-seq",
+      "surface": "string",
+      "form": "expression",
+      "source": "[]|pprint"
+    },
+    {
+      "id": "review/pprint-empty-map",
+      "surface": "string",
+      "form": "expression",
+      "source": "dict()|pprint"
+    },
+    {
+      "id": "review/pprint-string",
+      "surface": "string",
+      "form": "expression",
+      "source": "'a'|pprint"
+    },
+    {
+      "id": "review/pprint-undefined",
+      "surface": "string",
+      "form": "expression",
+      "source": "missing|pprint"
+    },
+    {
+      "id": "review/pprint-none",
+      "surface": "string",
+      "form": "expression",
+      "source": "none|pprint"
+    },
+    {
+      "id": "review/pprint-macro",
+      "surface": "string",
+      "form": "template",
+      "source": "{% macro m() %}{% endmacro %}{{ m|pprint }}"
+    },
+    {
+      "id": "review/pprint-key-escape",
+      "surface": "string",
+      "form": "expression",
+      "source": "dict(**{'á':1})|pprint"
     }
   ]
 }

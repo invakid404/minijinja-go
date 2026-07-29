@@ -206,3 +206,75 @@ func TestUnknownMethodCallbackNotConsultedForAttributes(t *testing.T) {
 		t.Errorf("the callback was consulted for an existing attribute: %v", calls)
 	}
 }
+
+// presenceObject is a generic host object that can hold an UNDEFINED value
+// under a name that exists. It answers presence through the optional
+// value.ObjectWithAttrLookup hook.
+type presenceObject struct {
+	entries map[string]value.Value
+}
+
+func (p *presenceObject) GetAttr(name string) value.Value {
+	if v, ok := p.entries[name]; ok {
+		return v
+	}
+	return value.Undefined()
+}
+
+func (p *presenceObject) LookupAttr(name string) (value.Value, bool) {
+	v, ok := p.entries[name]
+	if !ok {
+		return value.Undefined(), false
+	}
+	return v, true
+}
+
+// TestMethodDispatchTestsPresenceNotValue pins the contract that decides
+// whether a host's unknown-method callback runs at all.
+//
+// The engine's default `Object::call_method` is
+// `if let Some(value) = self.get_value(...) { value.call(...) }`
+// (value/object.rs:241-252). The branch is on the OPTION: a name that exists
+// and holds undefined is called — and fails as "undefined is not callable" —
+// where a name that does not exist is an unknown method. Deciding it on the
+// retrieved value instead sent every present-but-undefined entry to the
+// callback, which is a generic object contract error and not a pycompat one.
+func TestMethodDispatchTestsPresenceNotValue(t *testing.T) {
+	present := value.FromObject(&presenceObject{entries: map[string]value.Value{
+		"x": value.Undefined(),
+	}})
+	absent := value.FromObject(&presenceObject{entries: map[string]value.Value{}})
+
+	for _, tc := range []struct {
+		name     string
+		ctx      map[string]any
+		wantKind ErrorKind
+	}{
+		{"a present entry holding undefined is called", map[string]any{"o": present}, ErrInvalidOperation},
+		{"an absent name is an unknown method", map[string]any{"o": absent}, ErrUnknownMethod},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			var calls []string
+			out, err := renderWithHook(t, `{{ o.x() }}`, recordingCallback(&calls), tc.ctx)
+			if err == nil {
+				t.Fatalf("rendered %q, want an error", out)
+			}
+			var mjErr *Error
+			if !errors.As(err, &mjErr) {
+				t.Fatalf("error %T, want *minijinja.Error", err)
+			}
+			if mjErr.Kind != tc.wantKind {
+				t.Fatalf("kind %v, want %v", mjErr.Kind, tc.wantKind)
+			}
+			// The callback is reached only through UnknownMethod, so it is
+			// consulted for the absent name and for nothing else.
+			wantCalls := 0
+			if tc.wantKind == ErrUnknownMethod {
+				wantCalls = 1
+			}
+			if len(calls) != wantCalls {
+				t.Errorf("callback calls = %v, want %d", calls, wantCalls)
+			}
+		})
+	}
+}

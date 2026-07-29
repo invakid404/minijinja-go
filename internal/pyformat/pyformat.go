@@ -15,8 +15,10 @@
 // str.format left-aligns them; `%s` accepts a bool and `{:s}` does not).
 //
 // Widths and precisions count BYTES, not characters, because the reference
-// implementation slices and measures Rust strings. That is a real observable:
-// `"{:.1}".format("日")` cuts a multi-byte character in half.
+// implementation slices and measures Rust strings. That is a real observable —
+// and where a byte precision would cut a multi-byte character in half, Rust's
+// own string slicing ABORTS, which is the one place this package refuses
+// instead of answering; see [formatSpec.formatString].
 package pyformat
 
 import (
@@ -25,6 +27,7 @@ import (
 	"math/big"
 	"strconv"
 	"strings"
+	"unicode/utf8"
 
 	mjerrors "github.com/invakid404/minijinja-go/v2/internal/errors"
 	"github.com/invakid404/minijinja-go/v2/value"
@@ -253,18 +256,16 @@ func (s *formatSpec) format(val value.Value) (string, error) {
 	if b, ok := val.AsBool(); ok && val.Kind() == value.KindBool {
 		return s.formatBool(b)
 	}
+	// `cast_to_abs_integer` (format_utils.rs:172-184) tries the two integer
+	// widths in order: `i128`, which carries the sign, and then `u128`, which
+	// is where the values above `i128::MAX` live and are never negative. Only
+	// when NEITHER converts is the value formatted as a float.
 	if val.Kind() == value.KindNumber && val.IsActualInt() {
-		// Losslessly, through the engine's i128 conversion: an integer past
-		// int64 used to have its AsInt failure ignored and formatted as 0.
 		if n, ok := val.AsBigInt(); ok {
 			return s.formatInteger(new(big.Int).Abs(n), n.Sign() < 0)
 		}
-		if u, ok := val.AsString(); ok {
-			// A u128 past i128::MAX has no signed form; its decimal spelling
-			// is what the value itself renders as.
-			if n, ok := new(big.Int).SetString(u, 10); ok {
-				return s.formatInteger(new(big.Int).Abs(n), n.Sign() < 0)
-			}
+		if n, ok := val.AsBigUint(); ok {
+			return s.formatInteger(n, false)
 		}
 	}
 	if f, ok := val.AsFloat(); ok && val.Kind() == value.KindNumber {
@@ -302,8 +303,23 @@ func (s *formatSpec) formatString(text string) (string, error) {
 		if s.style == StylePrintf {
 			defaultAlign = alignRight
 		}
-		// Byte slicing, as in the reference implementation.
+		// Byte slicing, as in the reference implementation: the precision is a
+		// BYTE count compared against `text.len()` (format_utils.rs:227-231).
 		if s.hasPrecision && s.precision < len(text) {
+			// `text[..p]` on a Rust `String` ABORTS when p is not a UTF-8
+			// character boundary, so `'{:.1}'.format('日')` panics rather than
+			// producing a truncated encoding. Go would happily hand back the
+			// lone 0xE6 byte, which is neither what the engine returns nor
+			// valid UTF-8, so the fork refuses instead — the same disposition
+			// as the zero divisor and the unallocatable `usize`. The row is a
+			// DECLARED divergence in the oracle ledger with the engine's own
+			// abort pinned beside it.
+			if !utf8.RuneStart(text[s.precision]) {
+				return "", invalidOp(
+					"precision %d would split the character at byte %d of %q; "+
+						"the reference engine aborts here",
+					s.precision, s.precision, text)
+			}
 			return s.applyPadding(text[:s.precision], defaultAlign), nil
 		}
 		return s.applyPadding(text, defaultAlign), nil

@@ -977,7 +977,7 @@ func FilterSort(state State, val value.Value, args []value.Value, kwargs *value.
 	if err != nil {
 		return value.Undefined(), err
 	}
-	attrName, _, err := a.GetStr("attribute")
+	attrName, hasAttr, err := a.GetStr("attribute")
 	if err != nil {
 		return value.Undefined(), err
 	}
@@ -985,7 +985,13 @@ func FilterSort(state State, val value.Value, args []value.Value, kwargs *value.
 		return value.Undefined(), err
 	}
 
-	sortKeys := splitAttributeKeys(attrName)
+	// `Option<&str>`: the attribute branch is chosen by whether the keyword was
+	// GIVEN, so `sort(attribute="")` is a real, empty path and not "no
+	// attribute" (filters.rs:785).
+	var sortKeys []string
+	if hasAttr {
+		sortKeys = splitAttributeKeys(attrName)
+	}
 
 	items, err := listArg(val)
 	if err != nil {
@@ -1003,8 +1009,17 @@ func FilterSort(state State, val value.Value, args []value.Value, kwargs *value.
 		// orders by age and breaks ties by name, which one path lookup cannot
 		// do.
 		if len(sortKeys) == 1 {
-			a = getDeepAttr(a, sortKeys[0])
-			b = getDeepAttr(b, sortKeys[0])
+			// The single-key fast path compares the two `get_path` RESULTS,
+			// and a failed lookup on either side is a TIE, not undefined
+			// (filters.rs:814-819): under a stable sort the pair keeps its
+			// input order instead of being reordered against everything else
+			// that also failed.
+			av, aok := getDeepAttrOK(a, sortKeys[0])
+			bv, bok := getDeepAttrOK(b, sortKeys[0])
+			if !aok || !bok {
+				return false
+			}
+			a, b = av, bv
 		} else if len(sortKeys) > 1 {
 			aParts := make([]value.Value, len(sortKeys))
 			bParts := make([]value.Value, len(sortKeys))
@@ -1056,42 +1071,86 @@ func cmpHelper(a, b value.Value, caseSensitive bool) int {
 	return 0
 }
 
-// splitAttributeKeys splits a sort attribute into its comma-separated parts,
-// trimming each. An empty attribute yields no keys, and a single key is the
-// common fast path (filters.rs:785-797).
+// splitAttributeKeys splits `sort`'s attribute into its comma-separated parts
+// (filters.rs:786-796). Only `sort` splits: every other consumer of an
+// attribute passes the whole string to [getDeepAttr] as one path.
+//
+// Two details of the engine's filter are load-bearing and are reproduced here
+// rather than tidied up:
+//
+//   - the EMPTINESS test is on the raw part and the kept value is the TRIMMED
+//     one, so `" "` survives as `""` while `""` is dropped;
+//   - when every part is dropped, `sort` falls back to the literal attribute
+//     (filters.rs:813). `sort(attribute=",")` therefore looks up the key ","
+//     rather than composing two empty ones.
 func splitAttributeKeys(attr string) []string {
-	if attr == "" {
-		return nil
-	}
 	parts := strings.Split(attr, ",")
 	keys := make([]string, 0, len(parts))
 	for _, part := range parts {
+		if part == "" {
+			continue
+		}
 		keys = append(keys, strings.TrimSpace(part))
+	}
+	if len(keys) == 0 {
+		return []string{attr}
 	}
 	return keys
 }
 
-// getDeepAttr gets a nested attribute (supports "a.b.0" syntax)
-func getDeepAttr(v value.Value, path string) value.Value {
-	parts := strings.Split(path, ".")
-	for _, part := range parts {
-		// Try as integer index first
-		if idx, err := parseInt(part); err == nil {
-			v = v.GetItem(value.FromInt(idx))
+// getDeepAttr walks the engine's attribute PATH, `Value::get_path`
+// (value/mod.rs:1654-1664): the path splits on `.`, and a component is an
+// index only when it parses COMPLETELY as a `usize`.
+//
+// The result also carries whether the walk succeeded, because `get_path`
+// returns a Result and `sort`'s single-key comparator treats a failure as a
+// TIE rather than as undefined (filters.rs:814-819).
+func getDeepAttrOK(v value.Value, path string) (value.Value, bool) {
+	for _, part := range strings.Split(path, ".") {
+		// `get_attr`/`get_item` on undefined is the engine's one error here
+		// (value/mod.rs:1286, 1337); every other miss is a plain undefined.
+		if v.IsUndefined() {
+			return v, false
+		}
+		if idx, ok := parseUsize(part); ok {
+			v = v.GetItem(value.FromUint64(idx))
 		} else {
 			v = v.GetAttr(part)
 		}
-		if v.IsUndefined() {
-			return v
-		}
 	}
-	return v
+	return v, true
 }
 
-func parseInt(s string) (int64, error) {
-	var n int64
-	_, err := fmt.Sscanf(s, "%d", &n)
-	return n, err
+// getDeepAttr is [getDeepAttrOK] for the consumers that use
+// `get_path_or_default`, where a failed walk and an undefined result are the
+// same answer (value/mod.rs:1667-1673).
+func getDeepAttr(v value.Value, path string) value.Value {
+	val, ok := getDeepAttrOK(v, path)
+	if !ok {
+		return value.Undefined()
+	}
+	return val
+}
+
+// parseUsize is `str::parse::<usize>()`: the WHOLE component must be a
+// 64-bit unsigned integer. A sign other than `+`, a digit separator, or any
+// trailing text makes the component an attribute NAME instead, which is why
+// `sort(attribute="-1")` reads the key "-1" and does not index from the end.
+func parseUsize(s string) (uint64, bool) {
+	s = strings.TrimPrefix(s, "+")
+	if s == "" {
+		return 0, false
+	}
+	for i := 0; i < len(s); i++ {
+		if s[i] < '0' || s[i] > '9' {
+			return 0, false
+		}
+	}
+	n, err := strconv.ParseUint(s, 10, 64)
+	if err != nil {
+		return 0, false
+	}
+	return n, true
 }
 
 // FilterJoin concatenates items from an iterable into a string.
@@ -1196,7 +1255,7 @@ func FilterUnique(_ State, val value.Value, args []value.Value, kwargs *value.Or
 	if err != nil {
 		return value.Undefined(), err
 	}
-	attrName, _, err := a.GetStr("attribute")
+	attrName, hasAttr, err := a.GetStr("attribute")
 	if err != nil {
 		return value.Undefined(), err
 	}
@@ -1209,33 +1268,68 @@ func FilterUnique(_ State, val value.Value, args []value.Value, kwargs *value.Or
 		return value.Undefined(), err
 	}
 
-	seen := make(map[string]bool)
+	var seen valueSet
 	var result []value.Value
 	for _, item := range items {
 		valueToCompare := item
-		if attrName != "" {
+		// `Option<&str>`: an attribute that was given is a path even when it
+		// is empty (filters.rs:1503, 1512-1516).
+		if hasAttr {
 			valueToCompare = getDeepAttr(item, attrName)
 		}
 
-		// `s.to_lowercase()` (filters.rs:1517-1523), which is FULL case
-		// mapping: "İ" and "i̇" fold together, where Go's simple ToLower keeps
-		// them apart. Also, the attribute lookup above is a path.
-		var key string
+		// Only an ACTUAL string is memoized case-folded. Everything else is
+		// remembered as the value itself (filters.rs:1517-1523), so two
+		// objects that merely render alike are two values.
+		//
+		// The lowercasing is Rust's `to_lowercase`, FULL case mapping: "İ" and
+		// "i̇" fold together where Go's simple ToLower keeps them apart.
+		memorized := valueToCompare
 		if !caseSensitive {
 			if s, ok := valueToCompare.AsString(); ok {
-				key = value.FromString(unicodecase.ToLower(s)).Repr()
-			} else {
-				key = valueToCompare.Repr()
+				memorized = value.FromString(unicodecase.ToLower(s))
 			}
-		} else {
-			key = valueToCompare.Repr()
 		}
-		if !seen[key] {
-			seen[key] = true
+		if seen.insert(memorized) {
 			result = append(result, item)
 		}
 	}
 	return value.FromSlice(result), nil
+}
+
+// valueSet is `BTreeSet<Value>`: membership is decided by the value model's
+// own total ORDER, not by a rendered key.
+//
+// That is what makes `1` and `1.0` one entry — they coerce and compare equal —
+// while `true` stays its own, and what routes two host objects through the
+// generic comparison hook instead of collapsing them onto a shared display
+// string. It is a sorted slice rather than a tree because the sets a template
+// builds are small and the comparator is the expensive part either way.
+type valueSet struct {
+	sorted []value.Value
+}
+
+// insert adds a value and reports whether it was new.
+func (s *valueSet) insert(v value.Value) bool {
+	lo, hi := 0, len(s.sorted)
+	for lo < hi {
+		mid := int(uint(lo+hi) >> 1)
+		// A pair the engine has no rule for at all is where its `Ord` is
+		// `unreachable!()`; treating it as equal is the only answer that keeps
+		// this a total order.
+		cmp, _ := s.sorted[mid].Compare(v)
+		if cmp < 0 {
+			lo = mid + 1
+		} else if cmp > 0 {
+			hi = mid
+		} else {
+			return false
+		}
+	}
+	s.sorted = append(s.sorted, value.Value{})
+	copy(s.sorted[lo+1:], s.sorted[lo:])
+	s.sorted[lo] = v
+	return true
 }
 
 // FilterMin returns the smallest item from an iterable.
@@ -2096,15 +2190,15 @@ func FilterChain(_ State, val value.Value, args []value.Value, kwargs *value.Ord
 	}
 
 	// All mappings merge into one mapping, all sequences into one sequence.
+	//
+	// The mapping is `MergeDict`, which does not build a merged map at all: it
+	// searches its sources NEWEST FIRST and skips an undefined answer
+	// (value/merge_object.rs:21-31). Eagerly overwriting instead lost an
+	// earlier DEFINED value to a later undefined one, so
+	// `dict(a=1)|chain(dict(a=missing))` answered undefined where the engine
+	// answers 1.
 	if allMaps {
-		merged := make(map[string]value.Value)
-		for _, v := range allValues {
-			m, _ := v.AsMap()
-			for k, item := range m {
-				merged[k] = item
-			}
-		}
-		return value.FromMap(merged), nil
+		return value.NewMergedMap(allValues...), nil
 	}
 	if allSeq {
 		var items []value.Value
@@ -2186,44 +2280,75 @@ func FilterZip(_ State, val value.Value, args []value.Value, kwargs *value.Order
 	// `zip(value, others: Rest<Value>)`: every operand is iterated, so a
 	// non-iterable anywhere is an invalid operation rather than an empty
 	// result.
-	zipArg := func(v value.Value) ([]value.Value, error) {
-		return tryIter(v, fmt.Sprintf("zip filter argument must be iterable, got %s", v.Kind()))
-	}
-	first, err := zipArg(val)
-	if err != nil {
-		return value.Undefined(), err
-	}
-	seqs := [][]value.Value{first}
-	for _, arg := range NewArgs(args, kwargs).Rest() {
-		items, err := zipArg(arg)
-		if err != nil {
+	operands := append([]value.Value{val}, NewArgs(args, kwargs).Rest()...)
+
+	// The validation pass walks the operands in order and STOPS at the first
+	// one whose length is not known (filters.rs:1605-1627): the `break` is the
+	// engine's, so a non-iterable operand after an unsized one is never
+	// reported. The minimum of the known lengths is the zip's own length, and
+	// one unsized operand takes it away entirely.
+	knownLen := -1
+	for _, operand := range operands {
+		if _, err := tryIter(operand,
+			fmt.Sprintf("zip filter argument must be iterable, got %s", operand.Kind())); err != nil {
 			return value.Undefined(), err
 		}
-		seqs = append(seqs, items)
-	}
-
-	// Find minimum length
-	minLen := math.MaxInt
-	for _, seq := range seqs {
-		if len(seq) < minLen {
-			minLen = len(seq)
+		n, ok := operand.Len()
+		if !ok {
+			knownLen = -1
+			break
+		}
+		if knownLen < 0 || n < knownLen {
+			knownLen = n
 		}
 	}
 
-	if minLen <= 0 || minLen == math.MaxInt {
-		return value.FromSlice(nil), nil
+	// `make_object_iterable` (filters.rs:1629-1659), so the result is an
+	// ITERABLE and not a sequence, whatever the operands were. An operand that
+	// cannot be iterated at this point empties the whole stream rather than
+	// failing it, which is what `collect::<Option<Vec<_>>>().unwrap_or_default()`
+	// does.
+	zip := func() []value.Value {
+		seqs := make([][]value.Value, 0, len(operands))
+		for _, operand := range operands {
+			items, err := tryIter(operand, "not iterable")
+			if err != nil {
+				return nil
+			}
+			seqs = append(seqs, items)
+		}
+		minLen := math.MaxInt
+		for _, seq := range seqs {
+			if len(seq) < minLen {
+				minLen = len(seq)
+			}
+		}
+		if minLen <= 0 || minLen == math.MaxInt {
+			return nil
+		}
+		result := make([]value.Value, minLen)
+		for i := range result {
+			tuple := make([]value.Value, len(seqs))
+			for j, seq := range seqs {
+				tuple[j] = seq[i]
+			}
+			result[i] = value.FromSlice(tuple)
+		}
+		return result
 	}
 
-	// Zip
-	result := make([]value.Value, minLen)
-	for i := 0; i < minLen; i++ {
-		tuple := make([]value.Value, len(seqs))
-		for j, seq := range seqs {
-			tuple[j] = seq[i]
-		}
-		result[i] = value.FromSlice(tuple)
+	if knownLen >= 0 {
+		return value.MakeSizedIterable(zip()), nil
 	}
-	return value.FromSlice(result), nil
+	return value.MakeIterable(func() iter.Seq[value.Value] {
+		return func(yield func(value.Value) bool) {
+			for _, item := range zip() {
+				if !yield(item) {
+					return
+				}
+			}
+		}
+	}), nil
 }
 
 // FilterAbs returns the absolute value of a number.
@@ -2483,7 +2608,11 @@ func FilterItems(_ State, val value.Value, args []value.Value, kwargs *value.Ord
 				item,
 			}))
 		}
-		return value.FromSlice(result), nil
+		// `make_object_iterable` (filters.rs:362-379), so the result is an
+		// ITERABLE and not a sequence: `dict(a=1)|items is sequence` is false.
+		// Its enumerator has an exact size, which is what still gives it a
+		// length, an index and the alternate debug layout.
+		return value.MakeSizedIterable(result), nil
 	}
 	return value.Undefined(), mjerrors.NewError(mjerrors.ErrInvalidOperation,
 		"cannot convert value into pairs")
@@ -2648,18 +2777,37 @@ func FilterIndent(_ State, val value.Value, args []value.Value, kwargs *value.Or
 		return value.Undefined(), err
 	}
 
-	indent := strings.Repeat(" ", width)
-	lines := strings.Split(s, "\n")
-	for i, line := range lines {
-		if i == 0 && !first {
-			continue
-		}
-		if line == "" && !blank {
-			continue
-		}
-		lines[i] = indent + line
+	// The engine strips a terminal line ending BOTH before indenting and after
+	// (filters.rs:1067-1099), so `'a\n'|indent(2)` is `"a"` and not `"a\n"`.
+	// Each strip removes one '\n' and then one '\r', independently: `'a\r'`
+	// loses its CR even though no LF preceded it.
+	stripTrailingNewline := func(in string) string {
+		in = strings.TrimSuffix(in, "\n")
+		return strings.TrimSuffix(in, "\r")
 	}
-	return value.FromString(strings.Join(lines, "\n")), nil
+
+	indent := strings.Repeat(" ", width)
+	lines := strings.Split(stripTrailingNewline(s), "\n")
+
+	var out strings.Builder
+	if !first {
+		// The first line is emitted verbatim and is never treated as blank.
+		out.WriteString(lines[0])
+		out.WriteByte('\n')
+		lines = lines[1:]
+	}
+	for _, line := range lines {
+		if line == "" {
+			if blank {
+				out.WriteString(indent)
+			}
+		} else {
+			out.WriteString(indent)
+			out.WriteString(line)
+		}
+		out.WriteByte('\n')
+	}
+	return value.FromString(stripTrailingNewline(out.String())), nil
 }
 
 // FilterPprint pretty-prints a value for debugging.
@@ -2682,11 +2830,27 @@ func FilterPprint(_ State, val value.Value, args []value.Value, kwargs *value.Or
 	return value.FromString(pprintValue(val, 0)), nil
 }
 
+// pprintValue is `{value:#?}` (filters.rs:1665-1667), the ALTERNATE debug form
+// of a value.
+//
+// It is the same renderer the compact `Repr` goes through, selected the same
+// way (value/object.rs:327-353): a map is a `debug_map`, and a sequence OR an
+// iterable is a `debug_list` — but only when its enumerator has an exact
+// length, because the engine will not risk iterating an unsized object just to
+// print it. Anything else falls back to the object's own debug form.
+//
+// So the choice is about the object's REPRESENTATION and its enumerator, not
+// about whether the fork happens to hold a Go slice: `groupby(...)` records and
+// the pycompat views are objects, and printing them as `[]` was reading a slice
+// that was never there.
 func pprintValue(val value.Value, indent int) string {
 	pad := strings.Repeat(" ", indent)
 	switch val.Kind() {
-	case value.KindSeq:
-		items, _ := val.AsSlice()
+	case value.KindSeq, value.KindIterable:
+		if _, sized := val.Len(); !sized {
+			return val.Repr()
+		}
+		items := val.Iter()
 		if len(items) == 0 {
 			return "[]"
 		}
@@ -2701,18 +2865,22 @@ func pprintValue(val value.Value, indent int) string {
 		sb.WriteString("]")
 		return sb.String()
 	case value.KindMap:
-		m, _ := val.AsMap()
-		if len(m) == 0 {
-			return "{}"
-		}
 		// The mapping's own order, so a pretty-printed map does not disagree
 		// with the same map rendered normally.
-		keys, _ := val.MapKeys()
+		keys, ok := val.MapKeys()
+		if !ok {
+			return val.Repr()
+		}
+		if len(keys) == 0 {
+			return "{}"
+		}
 		var sb strings.Builder
 		sb.WriteString("{\n")
 		for _, k := range keys {
 			sb.WriteString(strings.Repeat(" ", indent+4))
-			sb.WriteString(fmt.Sprintf("%s: %s,", unicodecase.QuoteDebug(k), pprintValue(m[k], indent+4)))
+			sb.WriteString(fmt.Sprintf("%s: %s,",
+				unicodecase.QuoteDebug(k),
+				pprintValue(val.GetItem(value.FromString(k)), indent+4)))
 			sb.WriteString("\n")
 		}
 		sb.WriteString(pad)

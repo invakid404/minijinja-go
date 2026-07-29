@@ -287,6 +287,47 @@ func (v Value) AsBigInt() (*big.Int, bool) {
 	}
 }
 
+// AsBigUint is `impl TryFrom<Value> for u128` (value/argtypes.rs:410-428): the
+// same arms as [Value.AsBigInt], bounded by [0, u128::MAX] instead of by the
+// i128 range.
+//
+// It exists because the engine's integer formatter tries BOTH: `i128` first,
+// then `u128` (format_utils.rs:172-184). Without the second try, a `u128` above
+// `i128::MAX` is not an integer to the formatter at all and falls through to
+// floating point, which is a different number.
+//
+// The returned *big.Int is not aliased with the value's payload and is safe to
+// mutate.
+func (v Value) AsBigUint() (*big.Int, bool) {
+	switch d := v.data.(type) {
+	case bool:
+		if d {
+			return big.NewInt(1), true
+		}
+		return new(big.Int), true
+	case int64:
+		if d < 0 {
+			return nil, false
+		}
+		return big.NewInt(d), true
+	case u64Value:
+		return big.NewInt(int64(d)), true
+	case float64:
+		i, ok := f64ToI64(d)
+		if !ok || i < 0 {
+			return nil, false
+		}
+		return big.NewInt(i), true
+	case bigIntValue:
+		if d.Int.Sign() < 0 || d.Int.Cmp(bigU128Max) > 0 {
+			return nil, false
+		}
+		return new(big.Int).Set(d.Int), true
+	default:
+		return nil, false
+	}
+}
+
 // AsUsize is `impl TryFrom<Value> for usize` on a 64-bit target, where `usize`
 // is a `u64` and its range is [0, u64::MAX].
 //

@@ -577,37 +577,70 @@ func (s *State) callMacroWithValues(macro *parser.Macro, args []value.Value, kwa
 		s.Set("caller", caller)
 	}
 
-	// Bind arguments
+	// Resolving an argument's value and FILLING IN its default are two
+	// separate passes in the engine, and they run in opposite directions.
+	//
+	// `Macro::call` builds the whole argument vector first, forwards
+	// (vm/macro_object.rs:67-91): each parameter takes the positional at its
+	// index, else the keyword of its name, else undefined — and it is that
+	// pass that reports a duplicate or an unused keyword.
+	//
+	// The defaults are the macro's own INSTRUCTIONS, and the compiler emits
+	// them for `args.iter().rev()` (compiler/codegen.rs:419-430): the last
+	// parameter is defaulted and assigned first, the first one last. A default
+	// therefore sees the parameters written AFTER it and not the ones before
+	// it, so `{% macro f(a=b,b=2) %}` renders `2` for `a`, and `{% macro
+	// f(a=1,b=a) %}` renders undefined for `b`.
+	argValues := make([]value.Value, len(macro.Args))
 	for i, arg := range macro.Args {
-		if varArg, ok := arg.(*parser.Var); ok {
-			// Check if provided as kwarg
-			if val, ok := remainingKwargs.Get(varArg.ID); ok {
-				if i < len(args) {
-					return value.Undefined(), NewError(ErrTooManyArguments, fmt.Sprintf("duplicate argument `%s`", varArg.ID))
-				}
-				s.Set(varArg.ID, val)
-				remainingKwargs.Delete(varArg.ID)
-				continue
-			}
-			// Check if provided as positional arg
-			if i < len(args) {
-				s.Set(varArg.ID, args[i])
-			} else if i-len(macro.Args)+len(macro.Defaults) >= 0 {
-				// Use default value
-				defaultIdx := i - len(macro.Args) + len(macro.Defaults)
-				if defaultIdx >= 0 && defaultIdx < len(macro.Defaults) {
-					val, err := s.evalExpr(macro.Defaults[defaultIdx])
-					if err != nil {
-						return value.Undefined(), err
-					}
-					s.Set(varArg.ID, val)
-				} else {
-					s.Set(varArg.ID, value.Undefined())
-				}
-			} else {
-				s.Set(varArg.ID, value.Undefined())
-			}
+		argValues[i] = value.Undefined()
+		varArg, ok := arg.(*parser.Var)
+		if !ok {
+			continue
 		}
+		if val, ok := remainingKwargs.Get(varArg.ID); ok {
+			if i < len(args) {
+				return value.Undefined(), NewError(ErrTooManyArguments, fmt.Sprintf("duplicate argument `%s`", varArg.ID))
+			}
+			argValues[i] = val
+			remainingKwargs.Delete(varArg.ID)
+			continue
+		}
+		if i < len(args) {
+			argValues[i] = args[i]
+		}
+	}
+
+	// A macro body runs in a state whose context is only its closure
+	// (vm/mod.rs eval_macro), and a DECLARED parameter is by definition not
+	// free, so it is never in that closure. Binding every parameter up front
+	// is what makes an unassigned one resolve to undefined rather than to a
+	// same-named variable outside the macro: `{% set a = 5 %}{% macro f(a=a) %}`
+	// gets undefined, not 5.
+	for _, arg := range macro.Args {
+		if varArg, ok := arg.(*parser.Var); ok {
+			s.Set(varArg.ID, value.Undefined())
+		}
+	}
+
+	for i := len(macro.Args) - 1; i >= 0; i-- {
+		varArg, ok := macro.Args[i].(*parser.Var)
+		if !ok {
+			continue
+		}
+		val := argValues[i]
+		// `DupTop; IsUndefined; <if> DiscardTop; <default>` — the default
+		// replaces an UNDEFINED value whatever produced it, so a parameter
+		// passed undefined explicitly takes its default too.
+		if defaultIdx := i - len(macro.Args) + len(macro.Defaults); val.IsUndefined() &&
+			defaultIdx >= 0 && defaultIdx < len(macro.Defaults) {
+			evaluated, err := s.evalExpr(macro.Defaults[defaultIdx])
+			if err != nil {
+				return value.Undefined(), err
+			}
+			val = evaluated
+		}
+		s.Set(varArg.ID, val)
 	}
 
 	if remainingKwargs.Len() > 0 {
@@ -2867,8 +2900,14 @@ func (s *State) evalMethodCall(call *parser.Call, getAttr *parser.GetAttr, calle
 	}
 	kwargs = withCaller(kwargs, caller)
 
+	// An object that implements CallMethod has REPLACED `Object::call_method`
+	// (value/object.rs:241-252), the way the engine's own objects do, so an
+	// unknown method there does not fall back to the default attribute lookup;
+	// it goes straight to the unknown-method callback.
+	overrode := false
 	if objVal, ok := obj.AsObject(); ok {
 		if mc, ok := objVal.(value.MethodCallable); ok {
+			overrode = true
 			result, err := mc.CallMethod(s, getAttr.Name, args, kwargs)
 			if err != value.ErrUnknownMethod {
 				return result, err
@@ -2876,7 +2915,11 @@ func (s *State) evalMethodCall(call *parser.Call, getAttr *parser.GetAttr, calle
 		}
 	}
 
-	if attr := obj.GetAttr(getAttr.Name); !attr.IsUndefined() {
+	// The default `Object::call_method` branches on whether `get_value`
+	// answered AT ALL, not on what it answered: an entry holding undefined is
+	// an entry, and calling it is "value of type undefined is not callable"
+	// rather than an unknown method.
+	if attr, present := obj.LookupAttr(getAttr.Name); present && !overrode {
 		if callable, ok := attr.AsCallable(); ok {
 			return callable.Call(s, args, kwargs)
 		}

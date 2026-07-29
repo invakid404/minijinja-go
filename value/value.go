@@ -1437,6 +1437,40 @@ func (v Value) GetAttr(name string) Value {
 	return Undefined()
 }
 
+// LookupAttr is [Value.GetAttr] with the engine's presence answer kept: the
+// second result reports whether the attribute EXISTS, which for a mapping is
+// not the same question as whether its value is undefined.
+//
+// It is `get_value(&Value::from(key)) -> Option<Value>` (value/object.rs:181),
+// the hook `Object::call_method` branches on when it decides between calling
+// the attribute and reporting an unknown method.
+func (v Value) LookupAttr(name string) (Value, bool) {
+	switch d := v.data.(type) {
+	case map[string]Value:
+		val, ok := d[name]
+		return orUndefined(val, ok), ok
+	case *OrderedMap:
+		val, ok := d.Get(name)
+		return orUndefined(val, ok), ok
+	case Object:
+		if l, ok := d.(ObjectWithAttrLookup); ok {
+			return l.LookupAttr(name)
+		}
+		// Without the optional hook an object cannot tell the two apart, and
+		// an undefined answer is the absent one.
+		val := d.GetAttr(name)
+		return val, !val.IsUndefined()
+	}
+	return Undefined(), false
+}
+
+func orUndefined(v Value, ok bool) Value {
+	if !ok {
+		return Undefined()
+	}
+	return v
+}
+
 // AsObject returns the Object if this value wraps one.
 func (v Value) AsObject() (Object, bool) {
 	if o, ok := v.data.(Object); ok {

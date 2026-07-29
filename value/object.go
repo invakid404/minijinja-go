@@ -174,6 +174,25 @@ type ObjectWithCmp interface {
 	ObjectCmp(other Object) (cmp int, ok bool)
 }
 
+// ObjectWithAttrLookup answers whether an attribute is PRESENT, independently
+// of the value it holds.
+//
+// [Object.GetAttr] returns undefined for an attribute that is missing and for
+// one that is present but holds undefined, which is a distinction the engine
+// makes: its single object hook is `get_value(&Value) -> Option<Value>`
+// (value/object.rs:181), and `Object::call_method` decides between calling the
+// value and reporting an unknown method on the OPTION, not on the value
+// (value/object.rs:241-252). So `{"x": undefined}.x()` is "value of type
+// undefined is not callable" and `{}.x()` is an unknown method.
+//
+// An object that can hold an undefined value implements this; one that cannot
+// does not need to, because for it "undefined" and "absent" are the same answer.
+type ObjectWithAttrLookup interface {
+	Object
+	// LookupAttr returns the attribute and whether it is present at all.
+	LookupAttr(name string) (Value, bool)
+}
+
 // ReversibleObject can provide efficient reverse iteration.
 // If not implemented, reverse() will collect and reverse the items.
 //

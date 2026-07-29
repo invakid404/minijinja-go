@@ -106,6 +106,31 @@ var panicDeclines = map[string]struct{ rust, reason string }{
 	"review/usize-batch-u64-max":         usizeAllocDecline,
 	"review/usize-batch-float-u64-upper": usizeAllocDecline,
 	"review/usize-batch-i64-max":         usizeAllocDecline,
+	// A format PRECISION is a byte count, and the engine applies it by slicing
+	// the Rust string with it (format_utils.rs:227-231). A cut that is not a
+	// UTF-8 character boundary aborts inside `str` indexing, so there is no
+	// successful outcome to reproduce; Go's own slicing would return the
+	// truncated encoding, which is not valid UTF-8 and is not what the engine
+	// answers either. The fork refuses. PATCHES.md #89.
+	//
+	// The diagnostic names the offending scalar and its byte range, so it is
+	// pinned per row rather than shared: a change to it means the cut moved.
+	"review/pyformat-precision-char-boundary": {
+		rust:   "byte index 1 is not a char boundary; it is inside '日' (bytes 0..3) of `日`",
+		reason: "deliberate and permanent; see divergences.json",
+	},
+	"review/pyformat-precision-char-boundary-printf": {
+		rust:   "byte index 1 is not a char boundary; it is inside '日' (bytes 0..3) of `日`",
+		reason: "deliberate and permanent; see divergences.json",
+	},
+	"review/pyformat-precision-char-boundary-combining": {
+		rust:   "byte index 2 is not a char boundary; it is inside '\\u{301}' (bytes 1..3) of `e\u0301`",
+		reason: "deliberate and permanent; see divergences.json",
+	},
+	"review/pyformat-precision-char-boundary-mid-string": {
+		rust:   "byte index 4 is not a char boundary; it is inside '本' (bytes 3..6) of `日本`",
+		reason: "deliberate and permanent; see divergences.json",
+	},
 }
 
 // usizeAllocDecline is the engine's diagnostic for every one of those rows:

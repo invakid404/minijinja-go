@@ -1,6 +1,10 @@
 package value
 
-import "sort"
+import (
+	"fmt"
+	"sort"
+	"strings"
+)
 
 // MergeMaps merges multiple map-like values into a single lazy map object.
 //
@@ -13,6 +17,17 @@ func MergeMaps(sources ...Value) Value {
 	if len(sources) == 1 {
 		return sources[0]
 	}
+	return NewMergedMap(sources...)
+}
+
+// NewMergedMap is [MergeMaps] without the single-source shortcut: it always
+// builds the merged object.
+//
+// The distinction is observable. A merged mapping enumerates its keys SORTED,
+// the way `MergeDict` collects them into a `BTreeSet<Value>`
+// (value/merge_object.rs:33-43), where a mapping passed straight through keeps
+// its own insertion order. So `chain` over one mapping still has to wrap it.
+func NewMergedMap(sources ...Value) Value {
 	return FromObject(&mergedMap{sources: sources})
 }
 
@@ -51,6 +66,19 @@ func (m *mergedMap) GetAttr(name string) Value {
 		}
 	}
 	return Undefined()
+}
+
+// String is the default `Object::render` for a map representation, a
+// `debug_map` over the object's pairs (value/object.rs:331-338) — the same
+// bytes any other mapping displays, so merging is invisible to a template that
+// only prints the result.
+func (m *mergedMap) String() string {
+	keys := m.Keys()
+	parts := make([]string, 0, len(keys))
+	for _, key := range keys {
+		parts = append(parts, fmt.Sprintf("%s: %s", mapKeyRepr(nil, key), m.GetAttr(key).Repr()))
+	}
+	return "{" + strings.Join(parts, ", ") + "}"
 }
 
 func (m *mergedMap) Map() map[string]Value {
