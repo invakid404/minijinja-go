@@ -268,27 +268,79 @@ func (a *Args) intValue(rustType string) (int64, error) {
 // The coercion is [value.Value.AsInt] — `TryFrom<Value> for i64`, where a bool
 // and an integral float convert and a fractional one does not. The RANGE is
 // the target's, and the fork used to ignore it: `1.5|round(2147483648)` is an
-// invalid operation because `round`'s precision is an `i32`, and a `usize`
-// refuses a negative.
+// invalid operation because `round`'s precision is an `i32`.
 //
-// rustType is the type the parameter declares ("i32", "i64", "isize",
-// "usize"); it bounds the value and names the error.
+// rustType is the type the parameter declares ("i32", "i64", "isize"); it
+// bounds the value and names the error. `usize` is NOT one of them: its range
+// does not fit an int64 on a 64-bit target, so it has its own conversion —
+// see [ConvertUsize].
 func ConvertInt(v value.Value, rustType string) (int64, error) {
 	n, ok := v.AsInt()
 	if !ok {
 		return 0, invalidOp("cannot convert %s to %s", v.Kind(), rustType)
 	}
-	switch rustType {
-	case "i32":
-		if n < math.MinInt32 || n > math.MaxInt32 {
-			return 0, invalidOp("cannot convert %s to %s", v.Kind(), rustType)
-		}
-	case "usize":
-		if n < 0 {
-			return 0, invalidOp("cannot convert %s to %s", v.Kind(), rustType)
-		}
+	if rustType == "i32" && (n < math.MinInt32 || n > math.MaxInt32) {
+		return 0, invalidOp("cannot convert %s to %s", v.Kind(), rustType)
 	}
 	return n, nil
+}
+
+// Usize takes a required `usize` argument at the width that type really has.
+//
+// It is separate from [Args.Int] because it cannot share its return type: a
+// `usize` on a 64-bit target accepts the whole upper half of `u64`, which does
+// not fit an int64. Routing it through [value.Value.AsInt] made the fork refuse
+// a range the engine accepts — `[]|batch(9223372036854775808)` is an
+// invalid_operation here and a converted argument there.
+func (a *Args) Usize() (uint64, error) {
+	v, isKwargs, ok := a.peek()
+	if !ok {
+		return 0, missing()
+	}
+	a.advance(isKwargs)
+	if isKwargs {
+		return 0, invalidOp("cannot convert map to usize")
+	}
+	return ConvertUsize(v)
+}
+
+// ConvertUsize is the engine's `usize` ArgType conversion.
+func ConvertUsize(v value.Value) (uint64, error) {
+	n, ok := v.AsUsize()
+	if !ok {
+		return 0, invalidOp("cannot convert %s to usize", v.Kind())
+	}
+	return n, nil
+}
+
+// maxAllocatingArg is the largest `usize` argument this fork will let size an
+// allocation.
+//
+// Several builtins turn such an argument straight into memory: `batch` and
+// `slice` reserve `count` elements, `indent` and `tojson` build an indentation
+// string of `width` spaces. The engine does that unconditionally and ABORTS on
+// a value it cannot allocate — `Vec::with_capacity` and `str::repeat` panic
+// with "capacity overflow" — so past this bound the two implementations cannot
+// both be faithful and safe.
+//
+// The fork refuses instead, for the same reason it refuses a zero divisor where
+// the engine panics (`test/divisibleby-zero`): a library that a caller can make
+// abort the process, or exhaust its memory, on ordinary template input is worse
+// than one that returns an error. Every such row is a DECLARED divergence in
+// the oracle ledger with both signatures pinned, never an unrecorded one.
+//
+// The bound is deliberately far above any real use — 2^31 elements is a 32 GiB
+// slice or a 2 GiB indentation — so it cannot turn a working template into a
+// failing one. It is a safety valve, not a semantic limit.
+const maxAllocatingArg = 1 << 31
+
+// allocSize checks a converted `usize` against [maxAllocatingArg] and narrows it
+// to the Go int the caller allocates with.
+func allocSize(n uint64, what string) (int, error) {
+	if n > maxAllocatingArg {
+		return 0, invalidOp("%s %d is too large to allocate", what, n)
+	}
+	return int(n), nil
 }
 
 // OptBool takes an optional boolean argument.

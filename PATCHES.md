@@ -156,6 +156,12 @@ rather than same-named Go standard-library calls.
 | 76 | `review/pykind-*` (7 rows), `review/pyget-*` (4 rows) | pycompat `keys`/`values`/`items`/`get` | The three views were materialized as sequences, so `dict(a=1).keys() is sequence` was true where the engine says false; and `get` used "the lookup returned undefined" as its missing-key test, so a key present with an undefined value took the default. | The views are iterables whose length is known (`value.MakeSizedIterable`) — still rendering and iterating as before, but reporting the engine's kind — and `get` asks the mapping for PRESENCE. | A value kind is observable through the type tests, and a present-but-undefined entry is a real shape in BAML data. | slice 5 |
 | 77 | `review/debug-two-args`, `-one-arg`, `-strings`, `-nested`, `-none-arg`, `-empty-containers`, `-keyword`; `fn/debug-state-dump` (declared) | `debug()` | Several arguments were joined with `", "`; the engine pretty-debugs the argument SLICE. The corpus masked the no-argument form behind `length > 0`. | Rust's `{:#?}`: one argument alone, several as a list, four-space indentation and trailing commas, nested containers included. The state dump is compared byte for byte like everything else and DECLARED in the ledger, because its bytes are Rust type paths. | The mask was hiding an unmeasured surface; the declaration states exactly what is not reproducible and why. | slice 5 |
 | 78 | `review/pycompat-count-empty-needle` (declared) | the harness's own bound | `"abc".count("")` does not terminate in the reference module, so the case could not be a corpus row at all and lived only as a Go-side timeout test. | Both sides now evaluate every row under a 5-second bound and report `timeout` as an OUTCOME, so the case is a recorded row with a ledger entry: timeout there, Python's answer here. | A known cross-engine mismatch with no corpus row understates the differential. Bounding every row also means a future non-terminating input is reported rather than hanging CI. | slice 5 |
+| 79 | `review/pyview-keys-index-*` (8 rows), `-values-index-*`, `-items-index-*`, `-truth-*`, `-not-empty`, `-default-empty`, `-ternary-empty` (24 rows total) | indexing and truth of a sized iterable | `dict(a=1).keys()` supplied iteration, a legacy length and rendering, and nothing else: `keys()[0]` was undefined because only a `SeqObject` was indexed, and `{% if dict().keys() %}` took the TRUE branch because object truth reads `ObjectLen` and the view answered only through `Len`. | `Value.GetItem` dispatches on the object's REPRESENTATION, as `get_item_opt` does: an `ObjectRepr::Iterable` falls back to `nth()` on a fresh iterator, resolving a negative subscript against the enumerator's exact length. And the view reports that length through `ObjectWithLen`, so an empty one is FALSY. | `value/mod.rs:1514-1531` and `value/object.rs:216-220`. Both halves are ordinary pycompat input, and the truth half changes control flow rather than only bytes. | `feat/mjfork-builtins` |
+| 80 | `review/caller-lexical-*` (27 rows) | whether a macro accepts `caller` | A syntactic tree search for the token `caller`. A `{% set caller = … %}` target counted as a use, a nested macro's body counted as the outer macro's use, and a parameter's DEFAULT expression did not count at all — so `f(caller=1)` was silently accepted where the engine reports `too_many_arguments`, and rejected where the engine accepts it. | `macro_closure.go`, a port of `compiler/meta.rs`'s AssignmentTracker: the flag is set iff `caller` is a FREE variable of the macro, with the reference's own scope frames. The binding is also stored before the parameter defaults run, as `eval_macro` does. | `compiler/codegen.rs:435-456` computes `find_macro_closure` and removes `caller` from it. Assignment targets bind, nested macros and `{% call %}` bodies are their own scopes with `caller` already declared, and defaults are visited after the parameters. | `feat/mjfork-builtins` |
+| 81 | `review/dict-splat-int-key`, `-mixed`, `-overwrite`, `-bool-key`, `-float-key`, `-negative-key`, `-none-key`, `review/dict-positional-int-key`, `-kwarg`, `-splat` | `dict()` key spelling | Patch #69 carried a splatted key's spelling as far as the keyword map, and `dict` then copied the entries with `Set`, which drops it: `dict(**{8: 8})` rendered `{"8": 8}`. The positional form lost it the same way. | Both copies go through `CopyEntryFrom`, so the spelling travels to the result: `dict(**{8: 8})` and `dict({8: 8})` render `{8: 8}`. | `functions.rs:394-414` collects the source's key VALUES. Patch #69's note overstated the closure — it was true of the transport and not of `dict` itself. The remaining non-string-key work is *lookup*, which is the named value-model gap below, not this. | `feat/mjfork-builtins` |
+| 82 | `review/usize-*` (23 rows, 7 declared) | the `usize` ArgType's width | `usize` was converted through `Value.AsInt`, an `int64`, and only checked for a negative — so the whole upper half of `u64` was refused where the engine converts it. `tojson`'s indent additionally used a stricter integer test that rejected the integral floats the ArgType accepts. | `Value.AsUsize` models `TryFrom<Value> for usize` at the target's real width, arm for arm. The observable, non-panic proof is `[]\|batch(9223372036854775808, 1, 2)`: the count converts, so the call now fails on its ARITY exactly as the engine's does. | `value/argtypes.rs:409-435`. Each repr arm produces that repr's own Rust type and `TryFrom` for the DECLARED type bounds it, so `usize` and `i64` differ over `(i64::MAX, u64::MAX]`. | `feat/mjfork-builtins` |
+| 83 | `review/sort-unicode-*` (13 rows), `review/groupby-case-*` (7), `review/dictsort-case-*` (6), `review/unique-lowercase-*` (3) | the case-insensitive comparator | `sort` and `dictsort` lowercased both sides and compared; `groupby` broke a case-insensitive tie by case rank and raw bytes when sorting, then grouped with `EqualFold`. So an ASCII tie was reordered, the selected grouper changed, and a Unicode tie produced two groups instead of one. | One comparator, `filters.cmpHelper`, ported from `cmp_helper` and used by all three. Its case-insensitive path is `unicodecase.FoldCompare`, a port of `UniCase::cmp` whose fold table is dumped from the pinned `unicase` crate itself. A tie stays a tie, so the stable sort keeps the input order and `groupby` keeps one group. | `filters.rs:284-307`, `333-336`, `782-822`, `1412-1455`. Folding is not lowercasing: "ß" folds to "ss" and "İ" folds to two scalars. `unique` is deliberately NOT converted — it memoizes `to_lowercase()` (`filters.rs:1517-1521`) — and three rows pin that. | `feat/mjfork-builtins` |
+| 84 | `review/groupby-kind-*` (22 rows) | groupby's observable kinds | The group tuple declared no representation, so `group is sequence` was false, and both `.list` and index 1 were materialized as plain lists, so `group.list is sequence` was true. A negative subscript on the tuple answered nothing. | `groupObject` is an `ObjectRepr::Seq` of length 2 with the engine's `get_value` names, and its `.list` projection is a sized ITERABLE. | `filters.rs:1419-1446`: `repr()` is `ObjectRepr::Seq`, `enumerate()` is `Enumerator::Seq(2)`, and the list projection is `Value::make_object_iterable`. All of it is reachable through the standard `is sequence`/`is iterable` tests. | `feat/mjfork-builtins` |
 
 ### Fork-only files this slice adds
 
@@ -165,7 +171,7 @@ These are new files rather than changes to derived ones, declared in
 | Path | Why |
 | --- | --- |
 | `pycompat/` | The Python-compatible method module, the Go counterpart of `minijinja-contrib::pycompat`. Installed by the host, never by default. |
-| `internal/unicodecase/` | Rust-identical case mapping and character properties, generated from the reference implementation (`oracle/harness/src/casegen.rs` → `oracle/cmd/gentables`). |
+| `internal/unicodecase/` | Rust-identical case mapping, character properties and the `UniCase` fold the engine's case-insensitive comparator uses, generated from the reference implementations (`oracle/harness/src/casegen.rs` → `oracle/cmd/gentables`). |
 | `internal/pyformat/` | The port of `format_utils.rs`. |
 | `internal/serdejson/` | The port of `serde_json`'s value serialization. |
 | `filters/args.go` | `filters.Args`, the engine's `from_args` contract, shared by every filter, test and function. |
@@ -175,19 +181,29 @@ These are new files rather than changes to derived ones, declared in
 
 ## Known divergences not yet patched
 
-The differential records 4 declared divergences from BAML's engine, all classed
-`engine`, and **none of them belongs to the template, numeric, coercion,
-container or argument-contract class**: every row in those lanes agrees with the
-engine. They are listed with their evidence in `oracle/divergences.json`.
+The differential records 12 declared divergences from BAML's engine, all classed
+`engine`. **Only two of them are pending work**, and neither belongs to the
+template, numeric, coercion, container or argument-contract class: every row in
+those lanes agrees with the engine. They are listed with their evidence in
+`oracle/divergences.json`.
 
 | Slice | Corpus IDs |
 | --- | --- |
-| 5 — builtins and pycompat | `container/dict-function-kwargs-order` — see the named gap below |
 | 6 — template and error surface | `syntax/bad-escape-capital-u`, `syntax/bad-escape-rust-unicode` |
 
-`test/divisibleby-zero` is a fifth entry in the ledger, but it is not in this
-table: it is deliberate and permanent rather than pending, and it is logged as
-patch #56.
+The other ten are deliberate and permanent rather than pending, and each is
+logged as a patch:
+
+| Corpus IDs | Why permanent |
+| --- | --- |
+| `test/divisibleby-zero` | The engine PANICS on a zero divisor; the fork errors. Patch #56. |
+| `review/pycompat-count-empty-needle` | `"abc".count("")` does not terminate in the reference module. Patch #78. |
+| `fn/debug-state-dump` | The bytes ARE the other language's type paths. Patch #77. |
+| `review/usize-batch-u64-upper`, `review/usize-slice-u64-upper`, `review/usize-indent-u64-upper`, `review/usize-tojson-u64-upper`, `review/usize-batch-u64-max`, `review/usize-batch-float-u64-upper`, `review/usize-batch-i64-max` | A `usize` argument that sizes an allocation: the engine reserves that much memory and aborts, the fork refuses. Patch #82. |
+
+`container/dict-function-kwargs-order` used to be in the pending table and is
+gone: patch #69 closed it, and patch #81 closed the half of it that #69's note
+overstated.
 
 The template slice had two entries in this table and both are closed:
 `err/syntax-incomplete-if` by patch #1 and `tmpl/loop-cycle-no-args` by patch #9.
@@ -197,10 +213,9 @@ four are closed by patches #10 to #16. Slice 4 had seven: the four generic
 `value_cmp` rows and the three coercion/container rows
 (`cmp/int-in-string`, `container/map-render-insertion-order`,
 `container/map-loop-insertion-order`), all closed by patches #32 to #44. It
-opened one, `container/dict-function-kwargs-order`, which is slice 5's because
-the order is lost in the keyword-argument plumbing rather than in the mapping —
-see the named gap below; slice 5 carries it rather than closing it, for the
-reason stated there. The builtins slice itself had three —
+opened one, `container/dict-function-kwargs-order`, which was slice 5's because
+the order was lost in the keyword-argument plumbing rather than in the mapping;
+patches #69 and #81 close it. The builtins slice itself had three —
 `str/lower-dotted-capital-i`, `str/upper-sharp-s` and
 `err/go-only-urlencode-filter` — closed by patches #45, #46 and #48.
 
@@ -283,11 +298,26 @@ and `contains/none-in-map` show that containment already answers correctly for
 string-keyed mappings, which is what BAML produces (`BamlValue` maps and class
 fields are string-keyed, `baml_value.rs:20-56`).
 
-What remains open is *lookup* by a non-string key: `{1: 'a'}[1]` is undefined
-here and `'a'` in Rust, and iterating such a mapping yields the key as a string
-rather than as a number. There is no corpus row asserting the fork's behaviour
-because there is no BAML surface that reaches it; a row would pin a difference
-nobody consumes.
+Patch #81 extends that rendering half through `dict()`, so a key's spelling now
+survives construction as well as a map literal. What remains open is everything
+that needs the key VALUE rather than its printed form, measured against the
+pinned engine at this tip:
+
+| Input | Engine | Fork |
+| --- | --- | --- |
+| `{8: 8}[8]`, `dict(**{8: 8})[8]` | `8` | undefined |
+| `{8: 8}['8']` | undefined | `8` |
+| `8 in {8: 8}` / `'8' in {8: 8}` | true / false | false / true |
+| `{8: 8}\|items\|list` | `[[8, 8]]` | `[["8", 8]]` |
+| `{8: 8, 2: 2}\|dictsort` | `[[2, 2], [8, 8]]` | `[["2", 2], ["8", 8]]` |
+| `{8: 'a', '8': 'b'}` | `{8: "a", "8": "b"}` | `{8: "b"}` |
+
+There is no corpus row asserting any of them, because a row would have to be
+declared and a declared divergence in a landed lane is a place to hide a
+decline. The last line is why the spelling side-table cannot be stretched any
+further: two distinct engine keys collapse onto one Go string key, so an
+entry is LOST, and no amount of remembering how a key was printed brings it
+back.
 
 Closing it properly is a value-model change, not a patch: `OrderedMap` would key
 its index by a canonical `(kind, text)` pair rather than by the key text, expose

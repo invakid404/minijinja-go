@@ -526,204 +526,6 @@ func (f *functionCallable) String() string {
 	return fmt.Sprintf("<function %s>", f.name)
 }
 
-func macroUsesCaller(macro *parser.Macro) bool {
-	// A macro that DECLARES a parameter named `caller` has an ordinary
-	// parameter, not the call-block binding: the engine decides this when it
-	// compiles the macro, and a declared name wins. Without this, `{% macro
-	// f(caller) %}{{ caller }}{% endmacro %}{{ f(1) }}` bound the argument and
-	// then overwrote it with the (undefined) special caller.
-	for _, arg := range macro.Args {
-		if v, ok := arg.(*parser.Var); ok && v.ID == "caller" {
-			return false
-		}
-	}
-	for _, stmt := range macro.Body {
-		if stmtUsesCaller(stmt) {
-			return true
-		}
-	}
-	return false
-}
-
-func stmtUsesCaller(stmt parser.Stmt) bool {
-	switch st := stmt.(type) {
-	case *parser.EmitExpr:
-		return exprUsesCaller(st.Expr)
-	case *parser.ForLoop:
-		if exprUsesCaller(st.Target) || exprUsesCaller(st.Iter) || exprUsesCaller(st.FilterExpr) {
-			return true
-		}
-		for _, bodyStmt := range st.Body {
-			if stmtUsesCaller(bodyStmt) {
-				return true
-			}
-		}
-		for _, bodyStmt := range st.ElseBody {
-			if stmtUsesCaller(bodyStmt) {
-				return true
-			}
-		}
-	case *parser.IfCond:
-		if exprUsesCaller(st.Expr) {
-			return true
-		}
-		for _, bodyStmt := range st.TrueBody {
-			if stmtUsesCaller(bodyStmt) {
-				return true
-			}
-		}
-		for _, bodyStmt := range st.FalseBody {
-			if stmtUsesCaller(bodyStmt) {
-				return true
-			}
-		}
-	case *parser.WithBlock:
-		for _, assignment := range st.Assignments {
-			if exprUsesCaller(assignment.Target) || exprUsesCaller(assignment.Value) {
-				return true
-			}
-		}
-		for _, bodyStmt := range st.Body {
-			if stmtUsesCaller(bodyStmt) {
-				return true
-			}
-		}
-	case *parser.Set:
-		return exprUsesCaller(st.Target) || exprUsesCaller(st.Expr)
-	case *parser.SetBlock:
-		if exprUsesCaller(st.Target) || exprUsesCaller(st.Filter) {
-			return true
-		}
-		for _, bodyStmt := range st.Body {
-			if stmtUsesCaller(bodyStmt) {
-				return true
-			}
-		}
-	case *parser.Block:
-		for _, bodyStmt := range st.Body {
-			if stmtUsesCaller(bodyStmt) {
-				return true
-			}
-		}
-	case *parser.Extends:
-		return exprUsesCaller(st.Name)
-	case *parser.Import:
-		return exprUsesCaller(st.Expr) || exprUsesCaller(st.Name)
-	case *parser.FromImport:
-		if exprUsesCaller(st.Expr) {
-			return true
-		}
-		for _, name := range st.Names {
-			if exprUsesCaller(name.Name) || exprUsesCaller(name.Alias) {
-				return true
-			}
-		}
-		return false
-	case *parser.Include:
-		return exprUsesCaller(st.Name)
-	case *parser.Macro:
-		for _, bodyStmt := range st.Body {
-			if stmtUsesCaller(bodyStmt) {
-				return true
-			}
-		}
-	case *parser.FilterBlock:
-		if exprUsesCaller(st.Filter) {
-			return true
-		}
-		for _, bodyStmt := range st.Body {
-			if stmtUsesCaller(bodyStmt) {
-				return true
-			}
-		}
-	case *parser.AutoEscape:
-		if exprUsesCaller(st.Enabled) {
-			return true
-		}
-		for _, bodyStmt := range st.Body {
-			if stmtUsesCaller(bodyStmt) {
-				return true
-			}
-		}
-	case *parser.Do:
-		return exprUsesCaller(st.Call)
-	case *parser.CallBlock:
-		if exprUsesCaller(st.Call) {
-			return true
-		}
-		for _, bodyStmt := range st.MacroDecl.Body {
-			if stmtUsesCaller(bodyStmt) {
-				return true
-			}
-		}
-	}
-	return false
-}
-
-func exprUsesCaller(expr parser.Expr) bool {
-	switch e := expr.(type) {
-	case *parser.Var:
-		return e.ID == "caller"
-	case *parser.UnaryOp:
-		return exprUsesCaller(e.Expr)
-	case *parser.BinOp:
-		return exprUsesCaller(e.Left) || exprUsesCaller(e.Right)
-	case *parser.IfExpr:
-		return exprUsesCaller(e.TestExpr) || exprUsesCaller(e.TrueExpr) || exprUsesCaller(e.FalseExpr)
-	case *parser.Filter:
-		if exprUsesCaller(e.Expr) {
-			return true
-		}
-		for _, arg := range e.Args {
-			if exprUsesCaller(arg.Value) {
-				return true
-			}
-		}
-	case *parser.Test:
-		if exprUsesCaller(e.Expr) {
-			return true
-		}
-		for _, arg := range e.Args {
-			if exprUsesCaller(arg.Value) {
-				return true
-			}
-		}
-	case *parser.GetAttr:
-		return exprUsesCaller(e.Expr)
-	case *parser.GetItem:
-		return exprUsesCaller(e.Expr) || exprUsesCaller(e.SubscriptExpr)
-	case *parser.Call:
-		if exprUsesCaller(e.Expr) {
-			return true
-		}
-		for _, arg := range e.Args {
-			if exprUsesCaller(arg.Value) {
-				return true
-			}
-		}
-	case *parser.List:
-		for _, item := range e.Items {
-			if exprUsesCaller(item) {
-				return true
-			}
-		}
-	case *parser.Map:
-		for _, item := range e.Keys {
-			if exprUsesCaller(item) {
-				return true
-			}
-		}
-		for _, item := range e.Values {
-			if exprUsesCaller(item) {
-				return true
-			}
-		}
-	case *parser.Slice:
-		return exprUsesCaller(e.Expr) || exprUsesCaller(e.Start) || exprUsesCaller(e.Stop) || exprUsesCaller(e.Step)
-	}
-	return false
-}
-
 func (s *State) callMacroWithValues(macro *parser.Macro, args []value.Value, kwargs *value.OrderedMap, caller value.Value) (value.Value, error) {
 	s.depth++
 	if s.depth > s.recursionLimit() {
@@ -749,6 +551,30 @@ func (s *State) callMacroWithValues(macro *parser.Macro, args []value.Value, kwa
 	for _, k := range kwargs.Keys() {
 		v, _ := kwargs.Get(k)
 		remainingKwargs.Set(k, v)
+	}
+
+	// A macro that reads a FREE `caller` accepts `caller` as a keyword argument:
+	// that is how Rust passes a call block's body in the first place
+	// (vm/macro_object.rs:96-105 marks it used), so an explicit one is an
+	// argument rather than an unknown keyword. See PATCHES.md #7, #68 and #79.
+	//
+	// It is bound BEFORE the parameters, because the engine stores it into the
+	// macro's context before running the macro's instructions (vm/mod.rs:118-120
+	// eval_macro), and a parameter's DEFAULT expression is part of those
+	// instructions (compiler/codegen.rs:419-430). So `{% macro f(x=caller) %}`
+	// sees the binding. It is bound even when no call block supplied one, as
+	// undefined, so `{{ caller() }}` in a macro invoked normally is "value of
+	// type undefined is not callable" rather than an unknown function.
+	//
+	// A macro that DECLARES a parameter named `caller` is not one of these: the
+	// name is bound, so it is not free, and the parameter binding below is the
+	// only thing that sets it.
+	if macroUsesCaller(macro) {
+		if explicit, ok := remainingKwargs.Get("caller"); ok {
+			caller = explicit
+			remainingKwargs.Delete("caller")
+		}
+		s.Set("caller", caller)
 	}
 
 	// Bind arguments
@@ -784,40 +610,12 @@ func (s *State) callMacroWithValues(macro *parser.Macro, args []value.Value, kwa
 		}
 	}
 
-	// A macro that references caller() accepts `caller` as a keyword argument:
-	// that is how Rust passes a call block's body in the first place
-	// (vm/macro_object.rs marks it used), so an explicit one is an argument
-	// rather than an unknown keyword. See PATCHES.md #7 and #68.
-	//
-	// It reads `kwargs`, not `remainingKwargs`, on purpose: a macro that
-	// DECLARES a parameter named `caller` had it consumed by the binding loop
-	// above, and the engine still binds `caller` from the keyword map
-	// afterwards. Reading the remainder would lose it for exactly that macro,
-	// which is what `contract/macro-call-basic` and `-args` pin.
-	if macroUsesCaller(macro) {
-		if explicit, ok := kwargs.Get("caller"); ok {
-			caller = explicit
-			remainingKwargs.Delete("caller")
-		}
-	}
-
 	if remainingKwargs.Len() > 0 {
 		// The FIRST unused keyword in the order they were written, which is
 		// what the engine reports (value/argtypes.rs assert_all_used walks an
 		// insertion-ordered map).
 		return value.Undefined(), NewError(ErrTooManyArguments,
 			fmt.Sprintf("unknown keyword argument `%s`", remainingKwargs.Keys()[0]))
-	}
-
-	// Bind caller whenever the macro references it, even when no call block
-	// supplied one. Rust binds it as undefined in that case (vm/macro_object.rs
-	// fills Value::UNDEFINED, vm/mod.rs stores it), so `{{ caller() }}` in a
-	// macro invoked normally is "value of type undefined is not callable" --
-	// not the unknown-function error a missing binding would give. The engine
-	// pushes this binding AFTER the declared parameters, so it also wins over
-	// a parameter literally named `caller`. See PATCHES.md #7.
-	if macroUsesCaller(macro) {
-		s.Set("caller", caller)
 	}
 
 	// Capture output

@@ -129,6 +129,50 @@ const SAMPLES: &[&str] = &[
     "\u{fb00}\u{fb01}",       // ff fi
 ];
 
+/// Strings whose UniCase ordering is what `sort` and `groupby` actually ask
+/// for. Every ordered pair of these is dumped, so the Go port is checked
+/// against real comparisons and not only against the per-scalar fold table.
+const CASE_CMP_SAMPLES: &[&str] = &[
+    "",
+    "a",
+    "A",
+    "b",
+    "B",
+    "ab",
+    "AB",
+    "aB",
+    "abc",
+    "\u{df}",          // sharp s folds to "ss"
+    "ss",
+    "SS",
+    "Ma\u{df}e",
+    "MASSE",
+    "masse",
+    "i",
+    "I",
+    "\u{130}",         // dotted capital I folds to "i" + combining dot
+    "i\u{307}",        // i + combining dot above
+    "\u{131}",         // dotless i
+    "\u{3c3}",         // sigma
+    "\u{3c2}",         // final sigma
+    "\u{3a3}",         // capital sigma
+    "\u{3c3}\u{3c4}\u{3b9}\u{3b3}\u{3bc}\u{3b1}\u{3c2}",
+    "\u{3a3}\u{3a4}\u{399}\u{393}\u{39c}\u{391}\u{3a3}",
+    "\u{fb01}",        // fi ligature
+    "fi",
+    "\u{fb03}",        // ffi ligature: Fold::Three, whose iteration order is
+    "ffi",             // NOT the folded order -- see unicodecase.FoldCompare
+    "\u{212a}",        // Kelvin sign folds to "k"
+    "k",
+    "K",
+    "\u{1fb2}",
+    "\u{1f70}\u{3b9}",
+    "\u{e9}",          // e-acute
+    "\u{c9}",
+    "e",
+    "E",
+];
+
 fn main() {
     let mut out = String::from("{\n");
     write!(out, "  \"schema_version\": {SCHEMA_VERSION},\n").unwrap();
@@ -182,6 +226,49 @@ fn main() {
         |c: char| !is_cased(c) && sigma_lowered_to_plain(format!("\u{391}\u{3a3}{c}A"));
     emit_ranges(&mut out, "cased", &ranges(is_cased), false);
     emit_ranges(&mut out, "case_ignorable", &ranges(is_ignorable), false);
+
+    // The engine's case-insensitive comparator is `UniCase`, not "lowercase
+    // both sides": `cmp_helper` compares `UniCase::new(a)` to `UniCase::new(b)`
+    // under the `unicode` feature (filters.rs:284-300), and UniCase orders by
+    // the Unicode case-FOLDED character sequence. Folding is not lowercasing —
+    // "ß" folds to "ss" and "İ" folds to two scalars — so `sort` and `groupby`
+    // cannot be reproduced with a lowercase-and-compare.
+    //
+    // `to_folded_case` on the Unicode encoding is `chars().flat_map(lookup)`,
+    // which is character for character the sequence `Ord` compares, so this
+    // tabulates the comparator's own input rather than a reconstruction of it.
+    emit_mappings(
+        &mut out,
+        "unicase_fold",
+        &mappings(|c| unicase::UniCase::unicode(String::from(c)).to_folded_case()),
+    );
+
+    // Real orderings, over the strings a case-insensitive sort actually has to
+    // separate. Ordered pairs, so asymmetry would show.
+    out.push_str("  \"unicase_cmp\": [");
+    let mut first = true;
+    for a in CASE_CMP_SAMPLES {
+        for b in CASE_CMP_SAMPLES {
+            if !first {
+                out.push(',');
+            }
+            first = false;
+            let ordering = match unicase::UniCase::new(*a).cmp(&unicase::UniCase::new(*b)) {
+                std::cmp::Ordering::Less => -1,
+                std::cmp::Ordering::Equal => 0,
+                std::cmp::Ordering::Greater => 1,
+            };
+            write!(
+                out,
+                "[{},{},{}]",
+                json_string(a),
+                json_string(b),
+                ordering
+            )
+            .unwrap();
+        }
+    }
+    out.push_str("],\n");
 
     // Multi-character cases, so the Go port is checked against the string-level
     // operation and not only against the per-scalar tables it is built from.

@@ -8,7 +8,8 @@ fixtures.
 ## Corpus (`corpus/*.json`)
 
 Corpus files are lanes: `seed.json`, `template.json`, `numeric.json`,
-`builtins.json`, `argcontract.json`. Every file is loaded, and each has its own
+`coercion.json`, `builtins.json`, `argcontract.json`, `reviewfixes.json`. Every
+file is loaded, and each has its own
 recording (see below), so a change to one lane cannot stale another's. Row ids
 are unique across the whole set.
 

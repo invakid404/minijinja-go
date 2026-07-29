@@ -1016,30 +1016,44 @@ func FilterSort(state State, val value.Value, args []value.Value, kwargs *value.
 			b = value.FromSlice(bParts)
 		}
 
-		// Case-insensitive string comparison
-		if !caseSensitive {
-			if s1, ok1 := a.AsString(); ok1 {
-				if s2, ok2 := b.AsString(); ok2 {
-					cmp := strings.Compare(strings.ToLower(s1), strings.ToLower(s2))
-					if reverse {
-						return cmp > 0
-					}
-					return cmp < 0
-				}
-			}
-		}
-
-		cmp, ok := a.Compare(b)
-		if !ok {
-			return false
-		}
+		cmp := cmpHelper(a, b, caseSensitive)
 		if reverse {
-			return cmp > 0
+			cmp = -cmp
 		}
 		return cmp < 0
 	})
 
 	return value.FromSlice(result), nil
+}
+
+// cmpHelper is the engine's `cmp_helper` (filters.rs:284-307), the single
+// comparator `sort` and `groupby` both use.
+//
+// Two things about it are load-bearing and were not reproduced by comparing
+// lowercased strings:
+//
+//   - the case-insensitive path is UNICODE case folding, not lowercasing. It is
+//     `UniCase::new(a).cmp(&UniCase::new(b))` under the `unicode` feature BAML
+//     enables, so "İ" and "i̇" are EQUAL and "ß" ties with "ss".
+//   - a tie is a tie. The comparator has no secondary key, so two strings that
+//     fold alike keep their input order under the engine's stable sort — and
+//     `groupby` puts them in one group. Breaking such a tie by case rank or by
+//     raw bytes changed both the order of a sort and the number of groups.
+//
+// Anything that is not a pair of strings, and everything when case_sensitive is
+// set, falls to the value model's own total order.
+func cmpHelper(a, b value.Value, caseSensitive bool) int {
+	if !caseSensitive {
+		if s1, ok1 := a.AsString(); ok1 {
+			if s2, ok2 := b.AsString(); ok2 {
+				return unicodecase.FoldCompare(s1, s2)
+			}
+		}
+	}
+	if cmp, ok := a.Compare(b); ok {
+		return cmp
+	}
+	return 0
 }
 
 // splitAttributeKeys splits a sort attribute into its comma-separated parts,
@@ -1364,7 +1378,7 @@ func FilterSum(_ State, val value.Value, args []value.Value, kwargs *value.Order
 //	</table>
 func FilterBatch(_ State, val value.Value, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
 	a := NewArgs(args, kwargs)
-	lineCount, err := countArg(a)
+	rawCount, err := countArg(a)
 	if err != nil {
 		return value.Undefined(), err
 	}
@@ -1373,6 +1387,10 @@ func FilterBatch(_ State, val value.Value, args []value.Value, kwargs *value.Ord
 		return value.Undefined(), err
 	}
 	if err := a.Done(); err != nil {
+		return value.Undefined(), err
+	}
+	lineCount, err := usableCount(rawCount)
+	if err != nil {
 		return value.Undefined(), err
 	}
 	items, err := iterArg(val)
@@ -1428,25 +1446,30 @@ func FilterBatch(_ State, val value.Value, args []value.Value, kwargs *value.Ord
 //	{% endfor %}
 //	</div>
 //
-// countArg is the `count: usize` argument `batch` and `slice` take: it must be
-// present, non-negative and non-zero (filters.rs:945-953).
-func countArg(a *Args) (int, error) {
-	n, err := a.Int("usize")
-	if err != nil {
-		return 0, err
-	}
-	if n < 0 {
-		return 0, invalidOp("cannot convert number to usize")
-	}
+// countArg is the `count: usize` argument `batch` and `slice` take. It only
+// CONVERTS, at the width the parameter really declares, so a count in the upper
+// half of u64 is accepted here exactly as it is by the engine's ArgType.
+//
+// Everything the value then has to satisfy — non-zero (filters.rs:945-953) and
+// allocatable — belongs to the filter BODY, which the engine only reaches after
+// `from_args` has bound every parameter and rejected a surplus one. Checking
+// them here reported `[]|batch(<huge>, 1, 2)` as an invalid operation where the
+// engine reports too many arguments. See [usableCount].
+func countArg(a *Args) (uint64, error) {
+	return a.Usize()
+}
+
+// usableCount is the body's half of the `count` contract: run it after Done.
+func usableCount(n uint64) (int, error) {
 	if n == 0 {
 		return 0, invalidOp("count cannot be 0")
 	}
-	return int(n), nil
+	return allocSize(n, "count")
 }
 
 func FilterSlice(_ State, val value.Value, args []value.Value, kwargs *value.OrderedMap) (value.Value, error) {
 	a := NewArgs(args, kwargs)
-	sliceCount, err := countArg(a)
+	rawCount, err := countArg(a)
 	if err != nil {
 		return value.Undefined(), err
 	}
@@ -1455,6 +1478,10 @@ func FilterSlice(_ State, val value.Value, args []value.Value, kwargs *value.Ord
 		return value.Undefined(), err
 	}
 	if err := a.Done(); err != nil {
+		return value.Undefined(), err
+	}
+	sliceCount, err := usableCount(rawCount)
+	if err != nil {
 		return value.Undefined(), err
 	}
 	items, err := iterArg(val)
@@ -1920,10 +1947,14 @@ func FilterGroupBy(_ State, val value.Value, args []value.Value, kwargs *value.O
 	sorted := make([]value.Value, len(items))
 	copy(sorted, items)
 
+	// The SAME comparator groups and sorts (filters.rs:1412-1416 and 1455), so
+	// two keys that tie under it end up adjacent AND in one group. Sorting with
+	// a stricter comparator than the grouping test used to reorder a
+	// case-insensitive tie and then split it.
 	sort.SliceStable(sorted, func(i, j int) bool {
 		left := groupByValue(sorted[i], attrName, defaultVal)
 		right := groupByValue(sorted[j], attrName, defaultVal)
-		return compareGroupBy(left, right, caseSensitive) < 0
+		return cmpHelper(left, right, caseSensitive) < 0
 	})
 
 	// Group items
@@ -1941,7 +1972,7 @@ func FilterGroupBy(_ State, val value.Value, args []value.Value, kwargs *value.O
 			continue
 		}
 
-		if !groupByEqual(currentGrouper, groupValue, caseSensitive) {
+		if cmpHelper(currentGrouper, groupValue, caseSensitive) != 0 {
 			result = append(result, value.FromObject(&groupObject{
 				grouper: currentGrouper,
 				list:    currentList,
@@ -1973,95 +2004,60 @@ func groupByValue(item value.Value, attrName string, defaultVal value.Value) val
 	return grouper
 }
 
-func compareGroupBy(a, b value.Value, caseSensitive bool) int {
-	if !caseSensitive {
-		if s1, ok := a.AsString(); ok {
-			if s2, ok := b.AsString(); ok {
-				lowerCmp := strings.Compare(strings.ToLower(s1), strings.ToLower(s2))
-				if lowerCmp != 0 {
-					return lowerCmp
-				}
-				if s1 != s2 {
-					rank1 := caseRank(s1)
-					rank2 := caseRank(s2)
-					if rank1 != rank2 {
-						if rank1 < rank2 {
-							return -1
-						}
-						return 1
-					}
-					return strings.Compare(s1, s2)
-				}
-				return 0
-			}
-		}
-	}
-	if cmp, ok := a.Compare(b); ok {
-		return cmp
-	}
-	return strings.Compare(a.Repr(), b.Repr())
-}
-
-func groupByEqual(a, b value.Value, caseSensitive bool) bool {
-	if !caseSensitive {
-		if s1, ok := a.AsString(); ok {
-			if s2, ok := b.AsString(); ok {
-				return strings.EqualFold(s1, s2)
-			}
-		}
-	}
-	if cmp, ok := a.Compare(b); ok {
-		return cmp == 0
-	}
-	return a.Repr() == b.Repr()
-}
-
-func caseRank(s string) int {
-	if s == strings.ToLower(s) {
-		return 1
-	}
-	return 0
-}
-
-// groupObject represents a group in groupby filter
+// groupObject is groupby's group, the engine's `GroupTuple`
+// (filters.rs:1419-1446). Its two observable KINDS are not the same:
+//
+//   - the tuple itself is a SEQUENCE of exactly two elements — `repr()` is
+//     ObjectRepr::Seq and `enumerate()` is Enumerator::Seq(2) — so
+//     `group is sequence` is true, `group|length` is 2, and `group[-1]` counts
+//     back from the end.
+//   - its `.list` projection is an ITERABLE whose length is known, built with
+//     `Value::make_object_iterable`. So `group.list is sequence` is FALSE while
+//     `group.list is iterable` is true and `group.list|length` answers.
+//
+// Materializing both as plain lists made the first false and the second true,
+// which is directly observable through the standard `is sequence` test.
 type groupObject struct {
 	grouper value.Value
 	list    []value.Value
 }
 
+var (
+	_ value.Object         = (*groupObject)(nil)
+	_ value.ObjectWithRepr = (*groupObject)(nil)
+	_ value.SeqObject      = (*groupObject)(nil)
+)
+
+// GetAttr is the string half of `get_value`: the tuple answers to `grouper` and
+// `list` as well as to 0 and 1.
 func (g *groupObject) GetAttr(name string) value.Value {
 	switch name {
 	case "grouper":
 		return g.grouper
 	case "list":
-		return value.FromSlice(g.list)
+		return g.listValue()
 	}
 	return value.Undefined()
 }
 
-func (g *groupObject) Iter() []value.Value {
-	return []value.Value{g.grouper, value.FromSlice(g.list)}
-}
+func (g *groupObject) ObjectRepr() value.ObjectRepr { return value.ObjectReprSeq }
 
-func (g *groupObject) Len() (int, bool) {
-	return 2, true
-}
+func (g *groupObject) SeqLen() int { return 2 }
 
-func (g *groupObject) GetItem(key value.Value) value.Value {
-	if idx, ok := key.AsInt(); ok {
-		switch idx {
-		case 0:
-			return g.grouper
-		case 1:
-			return value.FromSlice(g.list)
-		}
+func (g *groupObject) SeqItem(index int) value.Value {
+	switch index {
+	case 0:
+		return g.grouper
+	case 1:
+		return g.listValue()
 	}
 	return value.Undefined()
 }
+
+func (g *groupObject) listValue() value.Value { return value.MakeSizedIterable(g.list) }
 
 func (g *groupObject) String() string {
-	listRepr := value.FromSlice(g.list).Repr()
-	return fmt.Sprintf("[%s, %s]", g.grouper.Repr(), listRepr)
+	return value.FromSlice([]value.Value{g.grouper, g.listValue()}).String()
 }
 
 // FilterChain chains multiple iterables into a single iterable.
@@ -2543,28 +2539,12 @@ func FilterDictSort(_ State, val value.Value, args []value.Value, kwargs *value.
 			}
 		}
 
-		cmpValues := func(a, b value.Value) int {
-			if !caseSensitive {
-				if s1, ok := a.AsString(); ok {
-					if s2, ok := b.AsString(); ok {
-						// `unicase::UniCase` compares case-insensitively and
-						// says EQUAL for "a" and "A" (filters.rs:284-307). The
-						// port broke that tie on raw bytes, which reordered
-						// keys the engine leaves alone: with a stable sort the
-						// mapping's own order survives.
-						return strings.Compare(unicodecase.ToLower(s1), unicodecase.ToLower(s2))
-					}
-				}
-			}
-			if cmp, ok := a.Compare(b); ok {
-				return cmp
-			}
-			return strings.Compare(a.Repr(), b.Repr())
-		}
-
+		// `dictsort` is the third caller of the engine's one comparator
+		// (filters.rs:333-336), so it sorts by exactly what `sort` and
+		// `groupby` do — Unicode case folding, and a tie that stays a tie.
 		if byValue {
 			sort.SliceStable(keys, func(i, j int) bool {
-				cmp := cmpValues(m[keys[i]], m[keys[j]])
+				cmp := cmpHelper(m[keys[i]], m[keys[j]], caseSensitive)
 				if reverse {
 					return cmp > 0
 				}
@@ -2572,7 +2552,7 @@ func FilterDictSort(_ State, val value.Value, args []value.Value, kwargs *value.
 			})
 		} else {
 			sort.SliceStable(keys, func(i, j int) bool {
-				cmp := cmpValues(value.FromString(keys[i]), value.FromString(keys[j]))
+				cmp := cmpHelper(value.FromString(keys[i]), value.FromString(keys[j]), caseSensitive)
 				if reverse {
 					return cmp > 0
 				}
@@ -2648,12 +2628,9 @@ func FilterIndent(_ State, val value.Value, args []value.Value, kwargs *value.Or
 		return value.Undefined(), err
 	}
 	a := NewArgs(args, kwargs)
-	w, err := a.Int("usize")
+	w, err := a.Usize()
 	if err != nil {
 		return value.Undefined(), err
-	}
-	if w < 0 {
-		return value.Undefined(), invalidOp("cannot convert number to usize")
 	}
 	first, err := a.OptBool()
 	if err != nil {
@@ -2666,7 +2643,10 @@ func FilterIndent(_ State, val value.Value, args []value.Value, kwargs *value.Or
 	if err := a.Done(); err != nil {
 		return value.Undefined(), err
 	}
-	width := int(w)
+	width, err := allocSize(w, "width")
+	if err != nil {
+		return value.Undefined(), err
+	}
 
 	indent := strings.Repeat(" ", width)
 	lines := strings.Split(s, "\n")
@@ -2800,12 +2780,16 @@ func FilterTojson(_ State, val value.Value, args []value.Value, kwargs *value.Or
 				indent = 2
 			}
 		} else {
-			n, ok := indentArg.AsInt()
-			if !ok || !indentArg.IsActualInt() || n < 0 {
-				return value.Undefined(), mjerrors.NewError(mjerrors.ErrInvalidOperation,
-					fmt.Sprintf("cannot convert %s to usize", indentArg.Kind()))
+			// `usize::try_from(val)` (filters.rs:1017), the same ArgType the
+			// other usize parameters declare, so the upper half of u64 converts.
+			n, err := ConvertUsize(indentArg)
+			if err != nil {
+				return value.Undefined(), err
 			}
-			indent = int(n)
+			indent, err = allocSize(n, "indent")
+			if err != nil {
+				return value.Undefined(), err
+			}
 		}
 	}
 

@@ -9,8 +9,8 @@ oracle/corpus/*.json ──┬──> oracle/harness (Rust)  ─> boundaryml/min
 ```
 
 The corpus is split by lane — `seed.json`, `template.json`, `numeric.json`,
-`builtins.json`, `argcontract.json` — and each file is recorded independently as
-`recorded/rust-8cfc770-<lane>.json`. Adding rows to one lane therefore never
+`coercion.json`, `builtins.json`, `argcontract.json`, `reviewfixes.json` — and
+each file is recorded independently as `recorded/rust-8cfc770-<lane>.json`. Adding rows to one lane therefore never
 invalidates another lane's recording. Row ids are unique across the whole set,
 because the ledger and `PATCHES.md` are keyed by them.
 
@@ -66,8 +66,10 @@ go test ./...
 # Refresh the recording after changing the corpus or the harness.
 ./record.sh
 
-# Regenerate internal/unicodecase from the Rust toolchain's Unicode tables.
-(cd harness && cargo build --release --bin mj-casegen)
+# Regenerate internal/unicodecase from the Rust toolchain's Unicode tables and
+# the pinned unicase crate's fold table. MJ_RUSTC_VERSION is read by option_env!,
+# so it has to be set when the generator is COMPILED, not when it is run.
+(cd harness && MJ_RUSTC_VERSION="$(rustc --version)" cargo build --release --bin mj-casegen)
 ./harness/target/release/mj-casegen > ../internal/unicodecase/testdata/rust-unicode.json
 go run ./cmd/gentables
 ```
@@ -211,27 +213,59 @@ on the Go side). Every profile is *engine configuration only*; BAML's
 environment (globals, `regex_match`/`sum`, the none-formatter, prompt lowering)
 is not here and arrives as its own profile in a later slice.
 
+**`reviewfixes.json`** — 228 rows: the cases two rounds of cold review found by
+probing the pinned engine directly rather than by reading the corpus. `range`
+cardinality at the i64 boundary; integer ArgTypes at their declared widths,
+including `usize` at its real 64-bit one; integers past i64 through the tests
+and the formatters; the string tests' typing; composite sort and select paths;
+the pycompat view objects' kind, indexing and truth; `debug()`'s exact bytes;
+whether a macro accepts the synthetic `caller` keyword, decided the way the
+compiler decides it; `dict()`'s key spellings; the engine's one case-insensitive
+comparator across `sort`, `groupby` and `dictsort`; and `groupby`'s two
+observable kinds. A row here is a repro that was RED against the engine before
+it was a row.
+
 ### Where the corpus stands
 
-1454 rows: 1450 agree, 4 diverge and every one of the 4 is declared. None is in
-the template, numeric, coercion or argument-contract lane, whose rows all agree
-with the engine:
+1682 rows: 1670 agree, 12 diverge and every one of the 12 is declared. None is
+in the template, numeric, coercion or argument-contract lane, whose rows all
+agree with the engine. Ten of the twelve are deliberate and permanent rather
+than pending:
 
-- `container/dict-function-kwargs-order` — keyword arguments reach a function as
-  a Go map, so `dict(b=1, a=2)` loses the order the engine keeps. Opened by
-  slice 4, owned by slice 5, and **carried rather than closed**: the fix is the
-  callable signature carrying an ordered mapping, which is a change to the
-  public object protocol. See PATCHES.md, *Named gap: keyword-argument order*.
-- `test/divisibleby-zero` — deliberate and permanent: the engine PANICS on a
-  zero divisor and the fork refuses with an error instead.
+- `test/divisibleby-zero` — the engine PANICS on a zero divisor and the fork
+  refuses with an error instead.
+- `review/usize-batch-u64-upper`, `review/usize-slice-u64-upper`,
+  `review/usize-indent-u64-upper`, `review/usize-tojson-u64-upper`,
+  `review/usize-batch-u64-max`, `review/usize-batch-float-u64-upper`,
+  `review/usize-batch-i64-max` — the same disposition one layer up. A `usize`
+  argument that sizes an allocation converts on both sides; the engine then
+  reserves that much memory and aborts with a capacity overflow, and the fork
+  refuses. That the CONVERSION agrees is proven separately and greenly by
+  `review/usize-*-too-many`, where the value converts and the call fails on its
+  arity instead.
+- `review/pycompat-count-empty-needle` — `"abc".count("")` does not terminate in
+  the reference module; the outcome is recorded as a timeout rather than the row
+  being left out.
+- `fn/debug-state-dump` — `debug()` with no arguments prints the host language's
+  debug rendering of the environment, Rust type paths included.
+
+Two are pending, and both belong to the error surface:
+
 - `syntax/bad-escape-capital-u`, `syntax/bad-escape-rust-unicode` — the lexer's
-  string escapes, owned by the error surface. Both sit in the builtins lane
-  because that is where they were found, not because they are builtins.
+  string escapes, owned by slice 6. Both sit in the builtins lane because that
+  is where they were found, not because they are builtins.
+
+`container/dict-function-kwargs-order` used to be here and is gone: the callable
+signature now carries an ordered keyword mapping (`value.Callable`,
+`value.MethodCallable`, `value.CallableObject`, `filters.FilterFunc`,
+`FunctionFunc` all take a `*value.OrderedMap`), so `dict(b=1, a=2)` keeps its
+order and an unknown-keyword error names the first one written. See PATCHES.md
+#69 and #81.
 
 Error TEXT is checked as well as error category: `messages_test.go` compares the
-message both engines produce for every row that fails on both sides — 469 of
-them — and carries two declared wording exceptions, one owned by slice 4's value
-model and one by the error surface.
+message both engines produce for every row that fails on both sides, and carries
+two declared wording exceptions, one owned by slice 4's value model and one by
+the error surface.
 
 `arith/int-mul-i64-edge` used to be **architecture-dependent**: the fork rendered
 `9223372036854775807` on darwin/arm64 and `-9223372036854775808` on linux/amd64
@@ -255,19 +289,23 @@ numeric regression cannot escape into the seed lane. A later slice adds its own
 lane the same way as it lands.
 
 **The builtins lane does not have that gate, and the omission is deliberate.**
-Its two lanes (`builtins`, `argcontract`) hold four ledger entries and none of
-them is a decline being hidden:
+Its three lanes (`builtins`, `argcontract`, `reviewfixes`) hold ten ledger
+entries and none of them is a decline being hidden:
 
 | Row | Why it is not a numeric-style failure |
 | --- | --- |
 | `test/divisibleby-zero` | The engine PANICS; the fork errors. A gate demanding byte-exactness here would demand reproducing a panic. |
-| `container/dict-function-kwargs-order` | Opened by slice 4 against a signature this slice does not change. Closing it is a public-API change, not a builtin fix. |
+| `review/usize-*` (7 rows) | The same: the engine reserves an unallocatable amount of memory and aborts. A gate here would demand that a Go library abort, or exhaust its memory, on template input. The conversion those rows are really about IS gated, by the green `review/usize-*-too-many` rows beside them. |
+| `review/pycompat-count-empty-needle` | The reference module does not terminate. A gate would demand reproducing a non-terminating loop. |
+| `fn/debug-state-dump` | The engine's bytes are Rust type paths. A gate would demand hard-coding them into a Go engine. |
 | `syntax/bad-escape-capital-u`, `syntax/bad-escape-rust-unicode` | Lexer rows that merely live in this lane; the error surface owns them. |
 
-So the builtins gate is stated rather than automated: **every row that is about a
-builtin agrees byte for byte, including its error text.** A reviewer checking
-that claim should read the ledger, not a passing test — which is exactly why the
-four entries above are enumerated here.
+Every one of those is a SAFETY or host-language decision, and every one of them
+is a row that runs on both sides on every run — not an omission. So the builtins
+gate is stated rather than automated: **every row that is about a builtin agrees
+byte for byte, including its error text.** A reviewer checking that claim should
+read the ledger, not a passing test — which is exactly why the entries above are
+enumerated here.
 
 ## Rust is test-only
 

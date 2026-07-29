@@ -13520,6 +13520,909 @@
       ],
       "profile": "pycompat",
       "notes": "The reference module walks the string with `find` and advances by the needle's length, which never advances for an empty needle: it does not terminate. The harness bounds every row, so this is RECORDED as a timeout on that side and as Python's answer on this one, rather than being left out of the corpus. Declared in divergences.json."
+    },
+    {
+      "id": "review/pyview-keys-index-first",
+      "surface": "container",
+      "form": "expression",
+      "source": "dict(b=1,a=2).keys()[0]|default('U')",
+      "profile": "pycompat",
+      "notes": "An ObjectRepr::Iterable has no indexing of its own, so the engine falls back to nth() on a fresh iterator (value/mod.rs:1514-1531). The view answered undefined because only a SeqObject was indexed."
+    },
+    {
+      "id": "review/pyview-keys-index-last",
+      "surface": "container",
+      "form": "expression",
+      "source": "dict(b=1,a=2).keys()[-1]|default('U')",
+      "profile": "pycompat",
+      "notes": "A negative subscript counts back from the enumerator's exact length."
+    },
+    {
+      "id": "review/pyview-keys-index-second-last",
+      "surface": "container",
+      "form": "expression",
+      "source": "dict(b=1,a=2).keys()[-2]|default('U')",
+      "profile": "pycompat"
+    },
+    {
+      "id": "review/pyview-keys-index-past-end",
+      "surface": "container",
+      "form": "expression",
+      "source": "dict(b=1,a=2).keys()[5]|default('U')",
+      "profile": "pycompat",
+      "notes": "Out of range is undefined, not an error."
+    },
+    {
+      "id": "review/pyview-keys-index-past-start",
+      "surface": "container",
+      "form": "expression",
+      "source": "dict(b=1,a=2).keys()[-5]|default('U')",
+      "profile": "pycompat",
+      "notes": "checked_sub underflows, so the lookup answers nothing at all."
+    },
+    {
+      "id": "review/pyview-keys-index-empty",
+      "surface": "container",
+      "form": "expression",
+      "source": "dict().keys()[0]|default('U')",
+      "profile": "pycompat"
+    },
+    {
+      "id": "review/pyview-keys-index-float",
+      "surface": "container",
+      "form": "expression",
+      "source": "dict(b=1,a=2).keys()[1.0]|default('U')",
+      "profile": "pycompat",
+      "notes": "The subscript goes through the engine's integer conversion, so an integral float indexes."
+    },
+    {
+      "id": "review/pyview-keys-index-bool",
+      "surface": "container",
+      "form": "expression",
+      "source": "dict(b=1,a=2).keys()[true]|default('U')",
+      "profile": "pycompat",
+      "notes": "A bool indexes as 0 or 1."
+    },
+    {
+      "id": "review/pyview-keys-index-string",
+      "surface": "container",
+      "form": "expression",
+      "source": "dict(b=1,a=2).keys()['b']|default('U')",
+      "profile": "pycompat",
+      "notes": "A string subscript is not an index and the view has no attribute by that name."
+    },
+    {
+      "id": "review/pyview-values-index-first",
+      "surface": "container",
+      "form": "expression",
+      "source": "dict(b=1,a=2).values()[0]|default('U')",
+      "profile": "pycompat"
+    },
+    {
+      "id": "review/pyview-values-index-last",
+      "surface": "container",
+      "form": "expression",
+      "source": "dict(b=1,a=2).values()[-1]|default('U')",
+      "profile": "pycompat"
+    },
+    {
+      "id": "review/pyview-items-index-first",
+      "surface": "container",
+      "form": "expression",
+      "source": "dict(b=1,a=2).items()[0]|default('U')",
+      "profile": "pycompat"
+    },
+    {
+      "id": "review/pyview-items-index-last",
+      "surface": "container",
+      "form": "expression",
+      "source": "dict(b=1,a=2).items()[-1]|default('U')",
+      "profile": "pycompat"
+    },
+    {
+      "id": "review/pyview-items-index-nested",
+      "surface": "container",
+      "form": "expression",
+      "source": "dict(b=1,a=2).items()[0][0]|default('U')",
+      "profile": "pycompat",
+      "notes": "The pair the fallback yields is an ordinary sequence, so it indexes again."
+    },
+    {
+      "id": "review/pyview-keys-truth-empty",
+      "surface": "container",
+      "form": "template",
+      "source": "{% set x=dict().keys() %}{{ x|length }}|{% if x %}T{% else %}F{% endif %}",
+      "profile": "pycompat",
+      "notes": "Object truth is `enumerator_len() != Some(0)` (value/object.rs:216-220): a view whose size is known to be zero is FALSE. The fork reported its size only through the legacy length interface, so truth took the unknown-length branch and this changed control flow."
+    },
+    {
+      "id": "review/pyview-keys-truth-full",
+      "surface": "container",
+      "form": "template",
+      "source": "{% set x=dict(a=1).keys() %}{{ x|length }}|{% if x %}T{% else %}F{% endif %}",
+      "profile": "pycompat"
+    },
+    {
+      "id": "review/pyview-values-truth-empty",
+      "surface": "container",
+      "form": "template",
+      "source": "{% set x=dict().values() %}{{ x|length }}|{% if x %}T{% else %}F{% endif %}",
+      "profile": "pycompat"
+    },
+    {
+      "id": "review/pyview-items-truth-empty",
+      "surface": "container",
+      "form": "template",
+      "source": "{% set x=dict().items() %}{{ x|length }}|{% if x %}T{% else %}F{% endif %}",
+      "profile": "pycompat"
+    },
+    {
+      "id": "review/pyview-keys-not-empty",
+      "surface": "container",
+      "form": "expression",
+      "source": "not dict().keys()",
+      "profile": "pycompat",
+      "expect": "boolean"
+    },
+    {
+      "id": "review/pyview-keys-default-empty",
+      "surface": "container",
+      "form": "expression",
+      "source": "dict().keys()|default('U',true)",
+      "profile": "pycompat",
+      "notes": "`default(boolean=true)` asks for truth, so an empty view takes the default."
+    },
+    {
+      "id": "review/pyview-keys-ternary-empty",
+      "surface": "container",
+      "form": "template",
+      "source": "{{ 'T' if dict().keys() else 'F' }}",
+      "profile": "pycompat"
+    },
+    {
+      "id": "review/pyview-keys-kind-sequence",
+      "surface": "container",
+      "form": "expression",
+      "source": "dict(a=1).keys() is sequence",
+      "profile": "pycompat",
+      "expect": "boolean",
+      "notes": "Still an iterable and not a sequence: indexing it does not change its kind."
+    },
+    {
+      "id": "review/pyview-keys-kind-iterable",
+      "surface": "container",
+      "form": "expression",
+      "source": "dict(a=1).keys() is iterable",
+      "profile": "pycompat",
+      "expect": "boolean"
+    },
+    {
+      "id": "review/caller-lexical-set-target",
+      "surface": "control",
+      "form": "template",
+      "source": "{% macro f() %}{% set caller = 5 %}X{% endmacro %}{{ f(caller=1) }}",
+      "notes": "A `{% set %}` target BINDS the name. `find_macro_closure` therefore does not report `caller` free, MACRO_CALLER is clear, and the keyword is unknown (compiler/codegen.rs:435-456). The fork counted the target as a use and silently accepted the keyword."
+    },
+    {
+      "id": "review/caller-lexical-set-self",
+      "surface": "control",
+      "form": "template",
+      "source": "{% macro f() %}{% set caller = caller %}X{% endmacro %}{{ f(caller=1) }}",
+      "notes": "The target is assigned BEFORE the value is visited (compiler/meta.rs:243-246), so even this reads a bound name."
+    },
+    {
+      "id": "review/caller-lexical-set-tuple",
+      "surface": "control",
+      "form": "template",
+      "source": "{% macro f() %}{% set caller, x = [1,2] %}{{ x }}{% endmacro %}{{ f(caller=1) }}",
+      "notes": "A tuple target binds each of its names."
+    },
+    {
+      "id": "review/caller-lexical-setblock-target",
+      "surface": "control",
+      "form": "template",
+      "source": "{% macro f() %}{% set caller %}Y{% endset %}X{% endmacro %}{{ f(caller=1) }}"
+    },
+    {
+      "id": "review/caller-lexical-for-target",
+      "surface": "control",
+      "form": "template",
+      "source": "{% macro f() %}{% for caller in [1,2] %}{{ caller }}{% endfor %}{% endmacro %}{{ f(caller=9) }}",
+      "notes": "A loop target binds too, for the length of the loop's scope."
+    },
+    {
+      "id": "review/caller-lexical-for-target-after",
+      "surface": "control",
+      "form": "template",
+      "source": "{% macro f() %}{% for caller in [1] %}{% endfor %}{{ caller }}{% endmacro %}{{ f(caller=9) }}",
+      "notes": "...and only for that scope: after the loop the name is free again, so the keyword IS accepted. The pair pins the frame discipline in both directions."
+    },
+    {
+      "id": "review/caller-lexical-with-target",
+      "surface": "control",
+      "form": "template",
+      "source": "{% macro f() %}{% with caller = 1 %}{{ caller }}{% endwith %}{% endmacro %}{{ f(caller=9) }}"
+    },
+    {
+      "id": "review/caller-lexical-with-after",
+      "surface": "control",
+      "form": "template",
+      "source": "{% macro f() %}{% with caller = 1 %}{% endwith %}{{ caller }}{% endmacro %}{{ f(caller=9) }}"
+    },
+    {
+      "id": "review/caller-lexical-if-scope",
+      "surface": "control",
+      "form": "template",
+      "source": "{% macro f() %}{% if true %}{% set caller = 1 %}{% endif %}{{ caller }}{% endmacro %}{{ f(caller=9) }}",
+      "notes": "An if body is its own frame, so the binding does not escape it."
+    },
+    {
+      "id": "review/caller-lexical-filter-scope",
+      "surface": "control",
+      "form": "template",
+      "source": "{% macro f() %}{% filter upper %}{% set caller = 1 %}{% endfilter %}{{ caller }}{% endmacro %}{{ f(caller=9) }}"
+    },
+    {
+      "id": "review/caller-lexical-autoescape-scope",
+      "surface": "control",
+      "form": "template",
+      "source": "{% macro f() %}{% autoescape true %}{% set caller = 1 %}{% endautoescape %}{{ caller }}{% endmacro %}{{ f(caller=9) }}"
+    },
+    {
+      "id": "review/caller-lexical-forelse-scope",
+      "surface": "control",
+      "form": "template",
+      "source": "{% macro f() %}{% for x in [] %}{% else %}{% set caller = 1 %}{% endfor %}{{ caller }}{% endmacro %}{{ f(caller=9) }}",
+      "notes": "The else body gets its own frame, separate from the loop body's."
+    },
+    {
+      "id": "review/caller-lexical-nested-macro",
+      "surface": "control",
+      "form": "template",
+      "source": "{% macro outer() %}{% macro inner() %}{{ caller() }}{% endmacro %}O{% endmacro %}{{ outer(caller=1) }}",
+      "notes": "A nested macro is its own scope with `caller` already declared in it (compiler/meta.rs:277-282), so the inner use says nothing about the outer macro. The fork searched the inner body as if it were the outer one's."
+    },
+    {
+      "id": "review/caller-lexical-nested-macro-param",
+      "surface": "control",
+      "form": "template",
+      "source": "{% macro outer() %}{% macro inner(caller) %}{{ caller }}{% endmacro %}{{ inner(3) }}{% endmacro %}{{ outer(caller=1) }}"
+    },
+    {
+      "id": "review/caller-lexical-nested-both",
+      "surface": "control",
+      "form": "template",
+      "source": "{% macro outer() %}{% macro inner() %}{{ caller() }}{% endmacro %}{{ caller() }}{% endmacro %}{% call outer() %}Z{% endcall %}",
+      "notes": "The outer macro's OWN free use still counts."
+    },
+    {
+      "id": "review/caller-lexical-macro-name",
+      "surface": "control",
+      "form": "template",
+      "source": "{% macro f() %}{% macro caller() %}n{% endmacro %}{{ caller() }}{% endmacro %}{{ f(caller=1) }}",
+      "notes": "A macro declaration binds its own name in the enclosing scope."
+    },
+    {
+      "id": "review/caller-lexical-callblock-body",
+      "surface": "control",
+      "form": "template",
+      "source": "{% macro g() %}[{{ caller() }}]{% endmacro %}{% macro f() %}{% call g() %}inner{% endcall %}{% endmacro %}{{ f(caller=1) }}",
+      "notes": "A `{% call %}` block's body is an implicit macro, and it declares `caller` the same way a nested one does."
+    },
+    {
+      "id": "review/caller-lexical-default-expr",
+      "surface": "control",
+      "form": "template",
+      "source": "{% macro f(x=caller) %}{{ x }}{% endmacro %}{{ f(caller=1) }}",
+      "notes": "The opposite direction: parameters are bound before defaults are visited, so a default DOES read a free `caller`, the keyword is accepted, and the binding is in scope when the default runs — the engine stores it before the macro's instructions (vm/mod.rs:118-120)."
+    },
+    {
+      "id": "review/caller-lexical-nested-default",
+      "surface": "control",
+      "form": "template",
+      "source": "{% macro outer() %}{% macro inner(x=caller) %}{{ x }}{% endmacro %}{{ inner() }}{% endmacro %}{{ outer(caller=1) }}",
+      "notes": "...and a nested macro's default reads the nested scope's declared `caller`, not the outer macro's."
+    },
+    {
+      "id": "review/caller-lexical-for-filter",
+      "surface": "control",
+      "form": "template",
+      "source": "{% macro f() %}{% for x in [1] if caller %}{{ x }}{% endfor %}{% endmacro %}{{ f(caller=9) }}",
+      "notes": "A loop's filter expression is visited, so a use there is a use."
+    },
+    {
+      "id": "review/caller-lexical-two-macros",
+      "surface": "control",
+      "form": "template",
+      "source": "{% macro a() %}{{ caller() }}{% endmacro %}{% macro b() %}x{% endmacro %}{{ b(caller=1) }}",
+      "notes": "The decision is per macro: a sibling's use is not this one's."
+    },
+    {
+      "id": "review/caller-lexical-declared-param",
+      "surface": "control",
+      "form": "template",
+      "source": "{% macro f(caller) %}{{ caller }}{% endmacro %}{{ f(caller=7) }}",
+      "notes": "Round-1's case, still closed: a declared parameter binds the name, so the argument is an ordinary one."
+    },
+    {
+      "id": "review/caller-lexical-call-block",
+      "surface": "control",
+      "form": "template",
+      "source": "{% macro f() %}{{ caller() }}{% endmacro %}{% call f() %}B{% endcall %}",
+      "notes": "And the real thing still works."
+    },
+    {
+      "id": "review/dict-splat-int-key",
+      "surface": "container",
+      "form": "expression",
+      "source": "dict(**{8: 8})",
+      "notes": "A splatted entry carries its key SPELLING, and `dict` has to copy it rather than re-deriving the key from its string form. The engine collects the source's key VALUES (functions.rs:394-414), so this renders `{8: 8}` and not `{\"8\": 8}`."
+    },
+    {
+      "id": "review/dict-splat-int-key-mixed",
+      "surface": "container",
+      "form": "expression",
+      "source": "dict(**{8: 8, 'a': 1})"
+    },
+    {
+      "id": "review/dict-splat-int-key-overwrite",
+      "surface": "container",
+      "form": "expression",
+      "source": "dict(**{8: 8}, **{8: 9})"
+    },
+    {
+      "id": "review/dict-splat-bool-key",
+      "surface": "container",
+      "form": "expression",
+      "source": "dict(**{true: 1})"
+    },
+    {
+      "id": "review/dict-splat-float-key",
+      "surface": "container",
+      "form": "expression",
+      "source": "dict(**{1.5: 2})"
+    },
+    {
+      "id": "review/dict-splat-negative-key",
+      "surface": "container",
+      "form": "expression",
+      "source": "dict(**{-1: 2})"
+    },
+    {
+      "id": "review/dict-splat-none-key",
+      "surface": "container",
+      "form": "expression",
+      "source": "dict(**{none: 1})"
+    },
+    {
+      "id": "review/dict-positional-int-key",
+      "surface": "container",
+      "form": "expression",
+      "source": "dict({8: 8})",
+      "notes": "The positional mapping is copied the same way."
+    },
+    {
+      "id": "review/dict-positional-int-key-kwarg",
+      "surface": "container",
+      "form": "expression",
+      "source": "dict({8: 8}, a=1)"
+    },
+    {
+      "id": "review/dict-positional-int-key-splat",
+      "surface": "container",
+      "form": "expression",
+      "source": "dict({8: 8}, **{9: 9})"
+    },
+    {
+      "id": "review/dict-splat-string-keys",
+      "surface": "container",
+      "form": "expression",
+      "source": "dict(**dict(b=1,a=2))",
+      "notes": "The string case round-1 added, unchanged."
+    },
+    {
+      "id": "review/usize-batch-upper-too-many",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[]|batch(9223372036854775808, 1, 2)",
+      "notes": "The observable proof that the width is modelled: the count CONVERTS, so what the call fails on is its arity, exactly as the engine's from_args does. While the conversion refused the upper half of u64, this was an invalid operation instead."
+    },
+    {
+      "id": "review/usize-slice-upper-too-many",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[]|slice(9223372036854775808, 1, 2)"
+    },
+    {
+      "id": "review/usize-indent-upper-too-many",
+      "surface": "environment",
+      "form": "expression",
+      "source": "''|indent(9223372036854775808, true, true, true)"
+    },
+    {
+      "id": "review/usize-batch-zero-too-many",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[]|batch(0, 1, 2)",
+      "notes": "`count == 0` is checked in the filter BODY, which the engine only reaches after every parameter is bound and a surplus one rejected."
+    },
+    {
+      "id": "review/usize-batch-past-u64",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[]|batch(18446744073709551616)",
+      "notes": "Past u64::MAX there is no usize, and both sides refuse at the conversion."
+    },
+    {
+      "id": "review/usize-tojson-past-u64",
+      "surface": "environment",
+      "form": "expression",
+      "source": "1|tojson(indent=18446744073709551616)"
+    },
+    {
+      "id": "review/usize-batch-negative",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[]|batch(-1)",
+      "notes": "A usize refuses a negative."
+    },
+    {
+      "id": "review/usize-indent-negative",
+      "surface": "environment",
+      "form": "expression",
+      "source": "''|indent(-1)"
+    },
+    {
+      "id": "review/usize-tojson-negative",
+      "surface": "environment",
+      "form": "expression",
+      "source": "1|tojson(indent=-1)"
+    },
+    {
+      "id": "review/usize-batch-bool",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[1,2]|batch(true)",
+      "notes": "The bool arm converts to 0 or 1."
+    },
+    {
+      "id": "review/usize-indent-bool",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'a'|indent(true)"
+    },
+    {
+      "id": "review/usize-indent-integral-float",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'a'|indent(2.0)",
+      "notes": "The float arm converts when it round-trips through the saturating i64 cast."
+    },
+    {
+      "id": "review/usize-indent-fractional-float",
+      "surface": "environment",
+      "form": "expression",
+      "source": "'a'|indent(1.5)",
+      "notes": "...and not otherwise."
+    },
+    {
+      "id": "review/usize-tojson-integral-float",
+      "surface": "environment",
+      "form": "expression",
+      "source": "1|tojson(indent=2.0)",
+      "notes": "`tojson`'s indent is the same ArgType, which the fork used to bind to a stricter integer test."
+    },
+    {
+      "id": "review/usize-tojson-fractional-float",
+      "surface": "environment",
+      "form": "expression",
+      "source": "1|tojson(indent=1.5)"
+    },
+    {
+      "id": "review/usize-batch-fractional-float",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[1,2]|batch(1.5)"
+    },
+    {
+      "id": "review/usize-batch-u64-upper",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[]|batch(9223372036854775808)",
+      "notes": "DECLARED. The count converts on both sides; the engine then reserves that many elements and panics with a capacity overflow. The fork refuses instead — see the ledger."
+    },
+    {
+      "id": "review/usize-slice-u64-upper",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[]|slice(9223372036854775808)",
+      "notes": "DECLARED, same shape."
+    },
+    {
+      "id": "review/usize-indent-u64-upper",
+      "surface": "environment",
+      "form": "expression",
+      "source": "''|indent(9223372036854775808)",
+      "notes": "DECLARED, through str::repeat rather than Vec::with_capacity."
+    },
+    {
+      "id": "review/usize-tojson-u64-upper",
+      "surface": "environment",
+      "form": "expression",
+      "source": "1|tojson(indent=9223372036854775808)",
+      "notes": "DECLARED, the fourth consumer."
+    },
+    {
+      "id": "review/usize-batch-u64-max",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[]|batch(18446744073709551615)",
+      "notes": "DECLARED, at the very top of the range."
+    },
+    {
+      "id": "review/usize-batch-float-u64-upper",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[]|batch(9223372036854775808.0)",
+      "notes": "DECLARED. Reached through the float arm, whose saturating cast lands on i64::MAX."
+    },
+    {
+      "id": "review/usize-batch-i64-max",
+      "surface": "environment",
+      "form": "expression",
+      "source": "[]|batch(9223372036854775807)",
+      "notes": "DECLARED, and inside i64 — so it is about the allocation and not the width. It used to answer `[]` silently, which was the worse direction."
+    },
+    {
+      "id": "review/sort-unicode-dotted-i",
+      "surface": "string",
+      "form": "template",
+      "source": "{% for x in ['i̇','İ']|sort %}[{{ x }}]{% endfor %}",
+      "notes": "`cmp_helper` compares `UniCase::new(a)` to `UniCase::new(b)` (filters.rs:284-300), which orders by the Unicode case-FOLDED characters. Folding is not lowercasing: 'İ' folds to 'i'+U+0307, so these two are EQUAL and the stable sort leaves them alone. Lowercasing put them the other way round."
+    },
+    {
+      "id": "review/sort-unicode-sharp-s",
+      "surface": "string",
+      "form": "template",
+      "source": "{% for x in ['Maße','MASSE','masse']|sort %}[{{ x }}]{% endfor %}",
+      "notes": "Folding is length changing: 'ß' folds to \"ss\", so all three tie."
+    },
+    {
+      "id": "review/sort-unicode-mixed-length",
+      "surface": "string",
+      "form": "template",
+      "source": "{% for x in ['ß','ss','SS','s']|sort %}[{{ x }}]{% endfor %}"
+    },
+    {
+      "id": "review/sort-unicode-ligature-fi",
+      "surface": "string",
+      "form": "template",
+      "source": "{% for x in ['ﬁ','fi']|sort %}[{{ x }}]{% endfor %}"
+    },
+    {
+      "id": "review/sort-unicode-ligature-ffi",
+      "surface": "string",
+      "form": "template",
+      "source": "{% for x in ['ﬃ','ffi']|sort %}[{{ x }}]{% endfor %}",
+      "notes": "unicase iterates a three-character fold as (third, first, second), so 'ﬃ' folds to \"iff\" and does NOT tie with \"ffi\". The quirk is reproduced rather than corrected."
+    },
+    {
+      "id": "review/sort-unicode-sigma",
+      "surface": "string",
+      "form": "template",
+      "source": "{% for x in ['ΣΤΙΓΜΑΣ','στιγμας','στιγμασ']|sort %}[{{ x }}]{% endfor %}"
+    },
+    {
+      "id": "review/sort-unicode-turkish",
+      "surface": "string",
+      "form": "template",
+      "source": "{% for x in ['I','ı','İ','i']|sort %}[{{ x }}]{% endfor %}"
+    },
+    {
+      "id": "review/sort-unicode-kelvin",
+      "surface": "string",
+      "form": "template",
+      "source": "{% for x in ['K','k','K']|sort %}[{{ x }}]{% endfor %}"
+    },
+    {
+      "id": "review/sort-unicode-accent",
+      "surface": "string",
+      "form": "template",
+      "source": "{% for x in ['é','E','e','É']|sort %}[{{ x }}]{% endfor %}"
+    },
+    {
+      "id": "review/sort-unicode-case-sensitive",
+      "surface": "string",
+      "form": "template",
+      "source": "{% for x in ['i̇','İ']|sort(case_sensitive=true) %}[{{ x }}]{% endfor %}",
+      "notes": "case_sensitive drops to the value model's own ordering."
+    },
+    {
+      "id": "review/sort-unicode-reverse",
+      "surface": "string",
+      "form": "template",
+      "source": "{% for x in ['i̇','İ']|sort(reverse=true) %}[{{ x }}]{% endfor %}",
+      "notes": "Reversing the comparator does not reverse a tie: the sort is stable either way."
+    },
+    {
+      "id": "review/sort-unicode-attribute",
+      "surface": "string",
+      "form": "template",
+      "source": "{% for x in [dict(k='İ'),dict(k='i̇')]|sort(attribute='k') %}[{{ x.k }}]{% endfor %}"
+    },
+    {
+      "id": "review/sort-unicode-composite",
+      "surface": "string",
+      "form": "template",
+      "source": "{% for x in [dict(a='B',b='y'),dict(a='b',b='x')]|sort(attribute='a,b') %}[{{ x.b }}]{% endfor %}",
+      "notes": "A composite key is a sequence, so it falls to the value model's ordering and not to the folding path."
+    },
+    {
+      "id": "review/groupby-case-ascii",
+      "surface": "string",
+      "form": "template",
+      "source": "{% for g in [dict(k='ca',n=1),dict(k='CA',n=2)]|groupby('k') %}{{ g.grouper }}:{% for i in g.list %}{{ i.n }}{% endfor %};{% endfor %}",
+      "notes": "groupby sorts and groups with the SAME comparator (filters.rs:1412-1416 and 1455). Breaking a case-insensitive tie by case rank reordered the run and changed which member's key became the grouper — the grouper is the LAST member's."
+    },
+    {
+      "id": "review/groupby-case-unicode",
+      "surface": "string",
+      "form": "template",
+      "source": "{% for g in [dict(k='i̇',n=1),dict(k='İ',n=2)]|groupby('k') %}{{ g.grouper }}:{% for i in g.list %}{{ i.n }}{% endfor %};{% endfor %}",
+      "notes": "With a folding comparator this is one group; with EqualFold it was two."
+    },
+    {
+      "id": "review/groupby-case-sharp-s",
+      "surface": "string",
+      "form": "template",
+      "source": "{% for g in [dict(k='Maße',n=1),dict(k='MASSE',n=2)]|groupby('k') %}{{ g.grouper }}:{% for i in g.list %}{{ i.n }}{% endfor %};{% endfor %}"
+    },
+    {
+      "id": "review/groupby-case-sensitive",
+      "surface": "string",
+      "form": "template",
+      "source": "{% for g in [dict(k='ca',n=1),dict(k='CA',n=2)]|groupby('k', case_sensitive=true) %}{{ g.grouper }}:{% for i in g.list %}{{ i.n }}{% endfor %};{% endfor %}"
+    },
+    {
+      "id": "review/groupby-case-runs",
+      "surface": "string",
+      "form": "template",
+      "source": "{% for g in [dict(k='b',n=1),dict(k='B',n=2),dict(k='a',n=3),dict(k='A',n=4)]|groupby('k') %}{{ g.grouper }}:{% for i in g.list %}{{ i.n }}{% endfor %};{% endfor %}"
+    },
+    {
+      "id": "review/groupby-nonstring-key",
+      "surface": "string",
+      "form": "template",
+      "source": "{% for g in [dict(k=1,n=1),dict(k=1,n=2),dict(k=2,n=3)]|groupby('k') %}{{ g.grouper }}:{% for i in g.list %}{{ i.n }}{% endfor %};{% endfor %}"
+    },
+    {
+      "id": "review/groupby-default-key",
+      "surface": "string",
+      "form": "template",
+      "source": "{% for g in [dict(n=1),dict(k='a',n=2)]|groupby('k', default='z') %}{{ g.grouper }}:{% for i in g.list %}{{ i.n }}{% endfor %};{% endfor %}"
+    },
+    {
+      "id": "review/dictsort-case-ascii",
+      "surface": "string",
+      "form": "template",
+      "source": "{% for p in {'b':1,'B':2,'a':3,'A':4}|dictsort %}[{{ p[0] }}{{ p[1] }}]{% endfor %}",
+      "notes": "`dictsort` is the third caller of the same comparator (filters.rs:333-336)."
+    },
+    {
+      "id": "review/dictsort-case-unicode",
+      "surface": "string",
+      "form": "template",
+      "source": "{% for p in {'i̇':1,'İ':2}|dictsort %}[{{ p[0] }}{{ p[1] }}]{% endfor %}"
+    },
+    {
+      "id": "review/dictsort-case-sharp-s",
+      "surface": "string",
+      "form": "template",
+      "source": "{% for p in {'Maße':1,'MASSE':2}|dictsort %}[{{ p[0] }}{{ p[1] }}]{% endfor %}"
+    },
+    {
+      "id": "review/dictsort-case-sensitive",
+      "surface": "string",
+      "form": "template",
+      "source": "{% for p in {'b':1,'B':2}|dictsort(case_sensitive=true) %}[{{ p[0] }}{{ p[1] }}]{% endfor %}"
+    },
+    {
+      "id": "review/dictsort-case-reverse",
+      "surface": "string",
+      "form": "template",
+      "source": "{% for p in {'b':1,'B':2,'a':3}|dictsort(reverse=true) %}[{{ p[0] }}{{ p[1] }}]{% endfor %}"
+    },
+    {
+      "id": "review/dictsort-case-by-value",
+      "surface": "string",
+      "form": "template",
+      "source": "{% for p in {'x':'İ','y':'i̇'}|dictsort(by='value') %}[{{ p[0] }}{{ p[1] }}]{% endfor %}"
+    },
+    {
+      "id": "review/unique-lowercase-sharp-s",
+      "surface": "string",
+      "form": "expression",
+      "source": "['Maße','MASSE','masse']|unique|list",
+      "notes": "`unique` is NOT the folding comparator: it memoizes `to_lowercase()` (filters.rs:1517-1521), so 'ß' does not equal \"ss\" there. The row exists so porting the comparator does not spread to a filter that never used it."
+    },
+    {
+      "id": "review/unique-lowercase-dotted-i",
+      "surface": "string",
+      "form": "expression",
+      "source": "['İ','i̇']|unique|list"
+    },
+    {
+      "id": "review/unique-lowercase-sigma",
+      "surface": "string",
+      "form": "expression",
+      "source": "['Σ','σ','ς']|unique|list"
+    },
+    {
+      "id": "review/groupby-kind-group-sequence",
+      "surface": "container",
+      "form": "expression",
+      "source": "([dict(k='a',n=1),dict(k='a',n=2)]|groupby('k'))[0] is sequence",
+      "expect": "boolean",
+      "notes": "The group tuple's repr is ObjectRepr::Seq and its enumerator is Seq(2) (filters.rs:1425-1446). The fork declared no repr, so the standard test answered false."
+    },
+    {
+      "id": "review/groupby-kind-group-iterable",
+      "surface": "container",
+      "form": "expression",
+      "source": "([dict(k='a',n=1),dict(k='a',n=2)]|groupby('k'))[0] is iterable",
+      "expect": "boolean"
+    },
+    {
+      "id": "review/groupby-kind-group-mapping",
+      "surface": "container",
+      "form": "expression",
+      "source": "([dict(k='a',n=1),dict(k='a',n=2)]|groupby('k'))[0] is mapping",
+      "expect": "boolean"
+    },
+    {
+      "id": "review/groupby-kind-group-length",
+      "surface": "container",
+      "form": "expression",
+      "source": "([dict(k='a',n=1),dict(k='a',n=2)]|groupby('k'))[0]|length"
+    },
+    {
+      "id": "review/groupby-kind-list-sequence",
+      "surface": "container",
+      "form": "expression",
+      "source": "([dict(k='a',n=1),dict(k='a',n=2)]|groupby('k'))[0].list is sequence",
+      "expect": "boolean",
+      "notes": "The `.list` projection is `Value::make_object_iterable`: an ITERABLE with a known length, not a sequence. Materializing it as a list made this true."
+    },
+    {
+      "id": "review/groupby-kind-list-iterable",
+      "surface": "container",
+      "form": "expression",
+      "source": "([dict(k='a',n=1),dict(k='a',n=2)]|groupby('k'))[0].list is iterable",
+      "expect": "boolean"
+    },
+    {
+      "id": "review/groupby-kind-list-length",
+      "surface": "container",
+      "form": "expression",
+      "source": "([dict(k='a',n=1),dict(k='a',n=2)]|groupby('k'))[0].list|length"
+    },
+    {
+      "id": "review/groupby-kind-index1-sequence",
+      "surface": "container",
+      "form": "expression",
+      "source": "([dict(k='a',n=1),dict(k='a',n=2)]|groupby('k'))[0][1] is sequence",
+      "expect": "boolean",
+      "notes": "Index 1 and `.list` are the same projection."
+    },
+    {
+      "id": "review/groupby-kind-index1-iterable",
+      "surface": "container",
+      "form": "expression",
+      "source": "([dict(k='a',n=1),dict(k='a',n=2)]|groupby('k'))[0][1] is iterable",
+      "expect": "boolean"
+    },
+    {
+      "id": "review/groupby-kind-index0",
+      "surface": "container",
+      "form": "expression",
+      "source": "([dict(k='a',n=1),dict(k='a',n=2)]|groupby('k'))[0][0]"
+    },
+    {
+      "id": "review/groupby-kind-index-negative",
+      "surface": "container",
+      "form": "expression",
+      "source": "([dict(k='a',n=1),dict(k='a',n=2)]|groupby('k'))[0][-2]",
+      "notes": "A Seq repr resolves a negative subscript against its enumerator length before looking it up."
+    },
+    {
+      "id": "review/groupby-kind-index-negative-length",
+      "surface": "container",
+      "form": "expression",
+      "source": "([dict(k='a',n=1),dict(k='a',n=2)]|groupby('k'))[0][-1]|length"
+    },
+    {
+      "id": "review/groupby-kind-index-string",
+      "surface": "container",
+      "form": "expression",
+      "source": "([dict(k='a',n=1),dict(k='a',n=2)]|groupby('k'))[0]['grouper']|default('U')",
+      "notes": "`get_value` takes the names as well as the indices."
+    },
+    {
+      "id": "review/groupby-kind-index-past-end",
+      "surface": "container",
+      "form": "expression",
+      "source": "([dict(k='a',n=1),dict(k='a',n=2)]|groupby('k'))[0][2]|default('U')"
+    },
+    {
+      "id": "review/groupby-kind-group-render",
+      "surface": "container",
+      "form": "expression",
+      "source": "([dict(k='a',n=1),dict(k='a',n=2)]|groupby('k'))[0]"
+    },
+    {
+      "id": "review/groupby-kind-list-render",
+      "surface": "container",
+      "form": "expression",
+      "source": "([dict(k='a',n=1),dict(k='a',n=2)]|groupby('k'))[0].list"
+    },
+    {
+      "id": "review/groupby-kind-group-tojson",
+      "surface": "container",
+      "form": "expression",
+      "source": "([dict(k='a',n=1),dict(k='a',n=2)]|groupby('k'))[0]|tojson"
+    },
+    {
+      "id": "review/groupby-kind-list-tojson",
+      "surface": "container",
+      "form": "expression",
+      "source": "([dict(k='a',n=1),dict(k='a',n=2)]|groupby('k'))[0].list|tojson"
+    },
+    {
+      "id": "review/groupby-kind-list-index",
+      "surface": "container",
+      "form": "expression",
+      "source": "([dict(k='a',n=1),dict(k='a',n=2)]|groupby('k'))[0].list[0].n|default('U')"
+    },
+    {
+      "id": "review/groupby-kind-list-index-negative",
+      "surface": "container",
+      "form": "expression",
+      "source": "([dict(k='a',n=1),dict(k='a',n=2)]|groupby('k'))[0].list[-1].n|default('U')"
+    },
+    {
+      "id": "review/groupby-kind-list-materialize",
+      "surface": "container",
+      "form": "expression",
+      "source": "([dict(k='a',n=1),dict(k='a',n=2)]|groupby('k'))[0].list|list"
+    },
+    {
+      "id": "review/groupby-kind-outer-sequence",
+      "surface": "container",
+      "form": "expression",
+      "source": "([dict(k='a',n=1)]|groupby('k')) is sequence",
+      "expect": "boolean",
+      "notes": "The list of groups is an ordinary sequence."
+    },
+    {
+      "id": "review/caller-lexical-slice-subject",
+      "surface": "control",
+      "form": "template",
+      "source": "{% macro f() %}{{ caller[0:1] }}{% endmacro %}{{ f(caller=[1,2]) }}",
+      "notes": "The reference's tracker visits a slice's three BOUNDS and not the expression being sliced (compiler/meta.rs:176-180). So a `caller` that is only ever sliced is not a free use and the keyword is rejected. Surprising, upstream, and reproduced rather than corrected."
+    },
+    {
+      "id": "review/caller-lexical-slice-bound",
+      "surface": "control",
+      "form": "template",
+      "source": "{% macro f() %}{{ [1,2][caller:] }}{% endmacro %}{{ f(caller=0) }}",
+      "notes": "The other half: a bound IS visited."
+    },
+    {
+      "id": "review/caller-lexical-slice-both",
+      "surface": "control",
+      "form": "template",
+      "source": "{% macro f() %}{{ caller[caller:] }}{% endmacro %}{{ f(caller=[1,2]) }}",
+      "notes": "With a bound present the name is free after all, so the keyword binds and the slice then fails on its own terms."
     }
   ]
 }

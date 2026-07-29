@@ -20,7 +20,29 @@ type dump struct {
 	Whitespace    [][2]rune   `json:"whitespace"`
 	Cased         [][2]rune   `json:"cased"`
 	CaseIgnorable [][2]rune   `json:"case_ignorable"`
+	UnicaseFold   []mapping   `json:"unicase_fold"`
+	UnicaseCmp    []foldCmp   `json:"unicase_cmp"`
 	Samples       [][6]string `json:"samples"`
+}
+
+// foldCmp is one [left, right, ordering] triple of UniCase's own Ord.
+type foldCmp struct {
+	Left, Right string
+	Ordering    int
+}
+
+func (c *foldCmp) UnmarshalJSON(data []byte) error {
+	var triple []json.RawMessage
+	if err := json.Unmarshal(data, &triple); err != nil {
+		return err
+	}
+	if err := json.Unmarshal(triple[0], &c.Left); err != nil {
+		return err
+	}
+	if err := json.Unmarshal(triple[1], &c.Right); err != nil {
+		return err
+	}
+	return json.Unmarshal(triple[2], &c.Ordering)
 }
 
 type mapping struct {
@@ -155,4 +177,52 @@ func rangeSet(ranges [][2]rune) map[rune]bool {
 		}
 	}
 	return rv
+}
+
+// TestFoldCompareMatchesReference replays every ordered pair UniCase was asked
+// to order, and every scalar's fold. The comparator is what `sort` and
+// `groupby` are, so an unreplayed fold table would only be a claim.
+func TestFoldCompareMatchesReference(t *testing.T) {
+	d := load(t)
+	if len(d.UnicaseCmp) == 0 || len(d.UnicaseFold) == 0 {
+		t.Fatal("the dump carries no unicase tables; regenerate it")
+	}
+	for _, c := range d.UnicaseCmp {
+		if got := sign(FoldCompare(c.Left, c.Right)); got != c.Ordering {
+			t.Errorf("FoldCompare(%q, %q) = %d, want %d", c.Left, c.Right, got, c.Ordering)
+		}
+		if got, want := FoldEqual(c.Left, c.Right), c.Ordering == 0; got != want {
+			t.Errorf("FoldEqual(%q, %q) = %v, want %v", c.Left, c.Right, got, want)
+		}
+	}
+
+	// Every remapped scalar folds to its recorded sequence, and every scalar
+	// the reference leaves alone folds to itself. Comparing a scalar against
+	// its own fold is how that is observed through the exported surface.
+	folded := map[rune]bool{}
+	for _, m := range d.UnicaseFold {
+		folded[m.Rune] = true
+		if got := FoldCompare(string(m.Rune), m.To); got != 0 {
+			t.Errorf("FoldCompare(%q, %q) = %d, want 0 (recorded fold)", m.Rune, m.To, got)
+		}
+	}
+	for r := rune(0); r <= 0x10FFFF; r++ {
+		if r >= 0xD800 && r <= 0xDFFF || folded[r] {
+			continue
+		}
+		if got := FoldCompare(string(r), string(r)); got != 0 {
+			t.Errorf("FoldCompare(%q, %q) = %d, want 0", r, r, got)
+		}
+	}
+}
+
+func sign(n int) int {
+	switch {
+	case n < 0:
+		return -1
+	case n > 0:
+		return 1
+	default:
+		return 0
+	}
 }

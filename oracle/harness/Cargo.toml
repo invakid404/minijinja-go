@@ -46,6 +46,11 @@ minijinja = { git = "https://github.com/boundaryml/minijinja.git", rev = "8cfc77
 minijinja-contrib = { git = "https://github.com/boundaryml/minijinja.git", rev = "8cfc770a5dffeda2de5b910d2b9f870d7edeff7c", default-features = false, features = [
   "pycompat",
 ] }
+# The case-insensitive comparison the engine's `sort` and `groupby` use under
+# the `unicode` feature (filters.rs:284-300). It is already in this build as a
+# transitive dependency of minijinja; naming it directly is what lets mj-casegen
+# dump its fold table for internal/unicodecase.
+unicase = "2.9"
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["preserve_order"] }
 sha2 = "0.10"

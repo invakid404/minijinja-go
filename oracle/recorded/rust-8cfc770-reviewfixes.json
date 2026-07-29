@@ -20,7 +20,7 @@
     "harness_version": "1",
     "os": "macos",
     "arch": "aarch64",
-    "corpus_sha256": "465fd4d4a14af193ff78f66b55ab40df1a9295cd068f779d9b4bb7e3cc024e9a"
+    "corpus_sha256": "56d47a0d7da16de5ebe3a53f76bf7282b5ba90cdfd31fd9820c0fa7a0cbd2dbd"
   },
   "results": [
     {
@@ -787,6 +787,1097 @@
       "outcome": {
         "status": "timeout",
         "seconds": 5
+      }
+    },
+    {
+      "id": "review/pyview-keys-index-first",
+      "outcome": {
+        "status": "ok",
+        "render": "b",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/pyview-keys-index-last",
+      "outcome": {
+        "status": "ok",
+        "render": "a",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/pyview-keys-index-second-last",
+      "outcome": {
+        "status": "ok",
+        "render": "b",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/pyview-keys-index-past-end",
+      "outcome": {
+        "status": "ok",
+        "render": "U",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/pyview-keys-index-past-start",
+      "outcome": {
+        "status": "ok",
+        "render": "U",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/pyview-keys-index-empty",
+      "outcome": {
+        "status": "ok",
+        "render": "U",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/pyview-keys-index-float",
+      "outcome": {
+        "status": "ok",
+        "render": "a",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/pyview-keys-index-bool",
+      "outcome": {
+        "status": "ok",
+        "render": "a",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/pyview-keys-index-string",
+      "outcome": {
+        "status": "ok",
+        "render": "U",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/pyview-values-index-first",
+      "outcome": {
+        "status": "ok",
+        "render": "1",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/pyview-values-index-last",
+      "outcome": {
+        "status": "ok",
+        "render": "2",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/pyview-items-index-first",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"b\", 1]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/pyview-items-index-last",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"a\", 2]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/pyview-items-index-nested",
+      "outcome": {
+        "status": "ok",
+        "render": "b",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/pyview-keys-truth-empty",
+      "outcome": {
+        "status": "ok",
+        "render": "0|F",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/pyview-keys-truth-full",
+      "outcome": {
+        "status": "ok",
+        "render": "1|T",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/pyview-values-truth-empty",
+      "outcome": {
+        "status": "ok",
+        "render": "0|F",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/pyview-items-truth-empty",
+      "outcome": {
+        "status": "ok",
+        "render": "0|F",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/pyview-keys-not-empty",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "review/pyview-keys-default-empty",
+      "outcome": {
+        "status": "ok",
+        "render": "U",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/pyview-keys-ternary-empty",
+      "outcome": {
+        "status": "ok",
+        "render": "F",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/pyview-keys-kind-sequence",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "review/pyview-keys-kind-iterable",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "review/caller-lexical-set-target",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments: unknown keyword argument `caller` (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "review/caller-lexical-set-self",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments: unknown keyword argument `caller` (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "review/caller-lexical-set-tuple",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments: unknown keyword argument `caller` (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "review/caller-lexical-setblock-target",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments: unknown keyword argument `caller` (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "review/caller-lexical-for-target",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments: unknown keyword argument `caller` (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "review/caller-lexical-for-target-after",
+      "outcome": {
+        "status": "ok",
+        "render": "9",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/caller-lexical-with-target",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments: unknown keyword argument `caller` (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "review/caller-lexical-with-after",
+      "outcome": {
+        "status": "ok",
+        "render": "9",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/caller-lexical-if-scope",
+      "outcome": {
+        "status": "ok",
+        "render": "1",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/caller-lexical-filter-scope",
+      "outcome": {
+        "status": "ok",
+        "render": "1",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/caller-lexical-autoescape-scope",
+      "outcome": {
+        "status": "ok",
+        "render": "1",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/caller-lexical-forelse-scope",
+      "outcome": {
+        "status": "ok",
+        "render": "1",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/caller-lexical-nested-macro",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments: unknown keyword argument `caller` (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "review/caller-lexical-nested-macro-param",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments: unknown keyword argument `caller` (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "review/caller-lexical-nested-both",
+      "outcome": {
+        "status": "ok",
+        "render": "Z",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/caller-lexical-macro-name",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments: unknown keyword argument `caller` (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "review/caller-lexical-callblock-body",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments: unknown keyword argument `caller` (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "review/caller-lexical-default-expr",
+      "outcome": {
+        "status": "ok",
+        "render": "1",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/caller-lexical-nested-default",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments: unknown keyword argument `caller` (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "review/caller-lexical-for-filter",
+      "outcome": {
+        "status": "ok",
+        "render": "1",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/caller-lexical-two-macros",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments: unknown keyword argument `caller` (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "review/caller-lexical-declared-param",
+      "outcome": {
+        "status": "ok",
+        "render": "7",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/caller-lexical-call-block",
+      "outcome": {
+        "status": "ok",
+        "render": "B",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/dict-splat-int-key",
+      "outcome": {
+        "status": "ok",
+        "render": "{8: 8}",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/dict-splat-int-key-mixed",
+      "outcome": {
+        "status": "ok",
+        "render": "{8: 8, \"a\": 1}",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/dict-splat-int-key-overwrite",
+      "outcome": {
+        "status": "ok",
+        "render": "{8: 9}",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/dict-splat-bool-key",
+      "outcome": {
+        "status": "ok",
+        "render": "{true: 1}",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/dict-splat-float-key",
+      "outcome": {
+        "status": "ok",
+        "render": "{1.5: 2}",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/dict-splat-negative-key",
+      "outcome": {
+        "status": "ok",
+        "render": "{-1: 2}",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/dict-splat-none-key",
+      "outcome": {
+        "status": "ok",
+        "render": "{none: 1}",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/dict-positional-int-key",
+      "outcome": {
+        "status": "ok",
+        "render": "{8: 8}",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/dict-positional-int-key-kwarg",
+      "outcome": {
+        "status": "ok",
+        "render": "{8: 8, \"a\": 1}",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/dict-positional-int-key-splat",
+      "outcome": {
+        "status": "ok",
+        "render": "{8: 8, 9: 9}",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/dict-splat-string-keys",
+      "outcome": {
+        "status": "ok",
+        "render": "{\"b\": 1, \"a\": 2}",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/usize-batch-upper-too-many",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "review/usize-slice-upper-too-many",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "review/usize-indent-upper-too-many",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "review/usize-batch-zero-too-many",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "review/usize-batch-past-u64",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot convert number to usize (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "review/usize-tojson-past-u64",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot convert number to usize (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "review/usize-batch-negative",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot convert number to usize (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "review/usize-indent-negative",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot convert number to usize (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "review/usize-tojson-negative",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot convert number to usize (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "review/usize-batch-bool",
+      "outcome": {
+        "status": "ok",
+        "render": "[[1], [2]]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/usize-indent-bool",
+      "outcome": {
+        "status": "ok",
+        "render": "a",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/usize-indent-integral-float",
+      "outcome": {
+        "status": "ok",
+        "render": "a",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/usize-indent-fractional-float",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot convert number to usize (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "review/usize-tojson-integral-float",
+      "outcome": {
+        "status": "ok",
+        "render": "1",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/usize-tojson-fractional-float",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot convert number to usize (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "review/usize-batch-fractional-float",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot convert number to usize (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "review/usize-batch-u64-upper",
+      "outcome": {
+        "status": "panic",
+        "message": "capacity overflow"
+      }
+    },
+    {
+      "id": "review/usize-slice-u64-upper",
+      "outcome": {
+        "status": "panic",
+        "message": "capacity overflow"
+      }
+    },
+    {
+      "id": "review/usize-indent-u64-upper",
+      "outcome": {
+        "status": "panic",
+        "message": "capacity overflow"
+      }
+    },
+    {
+      "id": "review/usize-tojson-u64-upper",
+      "outcome": {
+        "status": "panic",
+        "message": "capacity overflow"
+      }
+    },
+    {
+      "id": "review/usize-batch-u64-max",
+      "outcome": {
+        "status": "panic",
+        "message": "capacity overflow"
+      }
+    },
+    {
+      "id": "review/usize-batch-float-u64-upper",
+      "outcome": {
+        "status": "panic",
+        "message": "capacity overflow"
+      }
+    },
+    {
+      "id": "review/usize-batch-i64-max",
+      "outcome": {
+        "status": "panic",
+        "message": "capacity overflow"
+      }
+    },
+    {
+      "id": "review/sort-unicode-dotted-i",
+      "outcome": {
+        "status": "ok",
+        "render": "[i̇][İ]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/sort-unicode-sharp-s",
+      "outcome": {
+        "status": "ok",
+        "render": "[Maße][MASSE][masse]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/sort-unicode-mixed-length",
+      "outcome": {
+        "status": "ok",
+        "render": "[s][ß][ss][SS]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/sort-unicode-ligature-fi",
+      "outcome": {
+        "status": "ok",
+        "render": "[ﬁ][fi]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/sort-unicode-ligature-ffi",
+      "outcome": {
+        "status": "ok",
+        "render": "[ffi][ﬃ]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/sort-unicode-sigma",
+      "outcome": {
+        "status": "ok",
+        "render": "[ΣΤΙΓΜΑΣ][στιγμας][στιγμασ]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/sort-unicode-turkish",
+      "outcome": {
+        "status": "ok",
+        "render": "[I][i][İ][ı]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/sort-unicode-kelvin",
+      "outcome": {
+        "status": "ok",
+        "render": "[K][k][K]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/sort-unicode-accent",
+      "outcome": {
+        "status": "ok",
+        "render": "[E][e][é][É]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/sort-unicode-case-sensitive",
+      "outcome": {
+        "status": "ok",
+        "render": "[i̇][İ]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/sort-unicode-reverse",
+      "outcome": {
+        "status": "ok",
+        "render": "[i̇][İ]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/sort-unicode-attribute",
+      "outcome": {
+        "status": "ok",
+        "render": "[İ][i̇]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/sort-unicode-composite",
+      "outcome": {
+        "status": "ok",
+        "render": "[y][x]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/groupby-case-ascii",
+      "outcome": {
+        "status": "ok",
+        "render": "CA:12;",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/groupby-case-unicode",
+      "outcome": {
+        "status": "ok",
+        "render": "İ:12;",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/groupby-case-sharp-s",
+      "outcome": {
+        "status": "ok",
+        "render": "MASSE:12;",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/groupby-case-sensitive",
+      "outcome": {
+        "status": "ok",
+        "render": "CA:2;ca:1;",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/groupby-case-runs",
+      "outcome": {
+        "status": "ok",
+        "render": "A:34;B:12;",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/groupby-nonstring-key",
+      "outcome": {
+        "status": "ok",
+        "render": "1:12;2:3;",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/groupby-default-key",
+      "outcome": {
+        "status": "ok",
+        "render": "a:2;z:1;",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/dictsort-case-ascii",
+      "outcome": {
+        "status": "ok",
+        "render": "[a3][A4][b1][B2]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/dictsort-case-unicode",
+      "outcome": {
+        "status": "ok",
+        "render": "[i̇1][İ2]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/dictsort-case-sharp-s",
+      "outcome": {
+        "status": "ok",
+        "render": "[Maße1][MASSE2]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/dictsort-case-sensitive",
+      "outcome": {
+        "status": "ok",
+        "render": "[B2][b1]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/dictsort-case-reverse",
+      "outcome": {
+        "status": "ok",
+        "render": "[b1][B2][a3]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/dictsort-case-by-value",
+      "outcome": {
+        "status": "ok",
+        "render": "[xİ][yi̇]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/unique-lowercase-sharp-s",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"Maße\", \"MASSE\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/unique-lowercase-dotted-i",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"İ\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/unique-lowercase-sigma",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"Σ\", \"ς\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/groupby-kind-group-sequence",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "review/groupby-kind-group-iterable",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "review/groupby-kind-group-mapping",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "review/groupby-kind-group-length",
+      "outcome": {
+        "status": "ok",
+        "render": "2",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/groupby-kind-list-sequence",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "review/groupby-kind-list-iterable",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "review/groupby-kind-list-length",
+      "outcome": {
+        "status": "ok",
+        "render": "2",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/groupby-kind-index1-sequence",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "review/groupby-kind-index1-iterable",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "review/groupby-kind-index0",
+      "outcome": {
+        "status": "ok",
+        "render": "a",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/groupby-kind-index-negative",
+      "outcome": {
+        "status": "ok",
+        "render": "a",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/groupby-kind-index-negative-length",
+      "outcome": {
+        "status": "ok",
+        "render": "2",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/groupby-kind-index-string",
+      "outcome": {
+        "status": "ok",
+        "render": "a",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/groupby-kind-index-past-end",
+      "outcome": {
+        "status": "ok",
+        "render": "U",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/groupby-kind-group-render",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"a\", [{\"k\": \"a\", \"n\": 1}, {\"k\": \"a\", \"n\": 2}]]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/groupby-kind-list-render",
+      "outcome": {
+        "status": "ok",
+        "render": "[{\"k\": \"a\", \"n\": 1}, {\"k\": \"a\", \"n\": 2}]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/groupby-kind-group-tojson",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"a\",[{\"k\":\"a\",\"n\":1},{\"k\":\"a\",\"n\":2}]]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/groupby-kind-list-tojson",
+      "outcome": {
+        "status": "ok",
+        "render": "[{\"k\":\"a\",\"n\":1},{\"k\":\"a\",\"n\":2}]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/groupby-kind-list-index",
+      "outcome": {
+        "status": "ok",
+        "render": "1",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/groupby-kind-list-index-negative",
+      "outcome": {
+        "status": "ok",
+        "render": "2",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/groupby-kind-list-materialize",
+      "outcome": {
+        "status": "ok",
+        "render": "[{\"k\": \"a\", \"n\": 1}, {\"k\": \"a\", \"n\": 2}]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/groupby-kind-outer-sequence",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "review/caller-lexical-slice-subject",
+      "outcome": {
+        "status": "error",
+        "category": "too_many_arguments",
+        "kind": "TooManyArguments",
+        "message": "too many arguments: unknown keyword argument `caller` (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "review/caller-lexical-slice-bound",
+      "outcome": {
+        "status": "ok",
+        "render": "[1, 2]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "review/caller-lexical-slice-both",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot convert sequence to i64 (in corpus.txt:1)"
       }
     }
   ]

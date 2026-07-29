@@ -60,6 +60,90 @@
         "ok|-|State {\n  name: \"corpus.txt\",\n  current variables: {\n  }\n}"
       ],
       "slice": "5 builtins and pycompat (deliberate, permanent)"
+    },
+    {
+      "id": "review/usize-batch-u64-upper",
+      "class": "engine",
+      "summary": "The engine's `usize` ArgType converts this value — a usize is a u64 on a 64-bit target — and the filter body then turns it straight into memory. `batch` reserves `count` elements, and the process aborts with a capacity overflow. The fork converts identically and then REFUSES: a library a caller can make abort, or exhaust its memory, on ordinary template input is not a behaviour worth reproducing. Same disposition and same reason as test/divisibleby-zero. The width itself is proven green by review/usize-*-too-many, where the value converts and the call fails on its arity.",
+      "rust_signatures": [
+        "panic"
+      ],
+      "go_signatures": [
+        "error|invalid_operation"
+      ],
+      "slice": "5 builtins and pycompat (deliberate, permanent)"
+    },
+    {
+      "id": "review/usize-slice-u64-upper",
+      "class": "engine",
+      "summary": "The engine's `usize` ArgType converts this value — a usize is a u64 on a 64-bit target — and the filter body then turns it straight into memory. `slice` reserves `count` elements, and the process aborts with a capacity overflow. The fork converts identically and then REFUSES: a library a caller can make abort, or exhaust its memory, on ordinary template input is not a behaviour worth reproducing. Same disposition and same reason as test/divisibleby-zero. The width itself is proven green by review/usize-*-too-many, where the value converts and the call fails on its arity.",
+      "rust_signatures": [
+        "panic"
+      ],
+      "go_signatures": [
+        "error|invalid_operation"
+      ],
+      "slice": "5 builtins and pycompat (deliberate, permanent)"
+    },
+    {
+      "id": "review/usize-indent-u64-upper",
+      "class": "engine",
+      "summary": "The engine's `usize` ArgType converts this value — a usize is a u64 on a 64-bit target — and the filter body then turns it straight into memory. `indent` builds `width` spaces with str::repeat, and the process aborts with a capacity overflow. The fork converts identically and then REFUSES: a library a caller can make abort, or exhaust its memory, on ordinary template input is not a behaviour worth reproducing. Same disposition and same reason as test/divisibleby-zero. The width itself is proven green by review/usize-*-too-many, where the value converts and the call fails on its arity.",
+      "rust_signatures": [
+        "panic"
+      ],
+      "go_signatures": [
+        "error|invalid_operation"
+      ],
+      "slice": "5 builtins and pycompat (deliberate, permanent)"
+    },
+    {
+      "id": "review/usize-tojson-u64-upper",
+      "class": "engine",
+      "summary": "The engine's `usize` ArgType converts this value — a usize is a u64 on a 64-bit target — and the filter body then turns it straight into memory. `tojson` builds its indentation with str::repeat, and the process aborts with a capacity overflow. The fork converts identically and then REFUSES: a library a caller can make abort, or exhaust its memory, on ordinary template input is not a behaviour worth reproducing. Same disposition and same reason as test/divisibleby-zero. The width itself is proven green by review/usize-*-too-many, where the value converts and the call fails on its arity.",
+      "rust_signatures": [
+        "panic"
+      ],
+      "go_signatures": [
+        "error|invalid_operation"
+      ],
+      "slice": "5 builtins and pycompat (deliberate, permanent)"
+    },
+    {
+      "id": "review/usize-batch-u64-max",
+      "class": "engine",
+      "summary": "The engine's `usize` ArgType converts this value — a usize is a u64 on a 64-bit target — and the filter body then turns it straight into memory. `batch` reserves `count` elements, here u64::MAX of them, and the process aborts with a capacity overflow. The fork converts identically and then REFUSES: a library a caller can make abort, or exhaust its memory, on ordinary template input is not a behaviour worth reproducing. Same disposition and same reason as test/divisibleby-zero. The width itself is proven green by review/usize-*-too-many, where the value converts and the call fails on its arity.",
+      "rust_signatures": [
+        "panic"
+      ],
+      "go_signatures": [
+        "error|invalid_operation"
+      ],
+      "slice": "5 builtins and pycompat (deliberate, permanent)"
+    },
+    {
+      "id": "review/usize-batch-float-u64-upper",
+      "class": "engine",
+      "summary": "The engine's `usize` ArgType converts this value — a usize is a u64 on a 64-bit target — and the filter body then turns it straight into memory. `batch` reserves `count` elements, reached through the float arm whose saturating cast lands on i64::MAX, and the process aborts with a capacity overflow. The fork converts identically and then REFUSES: a library a caller can make abort, or exhaust its memory, on ordinary template input is not a behaviour worth reproducing. Same disposition and same reason as test/divisibleby-zero. The width itself is proven green by review/usize-*-too-many, where the value converts and the call fails on its arity.",
+      "rust_signatures": [
+        "panic"
+      ],
+      "go_signatures": [
+        "error|invalid_operation"
+      ],
+      "slice": "5 builtins and pycompat (deliberate, permanent)"
+    },
+    {
+      "id": "review/usize-batch-i64-max",
+      "class": "engine",
+      "summary": "The engine's `usize` ArgType converts this value — a usize is a u64 on a 64-bit target — and the filter body then turns it straight into memory. `batch` reserves `count` elements; this one is inside i64, so it is the allocation and not the width that parts the two — the fork used to answer `[]` silently, which was the worse direction, and the process aborts with a capacity overflow. The fork converts identically and then REFUSES: a library a caller can make abort, or exhaust its memory, on ordinary template input is not a behaviour worth reproducing. Same disposition and same reason as test/divisibleby-zero. The width itself is proven green by review/usize-*-too-many, where the value converts and the call fails on its arity.",
+      "rust_signatures": [
+        "panic"
+      ],
+      "go_signatures": [
+        "error|invalid_operation"
+      ],
+      "slice": "5 builtins and pycompat (deliberate, permanent)"
     }
   ]
 }

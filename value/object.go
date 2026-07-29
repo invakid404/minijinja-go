@@ -281,6 +281,38 @@ func IterateObject(obj Object) iter.Seq[Value] {
 	return nil
 }
 
+// iterableNth is the engine's item lookup for an ObjectRepr::Iterable: take the
+// subscript-th step of a fresh iterator (value/mod.rs:1514-1531).
+//
+// A NEGATIVE subscript counts back from the enumerator's exact length, and an
+// iterable that does not know its length cannot answer one at all — which is
+// the same `checked_sub` the engine does, so `keys()[-1]` is the last key while
+// an unsized iterable's `[-1]` is undefined rather than an error.
+func iterableNth(obj Object, idx int64) Value {
+	if idx < 0 {
+		length := GetObjectLen(obj)
+		if length < 0 {
+			return Undefined()
+		}
+		idx += int64(length)
+		if idx < 0 {
+			return Undefined()
+		}
+	}
+	seq := IterateObject(obj)
+	if seq == nil {
+		return Undefined()
+	}
+	var at int64
+	for item := range seq {
+		if at == idx {
+			return item
+		}
+		at++
+	}
+	return Undefined()
+}
+
 // ReverseIterateObject returns a reverse iterator over an object's values.
 // Returns nil if the object cannot be reverse-iterated.
 //
@@ -399,6 +431,15 @@ func (i *sizedIterableObject) Iterate() iter.Seq[Value] {
 }
 
 func (i *sizedIterableObject) Len() (int, bool) { return len(i.items), true }
+
+// ObjectLen is the enumerator's exact size.
+//
+// It is what TRUTH answers from, not just what `|length` reports: the engine's
+// default `is_true` is `enumerator_len() != Some(0)` (value/object.rs:216-220),
+// so an iterable whose size is known to be zero is FALSE. Reporting the size
+// only through the legacy [LenGetter] left [GetObjectTruth] on its
+// unknown-length branch, where `{% if dict().keys() %}` took the true arm.
+func (i *sizedIterableObject) ObjectLen() int { return len(i.items) }
 
 // String renders the elements, which is what the engine does for an iterable
 // whose length it knows: it only falls back to `<iterator>` when printing

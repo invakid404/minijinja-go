@@ -80,6 +80,11 @@ FORK_ADDED=(
   "testdata/snapshots/filters.txt.snap"
   "filters/args.go"
   "unknown_method_test.go"
+  # Round-2 review fixes: whether a macro accepts the synthetic `caller`
+  # keyword is the engine's compile-time free-variable analysis, ported as its
+  # own file rather than grown inside the evaluator.  PATCHES.md #80.
+  "macro_closure.go"
+  "macro_closure_test.go"
   "value/invalid.go"
   "value/invalid_test.go"
 )

@@ -287,6 +287,57 @@ func (v Value) AsBigInt() (*big.Int, bool) {
 	}
 }
 
+// AsUsize is `impl TryFrom<Value> for usize` on a 64-bit target, where `usize`
+// is a `u64` and its range is [0, u64::MAX].
+//
+// The engine builds every integer ArgType from one macro, and the target type
+// is not decoration: each ValueRepr arm produces a value of that repr's own
+// Rust type, and `TryFrom` for the DECLARED type is what bounds it
+// (value/argtypes.rs:409-435). So `usize` and `i64` differ over the whole upper
+// half of `u64`: `[]|batch(9223372036854775808)` converts, where the same
+// literal is refused by an `i64` or `isize` parameter.
+//
+// The arms are the engine's own. A bool is 0 or 1. An i64 converts when it is
+// non-negative. A float converts only when it round-trips through the
+// saturating i64 cast — which is why `9223372036854775808.0` converts to
+// i64::MAX rather than being refused, exactly as `val as i64 as f64 == val`
+// accepts it. A u64 always converts. An i128/u128 converts when it lands inside
+// [0, u64::MAX].
+//
+// The 64-bit assumption is the differential's: both recorded architectures are
+// 64-bit, and a 32-bit target would need its own measurement rather than a
+// guess. See PATCHES.md #82.
+func (v Value) AsUsize() (uint64, bool) {
+	switch d := v.data.(type) {
+	case bool:
+		if d {
+			return 1, true
+		}
+		return 0, true
+	case int64:
+		if d < 0 {
+			return 0, false
+		}
+		return uint64(d), true
+	case u64Value:
+		// The payload is a u64 in [0, i64::MAX]; a larger one is bigIntValue.
+		return uint64(d), true
+	case float64:
+		i, ok := f64ToI64(d)
+		if !ok || i < 0 {
+			return 0, false
+		}
+		return uint64(i), true
+	case bigIntValue:
+		if d.Int.Sign() < 0 || d.Int.Cmp(bigU64Max) > 0 {
+			return 0, false
+		}
+		return d.Int.Uint64(), true
+	default:
+		return 0, false
+	}
+}
+
 // FromI128 builds a Value from an exact integer, reporting whether it is
 // inside the range the engine can hold.
 //

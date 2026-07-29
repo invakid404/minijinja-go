@@ -1379,17 +1379,29 @@ func (v Value) GetItem(key Value) Value {
 	case ItemGetter:
 		return d.GetItem(key)
 	case Object:
-		// Check for SeqObject for index access
-		if idx, ok := key.AsInt(); ok {
-			if so, ok := d.(SeqObject); ok {
-				length := so.SeqLen()
-				if idx < 0 {
-					idx = int64(length) + idx
+		// How an object is subscripted follows its REPRESENTATION, exactly as
+		// `get_item_opt` dispatches on `obj.repr()` (value/mod.rs:1504-1541).
+		switch GetObjectRepr(d) {
+		case ObjectReprSeq:
+			if idx, ok := key.AsInt(); ok {
+				if so, ok := d.(SeqObject); ok {
+					length := so.SeqLen()
+					if idx < 0 {
+						idx = int64(length) + idx
+					}
+					if idx >= 0 && idx < int64(length) {
+						return so.SeqItem(int(idx))
+					}
+					return Undefined()
 				}
-				if idx >= 0 && idx < int64(length) {
-					return so.SeqItem(int(idx))
-				}
-				return Undefined()
+			}
+		case ObjectReprIterable:
+			// An iterable has no indexing of its own, so the engine falls back
+			// to `nth()` on a fresh iterator — "this lets one slice an array and
+			// then index into it". That fallback is why `dict(a=1).keys()[0]`
+			// answers even though the view is not a sequence.
+			if idx, ok := key.AsInt(); ok {
+				return iterableNth(d, idx)
 			}
 		}
 		// Fall through to attribute access for string keys

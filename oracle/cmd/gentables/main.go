@@ -35,7 +35,32 @@ type dump struct {
 	Whitespace    [][2]rune    `json:"whitespace"`
 	Cased         [][2]rune    `json:"cased"`
 	CaseIgnorable [][2]rune    `json:"case_ignorable"`
+	UnicaseFold   []mappingRaw `json:"unicase_fold"`
+	UnicaseCmp    []cmpRaw     `json:"unicase_cmp"`
 	Samples       [][6]string  `json:"samples"`
+}
+
+// cmpRaw is one [left, right, ordering] triple of UniCase's own Ord.
+type cmpRaw struct {
+	Left, Right string
+	Ordering    int
+}
+
+func (c *cmpRaw) UnmarshalJSON(data []byte) error {
+	var triple []json.RawMessage
+	if err := json.Unmarshal(data, &triple); err != nil {
+		return err
+	}
+	if len(triple) != 3 {
+		return fmt.Errorf("cmp entry has %d fields, want 3", len(triple))
+	}
+	if err := json.Unmarshal(triple[0], &c.Left); err != nil {
+		return err
+	}
+	if err := json.Unmarshal(triple[1], &c.Right); err != nil {
+		return err
+	}
+	return json.Unmarshal(triple[2], &c.Ordering)
 }
 
 // mappingRaw is one [scalar, mapping] pair.
@@ -89,9 +114,8 @@ func main() {
 // Source of truth: %s, whose Unicode tables are the ones BAML's engine build
 // uses. Regenerate with:
 //
-//	cd oracle/harness && cargo build --release --bin mj-casegen
-//	MJ_RUSTC_VERSION="$(rustc --version)" ./oracle/harness/target/release/mj-casegen \
-//	    > internal/unicodecase/testdata/rust-unicode.json
+//	cd oracle/harness && MJ_RUSTC_VERSION="$(rustc --version)" cargo build --release --bin mj-casegen
+//	./oracle/harness/target/release/mj-casegen > internal/unicodecase/testdata/rust-unicode.json
 //	cd oracle && go run ./cmd/gentables
 
 package unicodecase
@@ -113,6 +137,11 @@ const rustcVersion = %q
 	writeRanges(&buf, "casedRanges", "the Unicode Cased property, used by the final-sigma rule", d.Cased)
 	writeRanges(&buf, "caseIgnorableRanges", "the Unicode Case_Ignorable property, used by the final-sigma rule", d.CaseIgnorable)
 
+	writeMappings(&buf, "unicaseFoldMap", `unicase's own fold, tabulated per scalar: the character
+// sequence UniCase::cmp compares. It is dumped as the ITERATION order of
+// unicase's Fold, which for a three-character fold is not the folded order —
+// see FoldCompare`, d.UnicaseFold)
+
 	src, err := format.Source(buf.Bytes())
 	if err != nil {
 		fail(fmt.Errorf("generated source does not parse: %w", err))
@@ -121,8 +150,8 @@ const rustcVersion = %q
 	if err := os.WriteFile(out, src, 0o644); err != nil {
 		fail(err)
 	}
-	fmt.Fprintf(os.Stderr, "wrote %s: %d upper, %d lower mappings; %d property ranges\n",
-		out, len(d.ToUpper), len(d.ToLower),
+	fmt.Fprintf(os.Stderr, "wrote %s: %d upper, %d lower, %d fold mappings; %d property ranges\n",
+		out, len(d.ToUpper), len(d.ToLower), len(d.UnicaseFold),
 		len(d.Lowercase)+len(d.Uppercase)+len(d.Alphabetic)+len(d.Numeric)+
 			len(d.Whitespace)+len(d.Cased)+len(d.CaseIgnorable))
 }

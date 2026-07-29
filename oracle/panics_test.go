@@ -95,6 +95,24 @@ var panicDeclines = map[string]struct{ rust, reason string }{
 		rust:   "attempt to calculate the remainder with a divisor of zero",
 		reason: "deliberate and permanent; see divergences.json",
 	},
+	// A `usize` argument that sizes an allocation. The conversion succeeds on
+	// both sides — a usize is a u64 on a 64-bit target — and the engine then
+	// reserves that much memory and aborts. The fork refuses instead, for the
+	// same reason it refuses a zero divisor. PATCHES.md #82.
+	"review/usize-batch-u64-upper":       usizeAllocDecline,
+	"review/usize-slice-u64-upper":       usizeAllocDecline,
+	"review/usize-indent-u64-upper":      usizeAllocDecline,
+	"review/usize-tojson-u64-upper":      usizeAllocDecline,
+	"review/usize-batch-u64-max":         usizeAllocDecline,
+	"review/usize-batch-float-u64-upper": usizeAllocDecline,
+	"review/usize-batch-i64-max":         usizeAllocDecline,
+}
+
+// usizeAllocDecline is the engine's diagnostic for every one of those rows:
+// `Vec::with_capacity` and `str::repeat` raise the same fault.
+var usizeAllocDecline = struct{ rust, reason string }{
+	rust:   "capacity overflow",
+	reason: "deliberate and permanent; see divergences.json",
 }
 
 func TestPanicRowsAgreeOnStatusAndPinTheirDiagnostics(t *testing.T) {

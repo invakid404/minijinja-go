@@ -185,5 +185,82 @@ func Fields(s string) []string {
 	return strings.FieldsFunc(s, IsSpace)
 }
 
+// FoldCompare is `UniCase::cmp`: the engine's case-insensitive string ordering.
+//
+// `sort` and `groupby` do not lowercase and compare. Under the `unicode`
+// feature — which BAML's build enables — `cmp_helper` wraps both sides in
+// `unicase::UniCase` and compares those (filters.rs:284-300), and UniCase
+// orders by the Unicode case-FOLDED character sequence. The two are different
+// functions and the difference is visible on ordinary input:
+//
+//   - folding is length changing. "ß" folds to "ss", so `['ß','ss','SS']|sort`
+//     is one tie, not two strings around a third.
+//   - folding is not lowercasing. "İ" folds to "i" + U+0307, which compares
+//     EQUAL to "i̇" — where lowercasing puts "İ" first.
+//   - comparison is by character, not by UTF-8 bytes, so a fold that produces a
+//     shorter sequence sorts before a longer one with the same prefix.
+//
+// UniCase picks an ASCII fast path when both strings are ASCII, but that path
+// agrees character for character with the Unicode one over ASCII — the fold of
+// 'A'..'Z' is exactly `to_ascii_lowercase` — so one code path reproduces both.
+//
+// The fold table is unicase's own, dumped per scalar (see tables.go). It is
+// tabulated as the ITERATION order of unicase's `Fold`, which for a
+// three-character fold is not the folded order: `Fold::Three(a, b, c)` yields
+// c, then a, then b, so "ﬃ" iterates as "iff". That is a quirk of the pinned
+// crate and it is load-bearing — it decides `['ﬃ','ffi']|sort` — so it is
+// reproduced rather than corrected.
+func FoldCompare(a, b string) int {
+	ra, rb := a, b
+	var bufA, bufB []rune
+	for {
+		var ca, cb rune
+		var okA, okB bool
+		ca, ra, bufA, okA = nextFolded(ra, bufA)
+		cb, rb, bufB, okB = nextFolded(rb, bufB)
+		switch {
+		case !okA && !okB:
+			return 0
+		case !okA:
+			return -1
+		case !okB:
+			return 1
+		case ca < cb:
+			return -1
+		case ca > cb:
+			return 1
+		}
+	}
+}
+
+// FoldEqual reports whether two strings are case-insensitively equal under the
+// engine's comparator. It is FoldCompare == 0 and is spelled separately because
+// that is the question `groupby` asks between adjacent items.
+func FoldEqual(a, b string) bool { return FoldCompare(a, b) == 0 }
+
+// nextFolded yields the next character of a string's folded sequence, without
+// materializing the whole fold. buf carries the tail of a multi-character fold.
+func nextFolded(s string, buf []rune) (rune, string, []rune, bool) {
+	if len(buf) > 0 {
+		return buf[0], s, buf[1:], true
+	}
+	for s != "" {
+		r, size := utf8.DecodeRuneInString(s)
+		s = s[size:]
+		folded, ok := unicaseFoldMap[r]
+		if !ok {
+			return r, s, nil, true
+		}
+		runes := []rune(folded)
+		if len(runes) == 0 {
+			// unicase has no empty fold, but a table that grew one must not
+			// silently drop the rest of the string.
+			continue
+		}
+		return runes[0], s, runes[1:], true
+	}
+	return 0, "", nil, false
+}
+
 // RustcVersion reports the toolchain the tables were dumped from.
 func RustcVersion() string { return rustcVersion }

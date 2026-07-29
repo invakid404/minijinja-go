@@ -220,6 +220,16 @@ func mappingEntries(val value.Value, present bool) (*value.OrderedMap, error) {
 	if !present {
 		return rv, nil
 	}
+	// An ordered mapping is copied entry by entry so each key keeps how it was
+	// SPELLED: `dict({8: 8})` renders `{8: 8}` and not `{"8": 8}`, because the
+	// engine collects the source's key VALUES (`obj.try_iter_pairs().collect()`,
+	// functions.rs:397-400) rather than their string forms.
+	if src, ok := val.AsOrderedMap(); ok {
+		for _, name := range src.Keys() {
+			rv.CopyEntryFrom(src, name)
+		}
+		return rv, nil
+	}
 	// Through MapKeys so the copy keeps the source's own order. It also
 	// accepts the mapping-shaped objects the engine does — the loop object and
 	// an imported module — which is what `dict(loop, extra=2)` relies on.
@@ -338,9 +348,12 @@ func fnDict(_ *State, args []value.Value, kwargs *value.OrderedMap) (value.Value
 	if err != nil {
 		return value.Undefined(), NewError(ErrInvalidOperation, "invalid operation")
 	}
+	// CopyEntryFrom, not Set: an entry splatted out of `**{8: 8}` reached the
+	// kwargs map with its key SPELLING intact, and copying only the string form
+	// would render it back as `{"8": 8}` where the engine renders `{8: 8}`.
+	// The spelling travels with the entry all the way to the result.
 	for _, k := range kwargs.Keys() {
-		v, _ := kwargs.Get(k)
-		result.Set(k, v)
+		result.CopyEntryFrom(kwargs, k)
 	}
 	return value.FromOrderedMap(result), nil
 }

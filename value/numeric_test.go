@@ -530,3 +530,43 @@ func TestAsIntIsTheEnginesConversion(t *testing.T) {
 		t.Errorf("AsBigInt() over an integer past i64 = (%v, %v)", b, ok)
 	}
 }
+
+// TestAsUsizeIsTheEnginesConversionAtItsOwnWidth pins the arm the whole usize
+// finding was about: the DECLARED type bounds the conversion, so `usize` and
+// `i64` part company over the entire upper half of u64.
+func TestAsUsizeIsTheEnginesConversionAtItsOwnWidth(t *testing.T) {
+	big2p63, _ := new(big.Int).SetString("9223372036854775808", 10)
+	u64max, _ := new(big.Int).SetString("18446744073709551615", 10)
+	past, _ := new(big.Int).SetString("18446744073709551616", 10)
+	cases := []struct {
+		name string
+		in   Value
+		want uint64
+		ok   bool
+	}{
+		{"bool true", FromBool(true), 1, true},
+		{"bool false", FromBool(false), 0, true},
+		{"zero", FromInt(0), 0, true},
+		{"i64::MAX", FromInt(math.MaxInt64), math.MaxInt64, true},
+		{"a negative refuses", FromInt(-1), 0, false},
+		{"integral float", FromFloat(2), 2, true},
+		{"fractional float refuses", FromFloat(1.5), 0, false},
+		{"negative float refuses", FromFloat(-1), 0, false},
+		{"2^63 as a float saturates onto i64::MAX", FromFloat(9223372036854775808.0), math.MaxInt64, true},
+		{"2^63 CONVERTS, where AsInt refuses it", FromBigInt(big2p63), 9223372036854775808, true},
+		{"u64::MAX converts", FromBigInt(u64max), math.MaxUint64, true},
+		{"past u64::MAX refuses", FromBigInt(past), 0, false},
+		{"a string refuses", FromString("1"), 0, false},
+	}
+	for _, c := range cases {
+		got, ok := c.in.AsUsize()
+		if ok != c.ok || (ok && got != c.want) {
+			t.Errorf("%s: AsUsize() = (%d, %v), want (%d, %v)", c.name, got, ok, c.want, c.ok)
+		}
+	}
+	// The whole point: the two conversions disagree over that range, and the
+	// engine's ArgTypes pick between them by the parameter's declared type.
+	if _, ok := FromBigInt(big2p63).AsInt(); ok {
+		t.Error("AsInt accepted 2^63; it is an i64 conversion")
+	}
+}
