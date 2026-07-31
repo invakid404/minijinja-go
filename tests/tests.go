@@ -859,8 +859,15 @@ func TestIterable(_ filters.State, val value.Value, args []value.Value) (bool, e
 	}
 	// `v.try_iter().is_ok()` (tests.rs:223-225): none and undefined iterate as
 	// empty and are therefore iterable, while a number is not.
+	//
+	// A MAPPING is asked rather than assumed, because `try_iter` is the
+	// object's `enumerate()` and not its `repr()`: a host map object that
+	// returns `Enumerator::NonEnumerable` is a mapping that does not iterate.
+	// It is the same question `{% for %}` and the iterating filters ask, and
+	// answering it differently here made `x is mapping` and `x is iterable`
+	// both true for a value the loop refuses to walk.
 	switch val.Kind() {
-	case value.KindSeq, value.KindMap, value.KindIterable, value.KindString,
+	case value.KindSeq, value.KindIterable, value.KindString,
 		value.KindNone, value.KindUndefined:
 		return true, nil
 	default:

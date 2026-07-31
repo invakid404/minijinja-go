@@ -93,6 +93,7 @@ func TestCorpusIsMeaningful(t *testing.T) {
 		"seed":     {"arithmetic", "comparison", "string", "container", "value_cmp"},
 		"template": {"control", "whitespace", "macros", "loader"},
 		"numeric":  {"arithmetic", "comparison", "conversion", "rendering"},
+		"opaque":   {"value_cmp", "comparison", "container", "rendering"},
 	}
 	seen := map[string]bool{}
 	for _, corpus := range corpora {

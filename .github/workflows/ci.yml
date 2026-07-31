@@ -67,7 +67,10 @@ jobs:
             filters/args.go \
             unknown_method_test.go \
             value/invalid.go \
-            value/invalid_test.go)"
+            value/invalid_test.go \
+            value/opaquemap_fork_test.go \
+            value/objectstring_fork_test.go \
+            object_string_test.go)"
           if [ -n "$unformatted" ]; then
             echo "these files need gofmt:"
             echo "$unformatted"

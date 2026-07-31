@@ -635,9 +635,15 @@ func TestObjectWithString(t *testing.T) {
 		t.Error("obj should implement ObjectWithString")
 	}
 
-	// Note: Value.String() would need to check for ObjectWithString
-	// to use the custom string representation
-	_ = val
+	// Value.String() and Value.Repr() both dispatch it, the way the engine
+	// routes an object's Display AND its Debug through `render`. See
+	// value/objectstring_fork_test.go for the composed paths.
+	if got := val.String(); got != "custom string" {
+		t.Errorf("Value.String() = %q, want %q", got, "custom string")
+	}
+	if got := val.Repr(); got != "custom string" {
+		t.Errorf("Value.Repr() = %q, want %q", got, "custom string")
+	}
 }
 
 // -----------------------------------------------------------------------------

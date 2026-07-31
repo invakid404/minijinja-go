@@ -4,12 +4,13 @@
 > minijinja stack: rendered bytes, boolean results, value coercion, and
 > success/error behaviour.
 >
-> The baseline tag `v2.16.0-baml.2` is upstream `minijinja-go/v2.16.0`
-> (commit `b9afca42`) with no semantic changes at all. Since then the fork
-> carries the deltas logged in [PATCHES.md](PATCHES.md), each pinned by a
-> differential corpus row; [`scripts/verify-seed.sh`](scripts/verify-seed.sh)
-> proves that nothing else has changed. (`-baml.0` and `-baml.1` are retained
-> but superseded; see [Releases](UPSTREAM.md#releases).)
+> The current release is `v2.16.0-baml.4`. The baseline tag `v2.16.0-baml.2` is
+> upstream `minijinja-go/v2.16.0` (commit `b9afca42`) with no semantic changes at
+> all. Since then the fork carries the deltas logged in
+> [PATCHES.md](PATCHES.md), each pinned by a differential corpus row;
+> [`scripts/verify-seed.sh`](scripts/verify-seed.sh) proves that nothing else has
+> changed. (Earlier tags are retained but superseded; see
+> [Releases](UPSTREAM.md#releases).)
 >
 > Semantic patches land on top of that baseline, each one declared and pinned to
 > a differential corpus row. **The statements `block`, `extends`, `include`,

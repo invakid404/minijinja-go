@@ -14,7 +14,8 @@ logged in [PATCHES.md](PATCHES.md) and pinned by a differential corpus row.
 | Upstream subdirectory | `minijinja-go/` |
 | Upstream subtree sha | `10edf0cdd0a0b04fe3513464f7d1d1da51459096` |
 | Fork module path | `github.com/invakid404/minijinja-go/v2` |
-| Baseline tag | `v2.16.0-baml.2` (see [Releases](#releases); `-baml.0` and `-baml.1` are retained but superseded) |
+| Baseline tag | `v2.16.0-baml.2` — the semantically untouched baseline every patch is a delta over (see [Releases](#releases)) |
+| Current release | `v2.16.0-baml.4` |
 | License | Apache-2.0, upstream `LICENSE` preserved verbatim (upstream ships no `NOTICE`) |
 
 ### Behavioural target
@@ -53,7 +54,7 @@ hard-code BAML enums, aliases or media.
 The engine tree is a **mechanical derivation** of upstream, with exactly two
 transforms, plus the semantic patches declared in
 [PATCHES.md](PATCHES.md) (none at the `v2.16.0-baml.2` baseline; the template
-sweep is the first to add any):
+sweep was the first to add any):
 
 1. **Module path.** `github.com/mitsuhiko/minijinja/minijinja-go/v2` →
    `github.com/invakid404/minijinja-go/v2`, across 51 files. Plain upstream
@@ -124,12 +125,14 @@ wrong gets a successor, never a rewrite. Every tag below still resolves.
 
 | Tag | Status | Notes |
 | --- | --- | --- |
-| `v2.16.0-baml.2` | **canonical baseline** | The semantically untouched baseline. All CI green on linux/amd64 and darwin/arm64 at the tagged commit. |
+| `v2.16.0-baml.4` | **current** | Slice 7: the opaque host map (equality directionality, the ordering fault, and iterating a mapping that cannot be enumerated) and `ObjectWithString` dispatch through `Value.String`/`Value.Repr`. `PATCHES.md` #102-#105, pinned by the new `oracle/corpus/opaque.json` lane. |
+| `v2.16.0-baml.3` | retained, superseded | Slice 5: the builtin registry, string/format/JSON operations and the pycompat method surface. `PATCHES.md` #45-#101. Superseded by `-baml.4`, which is the same engine plus slice 7. |
+| `v2.16.0-baml.2` | retained, superseded | The **semantically untouched baseline**: upstream `minijinja-go/v2.16.0` with no engine change at all. It remains the reference `scripts/verify-seed.sh` derives from, and every patch in `PATCHES.md` is a delta over it. All CI green on linux/amd64 and darwin/arm64 at the tagged commit. |
 | `v2.16.0-baml.1` | retained, superseded | Green, but its copy of this file claimed the published module zips were identical across tags. They are not: they also differ in the provenance markdown, as the table note below records. Superseded to keep the provenance accurate about its own artifacts. |
 | `v2.16.0-baml.0` | retained, superseded | Its `oracle` workflow is red on linux/amd64: it predates the explicit architecture-dependent ledger handling, so `arith/int-mul-i64-edge` fails there as a shape change. Retained unmoved because it is already in the Go checksum database. |
 
-All `v2.16.0-baml.*` tags publish **the same engine**. Comparing their module
-zips, the only files that differ are `README.md`, `UPSTREAM.md` and
+Tags `-baml.0` through `-baml.2` publish **the same engine**. Comparing their
+module zips, the only files that differ are `README.md`, `UPSTREAM.md` and
 `PATCHES.md` — the provenance documents themselves, which each release updates
 to record the supersession. No Go source, no test data, and no engine behaviour
 differs between them. `oracle/` does not enter the comparison at all: it is a
@@ -144,3 +147,7 @@ Files PATCHES.md and PATCHES.md differ
 Files README.md and README.md differ
 Files UPSTREAM.md and UPSTREAM.md differ
 ```
+
+That claim stops at `-baml.2`. `-baml.3` and `-baml.4` carry real engine
+changes, each declared in `PATCHES.md` and pinned by a differential corpus row,
+so their zips differ in Go source as well.

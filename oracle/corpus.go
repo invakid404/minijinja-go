@@ -172,6 +172,17 @@ const (
 	// It is the generic shape of BAML's enum object (alias display,
 	// canonical-value identity) with no BAML types involved.
 	KindCmpObject ValueKind = "cmp_object"
+	// KindOpaqueMap is a generic host object that is a map by REPRESENTATION
+	// and has no enumerable pairs — `ObjectRepr::Map` with
+	// `Enumerator::NonEnumerable` on the Rust side, `ObjectReprMap` without
+	// `MapObject`/`MapGetter` on the fork's. It is the generic shape of BAML's
+	// enum member and enum namespace objects, again with no BAML types
+	// involved.
+	//
+	// A non-empty Canonical makes it a MEMBER: it answers the comparison hook
+	// by that value. An empty one makes it a NAMESPACE, whose hook declines
+	// everything, which is what lets a row reach the engine's map fallback.
+	KindOpaqueMap ValueKind = "opaque_map"
 )
 
 // TypedValue is an explicitly typed corpus input.
@@ -244,7 +255,7 @@ func (t *TypedValue) UnmarshalJSON(data []byte) error {
 		if err := json.Unmarshal(raw.Value, &t.String); err != nil {
 			return fmt.Errorf("string value: %w", err)
 		}
-	case KindNull, KindList, KindMap, KindCmpObject:
+	case KindNull, KindList, KindMap, KindCmpObject, KindOpaqueMap:
 		// no scalar payload
 	default:
 		return fmt.Errorf("unknown value kind %q", raw.Kind)

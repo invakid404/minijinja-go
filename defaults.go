@@ -188,7 +188,14 @@ func prettyRepr(val value.Value, depth int) string {
 		b.WriteString("]")
 		return b.String()
 	case value.KindMap:
-		keys, _ := val.MapKeys()
+		// A mapping is a `debug_map` over its PAIRS, which a map object with no
+		// enumerable pairs does not have. That is the same guard the sequence
+		// arm above applies for an unsized iterable, and the fallback is the
+		// same: the object's own debug form, which is its render.
+		keys, enumerable := val.MapKeys()
+		if !enumerable {
+			return val.Repr()
+		}
 		if len(keys) == 0 {
 			return "{}"
 		}

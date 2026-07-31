@@ -97,6 +97,40 @@ var panicRows = map[string]struct{ rust, fork string }{
 		rust: "attempt to calculate the remainder with a divisor of zero",
 		fork: "runtime error: integer divide by zero",
 	},
+	// Ordering two `ObjectRepr::Map` operands needs a pair iterator from BOTH,
+	// and the engine has no arm for a missing one:
+	// `match (a.try_iter_pairs(), b.try_iter_pairs()) { (Some, Some) => a.cmp(b),
+	// _ => unreachable!() }` (value/mod.rs:653-661). A host map object whose
+	// `enumerate` is `Enumerator::NonEnumerable` reaches it. PATCHES.md #102.
+	//
+	// Rust's diagnostic is std's text for `unreachable!()`, which names no
+	// operand. The fork's names WHICH side has no entries, because a host that
+	// recovers can act on that and cannot act on "entered unreachable code";
+	// the fault itself is what is being reproduced, and it is reproduced.
+	// value.UnorderableMaps carries both operands for the same reason
+	// value.UncomparableNumbers does.
+	"opaque/member-lt-namespace": {
+		rust: "internal error: entered unreachable code",
+		fork: "cannot order these mappings: neither enumerates its entries",
+	},
+	"opaque/namespace-lt-member": {
+		rust: "internal error: entered unreachable code",
+		fork: "cannot order these mappings: neither enumerates its entries",
+	},
+	"opaque/member-lt-empty-map": {
+		rust: "internal error: entered unreachable code",
+		fork: "cannot order these mappings: the left one does not enumerate its entries",
+	},
+	"opaque/empty-map-lt-member": {
+		rust: "internal error: entered unreachable code",
+		fork: "cannot order these mappings: the right one does not enumerate its entries",
+	},
+	// The same fault reached through a builtin rather than an operator, the
+	// neighbour of `num/sort-uncomparable`.
+	"opaque/sort-two-opaque-maps": {
+		rust: "internal error: entered unreachable code",
+		fork: "cannot order these mappings: neither enumerates its entries",
+	},
 }
 
 // panicDecline is one such row's pin.

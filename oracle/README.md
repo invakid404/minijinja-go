@@ -9,7 +9,8 @@ oracle/corpus/*.json ──┬──> oracle/harness (Rust)  ─> boundaryml/min
 ```
 
 The corpus is split by lane — `seed.json`, `template.json`, `numeric.json`,
-`coercion.json`, `builtins.json`, `argcontract.json`, `reviewfixes.json` — and
+`coercion.json`, `builtins.json`, `argcontract.json`, `reviewfixes.json`,
+`opaque.json` — and
 each file is recorded independently as `recorded/rust-8cfc770-<lane>.json`. Adding rows to one lane therefore never
 invalidates another lane's recording. Row ids are unique across the whole set,
 because the ledger and `PATCHES.md` are keyed by them.
@@ -148,7 +149,7 @@ all; with it, `review/pycompat-count-empty-needle` is a row with a ledger entry.
 The bound separates **does not terminate** from **is slow**, so it is set far
 above the slowest real row rather than close to it. Measured at this tip:
 
-| | all 1972 rows, excluding the one deliberate timeout | slowest single row |
+| | all 2028 rows, excluding the one deliberate timeout | slowest single row |
 | --- | --- | --- |
 | Rust harness | ~0.5 s total | well under 0.1 s |
 | Go runner | 80 ms total | 6.4 ms (`arity/join-extra`) |
@@ -331,9 +332,28 @@ engine for a claim about the two renderers rather than by suspecting the code,
 and it was invisible to the differential until its row existed. A row here is a
 repro that was RED against the engine before it was a row.
 
+**`opaque.json`** — 56 rows: the host object that is a **map by representation
+with no enumerable pairs** (`ObjectRepr::Map` plus `Enumerator::NonEnumerable`),
+and the object whose display comes from its own `render`. The corpus value kind
+is `opaque_map`, a generic object built the same way on both sides, with no BAML
+types involved.
+
+Its subject is one distinction the fork had collapsed: such an object is not an
+empty map. `{}` has a known, empty pair iterator; this has none at all, and the
+engine's comparison, iteration and debug paths are all written against
+`try_iter_pairs()` / `enumerate()`. So equality is DIRECTIONAL (`{} == member` is
+true and `member == {}` is false, and membership shows the orientation), ordering
+reaches `unreachable!()` and must fault on both sides, iterating is an error
+rather than zero passes, and truthiness is TRUE where `{}` is falsey. The
+rendering rows cover the other primitive: `render` is both Display and Debug in
+the engine, so the same bytes must come out of a native list, a nested list, a
+mapping value, `join`, `upper`, `string`, `~`, `debug`, `pprint` and statement
+output — every one of which reached Go's `%v` before. Each family carries its
+ordinary-mapping control, so a correction cannot over-reach without going red.
+
 ### Where the corpus stands
 
-1972 rows: 1956 agree, 16 diverge and every one of the 16 is declared. None is
+2028 rows: 2012 agree, 16 diverge and every one of the 16 is declared. None is
 in the template, numeric, coercion or argument-contract lane, whose rows all
 agree with the engine. Fourteen of the sixteen are deliberate and permanent
 rather than pending:

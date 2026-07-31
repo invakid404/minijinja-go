@@ -988,8 +988,35 @@ func (v Value) String() string {
 	case map[string]Value, *OrderedMap:
 		return v.formatMap()
 	default:
-		return fmt.Sprintf("%v", d)
+		return formatObject(d)
 	}
+}
+
+// formatObject is the display of anything the value model has no repr of its
+// own for, which in practice means a host object.
+//
+// The engine renders an object value through `DynObject`'s Display, which is
+// the object's own `render` (value/mod.rs:717, value/object.rs:327-353) — and
+// its Debug is the SAME call (value/mod.rs:463), which is why [Value.Repr] uses
+// this too and why an object nested in a list renders exactly as it does alone.
+//
+// [ObjectWithString] is this fork's `render`, so it is dispatched first. Without
+// that dispatch the interface was documented but dead: display fell straight
+// through to Go's `%v`, so an object that implemented it and not [fmt.Stringer]
+// leaked Go's own formatting into the output — the struct literal `&{rouge}`,
+// and an address for any field that is itself a pointer. That happened at the
+// top level and through every path that composes on these two primitives
+// (native lists and iterators, `formatMap`, `join`, `upper`, argument coercion,
+// `~`). Fixing those one at a time cannot work, because they recurse back
+// through `String`/`Repr`.
+//
+// `%v` remains the fallback, which keeps [fmt.Stringer] working for the objects
+// that use it.
+func formatObject(data any) string {
+	if obj, ok := data.(ObjectWithString); ok {
+		return obj.ObjectString()
+	}
+	return fmt.Sprintf("%v", data)
 }
 
 // formatMap renders a mapping the way the Rust engine does: entries in
@@ -1081,7 +1108,9 @@ func (v Value) Repr() string {
 		// numeric, because it is a string key.
 		return v.formatMap()
 	default:
-		return fmt.Sprintf("%v", d)
+		// The engine's Debug for an object value is its `render`, the same
+		// function Display uses (value/mod.rs:463, 717). See [formatObject].
+		return formatObject(d)
 	}
 }
 

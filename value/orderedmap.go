@@ -228,6 +228,26 @@ func (v Value) AsOrderedMap() (*OrderedMap, bool) {
 // Every part of the engine that enumerates a mapping goes through this, so
 // display, iteration, `items`, `list`, `first` and JSON all agree. The result is
 // a fresh slice: callers such as `dictsort` sort it in place.
+//
+// # The boolean is "enumerable", not "non-empty"
+//
+// It is the fork's `try_iter_pairs().is_some()` (value/object.rs:381-396), and
+// the distinction it draws is load-bearing rather than cosmetic:
+//
+//   - `(keys, true)` — the mapping ENUMERATES, and `keys` is all of it. An
+//     empty mapping is `([], true)`: it has a known, empty pair iterator, the
+//     way `Enumerator::Empty` does.
+//   - `(nil, false)` — the value is a map by REPRESENTATION but has no
+//     enumerable pairs at all, the way an object whose `enumerate` returns
+//     `Enumerator::NonEnumerable` does. A host object that reports
+//     [ObjectReprMap] and implements neither [MapObject] nor [MapGetter] is
+//     exactly that, and BAML's enum member and enum namespace objects are the
+//     motivating case.
+//
+// Reporting a non-enumerable object as an empty mapping would make it EQUAL to
+// `{}` and to every other opaque map, and would let two of them be ordered as
+// two empty key lists. [Value.Equal] and [Value.Compare] both branch on this
+// boolean for that reason; see [UnorderableMaps] for what ordering does with it.
 func (v Value) MapKeys() ([]string, bool) {
 	switch d := v.data.(type) {
 	case *OrderedMap:

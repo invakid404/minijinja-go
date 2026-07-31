@@ -115,9 +115,17 @@ func maxArgs(args []value.Value, kwargs *value.OrderedMap, n int) error {
 // else is an invalid operation. Answering something for a value the engine
 // refuses is the dangerous direction, so every consumer of this reports the
 // error rather than falling back to a default.
+//
+// A MAPPING is asked rather than assumed. `try_iter` is `enumerate()`, not
+// `repr()` (value/object.rs:361-379), so a host object that is a map by
+// REPRESENTATION but returns `Enumerator::NonEnumerable` does not iterate at
+// all — it is not an empty mapping. [value.Value.Iter] answers nil for exactly
+// that shape, and the mapping arm therefore goes through the same check the
+// other unknown kinds do; see [value.Value.MapKeys] for the same distinction on
+// the comparison side.
 func tryIter(val value.Value, msg string) ([]value.Value, error) {
 	switch val.Kind() {
-	case value.KindSeq, value.KindMap, value.KindIterable, value.KindString:
+	case value.KindSeq, value.KindIterable, value.KindString:
 		return val.Iter(), nil
 	case value.KindNone, value.KindUndefined:
 		return nil, nil
@@ -826,17 +834,21 @@ func FilterFirst(_ State, val value.Value, args []value.Value, kwargs *value.Ord
 	}
 	// Unlike `list`, `first` reaches for the value as an object, so none and
 	// undefined are errors rather than empty (filters.rs:686-697).
+	//
+	// It is `as_object().and_then(|x| x.try_iter())`, so the question is
+	// whether the object ENUMERATES, not what it looks like: a map object with
+	// no enumerable pairs takes the error arm rather than answering undefined.
 	switch val.Kind() {
 	case value.KindSeq, value.KindMap, value.KindIterable, value.KindPlain:
-		items := val.Iter()
-		if len(items) > 0 {
-			return items[0], nil
+		if items := val.Iter(); items != nil {
+			if len(items) > 0 {
+				return items[0], nil
+			}
+			return value.Undefined(), nil
 		}
-		return value.Undefined(), nil
-	default:
-		return value.Undefined(), mjerrors.NewError(mjerrors.ErrInvalidOperation,
-			"cannot get first item from value")
 	}
+	return value.Undefined(), mjerrors.NewError(mjerrors.ErrInvalidOperation,
+		"cannot get first item from value")
 }
 
 // FilterLast returns the last item from an iterable.
@@ -929,7 +941,17 @@ func FilterReverse(_ State, val value.Value, args []value.Value, kwargs *value.O
 		// halves are pinned by the corpus (container/map-reverse-order and
 		// container/map-reverse-twice), and `contract/filter-reverse-map` and
 		// `-map-items` pin the same asymmetry from the argument-contract side.
-		return value.FromIterator(value.NewIterator("reversed", val.Iter())), nil
+		//
+		// `Value::reverse` branches on the object's ENUMERATOR, and its very
+		// first arm is `Enumerator::NonEnumerable => None` (value/mod.rs:1411).
+		// A map object with no enumerable pairs is therefore the error arm, not
+		// an empty iterator.
+		items := val.Iter()
+		if items == nil {
+			return value.Undefined(), mjerrors.NewError(mjerrors.ErrInvalidOperation,
+				fmt.Sprintf("cannot reverse values of type %s", val.Kind()))
+		}
+		return value.FromIterator(value.NewIterator("reversed", items)), nil
 	case value.KindSeq, value.KindIterable, value.KindPlain:
 		items := val.Iter()
 		if items == nil && val.Kind() == value.KindPlain {
@@ -2584,18 +2606,23 @@ func FilterItems(_ State, val value.Value, args []value.Value, kwargs *value.Ord
 	if err := noArgs(args, kwargs); err != nil {
 		return value.Undefined(), err
 	}
-	if m, ok := val.AsMap(); ok {
+	// The gate is the value's KIND, and nothing else (filters.rs:363). Whether
+	// the mapping can actually be walked is asked INSIDE the iterable, where a
+	// map object with no enumerable pairs yields a single invalid value
+	// carrying "map is not iterable" rather than making the filter itself fail
+	// (filters.rs:365-376).
+	if val.Kind() == value.KindMap {
+		keys, enumerable := val.MapKeys()
+		if !enumerable {
+			return value.MakeSizedIterable([]value.Value{
+				value.Invalid(mjerrors.NewError(mjerrors.ErrInvalidOperation,
+					fmt.Sprintf("%s is not iterable", val.Kind()))),
+			}), nil
+		}
 		// Pairs come out in the mapping's own order, which for an ordered
 		// mapping is insertion order: `{% for k, v in m|items %}` is prompt
 		// bytes, so this is the same order question as rendering the map.
-		keys, ok := val.MapKeys()
-		if !ok {
-			keys = make([]string, 0, len(m))
-			for k := range m {
-				keys = append(keys, k)
-			}
-			sort.Strings(keys)
-		}
+		m, _ := val.AsMap()
 
 		result := make([]value.Value, 0, len(keys))
 		for _, k := range keys {

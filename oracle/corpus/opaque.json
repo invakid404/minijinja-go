@@ -1,0 +1,627 @@
+{
+  "schema_version": 1,
+  "rows": [
+    {
+      "id": "opaque/member-eq-namespace",
+      "surface": "value_cmp",
+      "form": "expression",
+      "source": "member == namespace",
+      "inputs": [
+        { "name": "member", "value": { "kind": "opaque_map", "canonical": "RED", "display": "rouge" } },
+        { "name": "namespace", "value": { "kind": "opaque_map", "display": "Color" } }
+      ],
+      "expect": "boolean",
+      "notes": "The critical row. Both operands are ObjectRepr::Map with Enumerator::NonEnumerable, and the member's value_cmp declines against the namespace, so the engine reaches the map arm. `a.try_iter_pairs()` is None, so equality is FALSE (value/mod.rs:545-552). Treating both as empty key slices made it true."
+    },
+    {
+      "id": "opaque/namespace-eq-member",
+      "surface": "value_cmp",
+      "form": "expression",
+      "source": "namespace == member",
+      "inputs": [
+        { "name": "member", "value": { "kind": "opaque_map", "canonical": "RED", "display": "rouge" } },
+        { "name": "namespace", "value": { "kind": "opaque_map", "display": "Color" } }
+      ],
+      "expect": "boolean",
+      "notes": "The same pair with the operands swapped. The left side still cannot be enumerated, so this is false too."
+    },
+    {
+      "id": "opaque/member-ne-namespace",
+      "surface": "value_cmp",
+      "form": "expression",
+      "source": "member != namespace",
+      "inputs": [
+        { "name": "member", "value": { "kind": "opaque_map", "canonical": "RED", "display": "rouge" } },
+        { "name": "namespace", "value": { "kind": "opaque_map", "display": "Color" } }
+      ],
+      "expect": "boolean",
+      "notes": "The negated spelling, which is what a template guard actually writes."
+    },
+    {
+      "id": "opaque/namespace-ne-member",
+      "surface": "value_cmp",
+      "form": "expression",
+      "source": "namespace != member",
+      "inputs": [
+        { "name": "member", "value": { "kind": "opaque_map", "canonical": "RED", "display": "rouge" } },
+        { "name": "namespace", "value": { "kind": "opaque_map", "display": "Color" } }
+      ],
+      "expect": "boolean",
+      "notes": "And negated from the other operand position."
+    },
+    {
+      "id": "opaque/namespace-eq-other-namespace",
+      "surface": "value_cmp",
+      "form": "expression",
+      "source": "namespace == other",
+      "inputs": [
+        { "name": "namespace", "value": { "kind": "opaque_map", "display": "Color" } },
+        { "name": "other", "value": { "kind": "opaque_map", "display": "Shade" } }
+      ],
+      "expect": "boolean",
+      "notes": "Two opaque maps with no comparison hook at all: neither declines into an answer, and the map arm still says false."
+    },
+    {
+      "id": "opaque/member-in-namespace-seq",
+      "surface": "container",
+      "form": "expression",
+      "source": "member in [namespace]",
+      "inputs": [
+        { "name": "member", "value": { "kind": "opaque_map", "canonical": "RED", "display": "rouge" } },
+        { "name": "namespace", "value": { "kind": "opaque_map", "display": "Color" } }
+      ],
+      "expect": "boolean",
+      "notes": "Sequence membership tests `item == needle`, so the CONTAINER's item is the left operand. This is the orientation an `in` guard reaches."
+    },
+    {
+      "id": "opaque/namespace-in-member-seq",
+      "surface": "container",
+      "form": "expression",
+      "source": "namespace in [member]",
+      "inputs": [
+        { "name": "member", "value": { "kind": "opaque_map", "canonical": "RED", "display": "rouge" } },
+        { "name": "namespace", "value": { "kind": "opaque_map", "display": "Color" } }
+      ],
+      "expect": "boolean",
+      "notes": "The other membership orientation."
+    },
+    {
+      "id": "opaque/member-in-two-namespaces",
+      "surface": "container",
+      "form": "expression",
+      "source": "member in [namespace, other]",
+      "inputs": [
+        { "name": "member", "value": { "kind": "opaque_map", "canonical": "RED", "display": "rouge" } },
+        { "name": "namespace", "value": { "kind": "opaque_map", "display": "Color" } },
+        { "name": "other", "value": { "kind": "opaque_map", "display": "Shade" } }
+      ],
+      "expect": "boolean",
+      "notes": "More than one candidate, so a false answer is not an artefact of a one-element sequence."
+    },
+    {
+      "id": "opaque/member-eq-empty-map",
+      "surface": "value_cmp",
+      "form": "expression",
+      "source": "member == {}",
+      "inputs": [
+        { "name": "member", "value": { "kind": "opaque_map", "canonical": "RED", "display": "rouge" } }
+      ],
+      "expect": "boolean",
+      "notes": "A non-enumerable LEFT map against a known-empty right one: false, because the left has no pair iterator."
+    },
+    {
+      "id": "opaque/empty-map-eq-member",
+      "surface": "value_cmp",
+      "form": "expression",
+      "source": "{} == member",
+      "inputs": [
+        { "name": "member", "value": { "kind": "opaque_map", "canonical": "RED", "display": "rouge" } }
+      ],
+      "expect": "boolean",
+      "notes": "The deliberate asymmetry, and stock authority: a KNOWN-EMPTY left map reaches the length fallback, where a non-enumerable right side counts as zero, so this is TRUE where the reversed spelling is false (value/mod.rs:554-558)."
+    },
+    {
+      "id": "opaque/member-ne-empty-map",
+      "surface": "value_cmp",
+      "form": "expression",
+      "source": "member != {}",
+      "inputs": [
+        { "name": "member", "value": { "kind": "opaque_map", "canonical": "RED", "display": "rouge" } }
+      ],
+      "expect": "boolean",
+      "notes": "The negated spelling of the same asymmetry."
+    },
+    {
+      "id": "opaque/empty-map-ne-member",
+      "surface": "value_cmp",
+      "form": "expression",
+      "source": "{} != member",
+      "inputs": [
+        { "name": "member", "value": { "kind": "opaque_map", "canonical": "RED", "display": "rouge" } }
+      ],
+      "expect": "boolean",
+      "notes": "And from the other side."
+    },
+    {
+      "id": "opaque/member-in-empty-map-seq",
+      "surface": "container",
+      "form": "expression",
+      "source": "member in [{}]",
+      "inputs": [
+        { "name": "member", "value": { "kind": "opaque_map", "canonical": "RED", "display": "rouge" } }
+      ],
+      "expect": "boolean",
+      "notes": "Membership makes the asymmetry visible: the item `{}` is on the left, so this asks `{} == member` and is TRUE. Adding a membership shortcut, or comparing the needle from the other side, would flip it."
+    },
+    {
+      "id": "opaque/empty-map-in-member-seq",
+      "surface": "container",
+      "form": "expression",
+      "source": "{} in [member]",
+      "inputs": [
+        { "name": "member", "value": { "kind": "opaque_map", "canonical": "RED", "display": "rouge" } }
+      ],
+      "expect": "boolean",
+      "notes": "The reverse orientation of the same pair, which is false. The two rows together are what pin the orientation itself."
+    },
+    {
+      "id": "opaque/nonempty-map-eq-member",
+      "surface": "value_cmp",
+      "form": "expression",
+      "source": "{'a': 'b'} == member",
+      "inputs": [
+        { "name": "member", "value": { "kind": "opaque_map", "canonical": "RED", "display": "rouge" } }
+      ],
+      "expect": "boolean",
+      "notes": "The length fallback is a comparison against ZERO, not a blanket truth: a non-empty enumerable left map is still unequal to an opaque one."
+    },
+    {
+      "id": "opaque/member-eq-nonempty-map",
+      "surface": "value_cmp",
+      "form": "expression",
+      "source": "member == {'a': 'b'}",
+      "inputs": [
+        { "name": "member", "value": { "kind": "opaque_map", "canonical": "RED", "display": "rouge" } }
+      ],
+      "expect": "boolean",
+      "notes": "And the same pair reversed."
+    },
+    {
+      "id": "opaque/member-eq-same-canonical",
+      "surface": "value_cmp",
+      "form": "expression",
+      "source": "member == twin",
+      "inputs": [
+        { "name": "member", "value": { "kind": "opaque_map", "canonical": "RED", "display": "rouge" } },
+        { "name": "twin", "value": { "kind": "opaque_map", "canonical": "RED", "display": "red" } }
+      ],
+      "expect": "boolean",
+      "notes": "The map fallback must stay a LAST resort. Two members with the same canonical value are equal through the comparison hook, even though they display differently and neither enumerates."
+    },
+    {
+      "id": "opaque/member-eq-other-member",
+      "surface": "value_cmp",
+      "form": "expression",
+      "source": "member == blue",
+      "inputs": [
+        { "name": "member", "value": { "kind": "opaque_map", "canonical": "RED", "display": "rouge" } },
+        { "name": "blue", "value": { "kind": "opaque_map", "canonical": "BLUE", "display": "bleu" } }
+      ],
+      "expect": "boolean",
+      "notes": "Two members with different canonical values: the hook answers, and it answers unequal."
+    },
+    {
+      "id": "opaque/member-eq-canonical-string",
+      "surface": "value_cmp",
+      "form": "expression",
+      "source": "member == 'RED'",
+      "inputs": [
+        { "name": "member", "value": { "kind": "opaque_map", "canonical": "RED", "display": "rouge" } }
+      ],
+      "expect": "boolean",
+      "notes": "The hook still runs before the kind rules, so a member compares equal to its canonical string rather than to what it displays."
+    },
+    {
+      "id": "opaque/string-eq-member",
+      "surface": "value_cmp",
+      "form": "expression",
+      "source": "'RED' == member",
+      "inputs": [
+        { "name": "member", "value": { "kind": "opaque_map", "canonical": "RED", "display": "rouge" } }
+      ],
+      "expect": "boolean",
+      "notes": "The hook from the RIGHT operand position, which is the commutativity half of the dispatch."
+    },
+    {
+      "id": "opaque/member-lt-namespace",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "member < namespace",
+      "inputs": [
+        { "name": "member", "value": { "kind": "opaque_map", "canonical": "RED", "display": "rouge" } },
+        { "name": "namespace", "value": { "kind": "opaque_map", "display": "Color" } }
+      ],
+      "expect": "bytes",
+      "notes": "Ordering two map operands needs a pair iterator from BOTH, and the engine has no arm for a missing one: `match (a.try_iter_pairs(), b.try_iter_pairs()) { (Some, Some) => .., _ => unreachable!() }` (value/mod.rs:653-661). Both sides must FAULT. Returning an ordering, a decline or a false would each be a stronger answer than the engine's."
+    },
+    {
+      "id": "opaque/namespace-lt-member",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "namespace < member",
+      "inputs": [
+        { "name": "member", "value": { "kind": "opaque_map", "canonical": "RED", "display": "rouge" } },
+        { "name": "namespace", "value": { "kind": "opaque_map", "display": "Color" } }
+      ],
+      "expect": "bytes",
+      "notes": "The same fault from the other operand position. The member's hook is tried from the right and declines, so ordering still reaches the map arm."
+    },
+    {
+      "id": "opaque/member-lt-empty-map",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "member < {}",
+      "inputs": [
+        { "name": "member", "value": { "kind": "opaque_map", "canonical": "RED", "display": "rouge" } }
+      ],
+      "expect": "bytes",
+      "notes": "One enumerable operand is not enough: `unreachable!()` needs only ONE missing pair iterator."
+    },
+    {
+      "id": "opaque/empty-map-lt-member",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "{} < member",
+      "inputs": [
+        { "name": "member", "value": { "kind": "opaque_map", "canonical": "RED", "display": "rouge" } }
+      ],
+      "expect": "bytes",
+      "notes": "And with the enumerable operand on the left, which is the case a length-based ordering would have answered 0 for."
+    },
+    {
+      "id": "opaque/member-lt-canonical-string",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "member < 'S'",
+      "inputs": [
+        { "name": "member", "value": { "kind": "opaque_map", "canonical": "RED", "display": "rouge" } }
+      ],
+      "expect": "boolean",
+      "notes": "The control for the fault rows: when the comparison hook DOES answer, ordering succeeds normally and nothing faults. 'RED' < 'S'."
+    },
+    {
+      "id": "opaque/member-lt-other-member",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "blue < member",
+      "inputs": [
+        { "name": "member", "value": { "kind": "opaque_map", "canonical": "RED", "display": "rouge" } },
+        { "name": "blue", "value": { "kind": "opaque_map", "canonical": "BLUE", "display": "bleu" } }
+      ],
+      "expect": "boolean",
+      "notes": "Two members order by canonical value through the hook, so the fault never applies to the pair a template most often orders."
+    },
+    {
+      "id": "opaque/empty-map-lt-nonempty-map",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "{} < {'a': 'b'}",
+      "expect": "boolean",
+      "notes": "The ordinary-mapping control: two enumerable maps still order structurally, so the fault cannot have swallowed the normal path."
+    },
+    {
+      "id": "opaque/member-is-mapping",
+      "surface": "value_cmp",
+      "form": "expression",
+      "source": "member is mapping",
+      "inputs": [
+        { "name": "member", "value": { "kind": "opaque_map", "canonical": "RED", "display": "rouge" } }
+      ],
+      "expect": "boolean",
+      "notes": "Representation and enumerability are separate questions: the object IS a mapping, which is exactly why it takes the map arm of equality and ordering."
+    },
+    {
+      "id": "opaque/member-is-iterable",
+      "surface": "value_cmp",
+      "form": "expression",
+      "source": "member is iterable",
+      "inputs": [
+        { "name": "member", "value": { "kind": "opaque_map", "canonical": "RED", "display": "rouge" } }
+      ],
+      "expect": "boolean",
+      "notes": "...and it is NOT iterable, which is the other half of the same fact."
+    },
+    {
+      "id": "opaque/member-truthy",
+      "surface": "value_cmp",
+      "form": "template",
+      "source": "{% if member %}T{% else %}F{% endif %}",
+      "inputs": [
+        { "name": "member", "value": { "kind": "opaque_map", "canonical": "RED", "display": "rouge" } }
+      ],
+      "expect": "bytes",
+      "notes": "Truthiness is `enumerator_len() != Some(0)`, and an unknown length is not Some(0), so an opaque map is TRUE where `{}` is false. A third fact that a keys-are-empty model got wrong."
+    },
+    {
+      "id": "opaque/empty-map-falsey",
+      "surface": "value_cmp",
+      "form": "template",
+      "source": "{% if e %}T{% else %}F{% endif %}",
+      "inputs": [{ "name": "e", "value": { "kind": "map", "entries": [] } }],
+      "expect": "bytes",
+      "notes": "The control the previous row is measured against: an ordinary empty mapping is falsey."
+    },
+    {
+      "id": "opaque/member-for-loop",
+      "surface": "container",
+      "form": "template",
+      "source": "{% for x in member %}{{ x }}{% endfor %}",
+      "inputs": [
+        { "name": "member", "value": { "kind": "opaque_map", "canonical": "RED", "display": "rouge" } }
+      ],
+      "expect": "error",
+      "notes": "An opaque map is not silently an empty iterable: iterating it is an error, not zero passes through the loop body."
+    },
+    {
+      "id": "opaque/member-list",
+      "surface": "container",
+      "form": "expression",
+      "source": "member|list",
+      "inputs": [
+        { "name": "member", "value": { "kind": "opaque_map", "canonical": "RED", "display": "rouge" } }
+      ],
+      "expect": "error",
+      "notes": "`try_iter` is the object's `enumerate()`, not its `repr()` (value/object.rs:361-379). Every iterating filter asks the same question the loop does, so `|list` errors rather than answering `[]`."
+    },
+    {
+      "id": "opaque/member-join",
+      "surface": "container",
+      "form": "expression",
+      "source": "member|join(\",\")",
+      "inputs": [
+        { "name": "member", "value": { "kind": "opaque_map", "canonical": "RED", "display": "rouge" } }
+      ],
+      "expect": "error",
+      "notes": "The same through a filter that walks its subject to build a string, where an empty answer would silently render nothing."
+    },
+    {
+      "id": "opaque/member-first",
+      "surface": "container",
+      "form": "expression",
+      "source": "member|first",
+      "inputs": [
+        { "name": "member", "value": { "kind": "opaque_map", "canonical": "RED", "display": "rouge" } }
+      ],
+      "expect": "error",
+      "notes": "`first` is `as_object().and_then(|x| x.try_iter())` (filters.rs:686-697): a missing iterator is the error arm, not an undefined result."
+    },
+    {
+      "id": "opaque/member-reverse",
+      "surface": "container",
+      "form": "expression",
+      "source": "member|reverse",
+      "inputs": [
+        { "name": "member", "value": { "kind": "opaque_map", "canonical": "RED", "display": "rouge" } }
+      ],
+      "expect": "error",
+      "notes": "`Value::reverse` branches on the enumerator and its first arm is `Enumerator::NonEnumerable => None` (value/mod.rs:1411), so reversing an opaque map is `cannot reverse values of type map`."
+    },
+    {
+      "id": "opaque/member-items",
+      "surface": "container",
+      "form": "expression",
+      "source": "member|items",
+      "inputs": [
+        { "name": "member", "value": { "kind": "opaque_map", "canonical": "RED", "display": "rouge" } }
+      ],
+      "expect": "bytes",
+      "notes": "`items` is the one that does NOT fail: it gates on the KIND and then yields a single invalid value from inside the iterable (filters.rs:363-377), which is the engine's error-as-a-value repr. The distinction only exists because the two questions are asked in different places."
+    },
+    {
+      "id": "opaque/member-length",
+      "surface": "container",
+      "form": "expression",
+      "source": "member|length",
+      "inputs": [
+        { "name": "member", "value": { "kind": "opaque_map", "canonical": "RED", "display": "rouge" } }
+      ],
+      "expect": "error",
+      "notes": "An unknown enumerator length is not zero."
+    },
+    {
+      "id": "opaque/member-debug",
+      "surface": "rendering",
+      "form": "expression",
+      "source": "debug(member)",
+      "inputs": [
+        { "name": "member", "value": { "kind": "opaque_map", "canonical": "RED", "display": "rouge" } }
+      ],
+      "expect": "bytes",
+      "notes": "`debug(x)` is `format!(\"{x:#?}\")`, so the alternate debug layout is chosen the same way `render` chooses it: a mapping is a `debug_map` over its PAIRS, and an object with none falls back to its own debug form. Formatting it as an empty map printed `{}` for a value the engine renders as itself."
+    },
+    {
+      "id": "opaque/member-pprint",
+      "surface": "rendering",
+      "form": "expression",
+      "source": "member|pprint",
+      "inputs": [
+        { "name": "member", "value": { "kind": "opaque_map", "canonical": "RED", "display": "rouge" } }
+      ],
+      "expect": "bytes",
+      "notes": "`pprint` is the same formatting through a filter."
+    },
+    {
+      "id": "opaque/member-tojson",
+      "surface": "rendering",
+      "form": "expression",
+      "source": "member|tojson",
+      "inputs": [
+        { "name": "member", "value": { "kind": "opaque_map", "canonical": "RED", "display": "rouge" } }
+      ],
+      "expect": "bytes",
+      "notes": "Serialization is NOT rendering: an opaque map serializes as the empty object it has no pairs for, which is the one place `{}` is the right answer."
+    },
+    {
+      "id": "opaque/sort-two-opaque-maps",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "[member, namespace]|sort",
+      "inputs": [
+        { "name": "member", "value": { "kind": "opaque_map", "canonical": "RED", "display": "rouge" } },
+        { "name": "namespace", "value": { "kind": "opaque_map", "display": "Color" } }
+      ],
+      "expect": "bytes",
+      "notes": "The ordering fault reached through a builtin rather than an operator: `sort` orders with the same comparison, so it aborts the same way. The neighbour of `num/sort-uncomparable`."
+    },
+    {
+      "id": "opaque/sort-one-opaque-map",
+      "surface": "comparison",
+      "form": "expression",
+      "source": "[member]|sort",
+      "inputs": [
+        { "name": "member", "value": { "kind": "opaque_map", "canonical": "RED", "display": "rouge" } }
+      ],
+      "expect": "bytes",
+      "notes": "The control: a one-element sort never compares anything, so it succeeds and renders the element. The fault is in the comparison, not in the presence of an opaque map."
+    },
+    {
+      "id": "opaque/empty-map-list",
+      "surface": "container",
+      "form": "expression",
+      "source": "e|list",
+      "inputs": [{ "name": "e", "value": { "kind": "map", "entries": [] } }],
+      "expect": "bytes",
+      "notes": "The control for the iterating rows: an ordinary empty mapping still iterates, to nothing."
+    },
+    {
+      "id": "opaque/empty-map-is-iterable",
+      "surface": "container",
+      "form": "expression",
+      "source": "e is iterable",
+      "inputs": [{ "name": "e", "value": { "kind": "map", "entries": [] } }],
+      "expect": "boolean",
+      "notes": "And it still answers the `iterable` test, so tightening that test cannot have swallowed ordinary mappings."
+    },
+    {
+      "id": "opaque/render-member",
+      "surface": "rendering",
+      "form": "expression",
+      "source": "member",
+      "inputs": [
+        { "name": "member", "value": { "kind": "opaque_map", "canonical": "RED", "display": "rouge" } }
+      ],
+      "expect": "bytes",
+      "notes": "The already-green control for the rendering family: an object's own `render` at the top level. It cannot detect the fork defect, and is here to say so."
+    },
+    {
+      "id": "opaque/render-namespace",
+      "surface": "rendering",
+      "form": "expression",
+      "source": "namespace",
+      "inputs": [{ "name": "namespace", "value": { "kind": "opaque_map", "display": "Color" } }],
+      "expect": "bytes",
+      "notes": "The same for a namespace, whose `render` overrides the empty debug map an unenumerable map would otherwise print."
+    },
+    {
+      "id": "opaque/render-native-list",
+      "surface": "rendering",
+      "form": "expression",
+      "source": "[member]",
+      "inputs": [
+        { "name": "member", "value": { "kind": "opaque_map", "canonical": "RED", "display": "rouge" } }
+      ],
+      "expect": "bytes",
+      "notes": "A native sequence prints its elements in their DEBUG form, and an object's Debug is the same `render` its Display is (value/mod.rs:463, 717). The fork reached Go's `%v` here and printed `[&{rouge}]`."
+    },
+    {
+      "id": "opaque/render-nested-list",
+      "surface": "rendering",
+      "form": "expression",
+      "source": "[[member]]",
+      "inputs": [
+        { "name": "member", "value": { "kind": "opaque_map", "canonical": "RED", "display": "rouge" } }
+      ],
+      "expect": "bytes",
+      "notes": "One level deeper, because the container path recurses through the same primitive."
+    },
+    {
+      "id": "opaque/render-map-value",
+      "surface": "rendering",
+      "form": "expression",
+      "source": "{'key1': member}",
+      "inputs": [
+        { "name": "member", "value": { "kind": "opaque_map", "canonical": "RED", "display": "rouge" } }
+      ],
+      "expect": "bytes",
+      "notes": "And as a mapping VALUE, which is the third container renderer built on the same call."
+    },
+    {
+      "id": "opaque/render-join",
+      "surface": "rendering",
+      "form": "expression",
+      "source": "[member, blue]|join(\",\")",
+      "inputs": [
+        { "name": "member", "value": { "kind": "opaque_map", "canonical": "RED", "display": "rouge" } },
+        { "name": "blue", "value": { "kind": "opaque_map", "canonical": "BLUE", "display": "bleu" } }
+      ],
+      "expect": "bytes",
+      "notes": "`join` stringifies each element, which is a different consumer of the same primitive from the container renderers above."
+    },
+    {
+      "id": "opaque/render-upper",
+      "surface": "rendering",
+      "form": "expression",
+      "source": "member|upper",
+      "inputs": [
+        { "name": "member", "value": { "kind": "opaque_map", "canonical": "RED", "display": "rouge" } }
+      ],
+      "expect": "bytes",
+      "notes": "A filter that takes its subject AS a string. The fork uppercased Go's struct rendering and produced `&{ROUGE}`."
+    },
+    {
+      "id": "opaque/render-string-filter",
+      "surface": "rendering",
+      "form": "expression",
+      "source": "member|string",
+      "inputs": [
+        { "name": "member", "value": { "kind": "opaque_map", "canonical": "RED", "display": "rouge" } }
+      ],
+      "expect": "bytes",
+      "notes": "The explicit coercion control."
+    },
+    {
+      "id": "opaque/render-concat",
+      "surface": "rendering",
+      "form": "expression",
+      "source": "member ~ '!'",
+      "inputs": [
+        { "name": "member", "value": { "kind": "opaque_map", "canonical": "RED", "display": "rouge" } }
+      ],
+      "expect": "bytes",
+      "notes": "The `~` operator, the third independently important consumer: it concatenates two Display results."
+    },
+    {
+      "id": "opaque/render-concat-reverse",
+      "surface": "rendering",
+      "form": "expression",
+      "source": "'>' ~ member",
+      "inputs": [
+        { "name": "member", "value": { "kind": "opaque_map", "canonical": "RED", "display": "rouge" } }
+      ],
+      "expect": "bytes",
+      "notes": "And from the other operand position."
+    },
+    {
+      "id": "opaque/render-loop-body",
+      "surface": "rendering",
+      "form": "template",
+      "source": "{% for x in [member, blue] %}{{ x }};{% endfor %}",
+      "inputs": [
+        { "name": "member", "value": { "kind": "opaque_map", "canonical": "RED", "display": "rouge" } },
+        { "name": "blue", "value": { "kind": "opaque_map", "canonical": "BLUE", "display": "bleu" } }
+      ],
+      "expect": "bytes",
+      "notes": "Statement output rather than expression output, so the formatter path is covered too."
+    }
+  ]
+}

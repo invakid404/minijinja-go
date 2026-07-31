@@ -1,0 +1,476 @@
+{
+  "schema_version": 1,
+  "provenance": {
+    "engine_repo": "https://github.com/boundaryml/minijinja",
+    "engine_branch": "value-cmp",
+    "engine_rev": "8cfc770a5dffeda2de5b910d2b9f870d7edeff7c",
+    "engine_features": [
+      "macros",
+      "builtins",
+      "debug",
+      "preserve_order",
+      "adjacent_loop_items",
+      "unicode",
+      "json",
+      "unstable_machinery",
+      "custom_syntax",
+      "deserialization",
+      "serde"
+    ],
+    "harness_version": "1",
+    "os": "macos",
+    "arch": "aarch64",
+    "corpus_sha256": "c7992d99259ebbb406cac9fb802d6862237f140d8c310135611c2449a78aee86"
+  },
+  "results": [
+    {
+      "id": "opaque/member-eq-namespace",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "opaque/namespace-eq-member",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "opaque/member-ne-namespace",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "opaque/namespace-ne-member",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "opaque/namespace-eq-other-namespace",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "opaque/member-in-namespace-seq",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "opaque/namespace-in-member-seq",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "opaque/member-in-two-namespaces",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "opaque/member-eq-empty-map",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "opaque/empty-map-eq-member",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "opaque/member-ne-empty-map",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "opaque/empty-map-ne-member",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "opaque/member-in-empty-map-seq",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "opaque/empty-map-in-member-seq",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "opaque/nonempty-map-eq-member",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "opaque/member-eq-nonempty-map",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "opaque/member-eq-same-canonical",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "opaque/member-eq-other-member",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "opaque/member-eq-canonical-string",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "opaque/string-eq-member",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "opaque/member-lt-namespace",
+      "outcome": {
+        "status": "panic",
+        "message": "internal error: entered unreachable code"
+      }
+    },
+    {
+      "id": "opaque/namespace-lt-member",
+      "outcome": {
+        "status": "panic",
+        "message": "internal error: entered unreachable code"
+      }
+    },
+    {
+      "id": "opaque/member-lt-empty-map",
+      "outcome": {
+        "status": "panic",
+        "message": "internal error: entered unreachable code"
+      }
+    },
+    {
+      "id": "opaque/empty-map-lt-member",
+      "outcome": {
+        "status": "panic",
+        "message": "internal error: entered unreachable code"
+      }
+    },
+    {
+      "id": "opaque/member-lt-canonical-string",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "opaque/member-lt-other-member",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "opaque/empty-map-lt-nonempty-map",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "opaque/member-is-mapping",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "opaque/member-is-iterable",
+      "outcome": {
+        "status": "ok",
+        "render": "false",
+        "boolean": false
+      }
+    },
+    {
+      "id": "opaque/member-truthy",
+      "outcome": {
+        "status": "ok",
+        "render": "T",
+        "boolean": null
+      }
+    },
+    {
+      "id": "opaque/empty-map-falsey",
+      "outcome": {
+        "status": "ok",
+        "render": "F",
+        "boolean": null
+      }
+    },
+    {
+      "id": "opaque/member-for-loop",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: map is not iterable (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "opaque/member-list",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot convert value to list (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "opaque/member-join",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot join value of type map (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "opaque/member-first",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot get first item from value (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "opaque/member-reverse",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot reverse values of type map (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "opaque/member-items",
+      "outcome": {
+        "status": "ok",
+        "render": "[<invalid value: invalid operation: map is not iterable>]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "opaque/member-length",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: cannot calculate length of value of type map (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "opaque/member-debug",
+      "outcome": {
+        "status": "ok",
+        "render": "rouge",
+        "boolean": null
+      }
+    },
+    {
+      "id": "opaque/member-pprint",
+      "outcome": {
+        "status": "ok",
+        "render": "rouge",
+        "boolean": null
+      }
+    },
+    {
+      "id": "opaque/member-tojson",
+      "outcome": {
+        "status": "ok",
+        "render": "{}",
+        "boolean": null
+      }
+    },
+    {
+      "id": "opaque/sort-two-opaque-maps",
+      "outcome": {
+        "status": "panic",
+        "message": "internal error: entered unreachable code"
+      }
+    },
+    {
+      "id": "opaque/sort-one-opaque-map",
+      "outcome": {
+        "status": "ok",
+        "render": "[rouge]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "opaque/empty-map-list",
+      "outcome": {
+        "status": "ok",
+        "render": "[]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "opaque/empty-map-is-iterable",
+      "outcome": {
+        "status": "ok",
+        "render": "true",
+        "boolean": true
+      }
+    },
+    {
+      "id": "opaque/render-member",
+      "outcome": {
+        "status": "ok",
+        "render": "rouge",
+        "boolean": null
+      }
+    },
+    {
+      "id": "opaque/render-namespace",
+      "outcome": {
+        "status": "ok",
+        "render": "Color",
+        "boolean": null
+      }
+    },
+    {
+      "id": "opaque/render-native-list",
+      "outcome": {
+        "status": "ok",
+        "render": "[rouge]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "opaque/render-nested-list",
+      "outcome": {
+        "status": "ok",
+        "render": "[[rouge]]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "opaque/render-map-value",
+      "outcome": {
+        "status": "ok",
+        "render": "{\"key1\": rouge}",
+        "boolean": null
+      }
+    },
+    {
+      "id": "opaque/render-join",
+      "outcome": {
+        "status": "ok",
+        "render": "rouge,bleu",
+        "boolean": null
+      }
+    },
+    {
+      "id": "opaque/render-upper",
+      "outcome": {
+        "status": "ok",
+        "render": "ROUGE",
+        "boolean": null
+      }
+    },
+    {
+      "id": "opaque/render-string-filter",
+      "outcome": {
+        "status": "ok",
+        "render": "rouge",
+        "boolean": null
+      }
+    },
+    {
+      "id": "opaque/render-concat",
+      "outcome": {
+        "status": "ok",
+        "render": "rouge!",
+        "boolean": null
+      }
+    },
+    {
+      "id": "opaque/render-concat-reverse",
+      "outcome": {
+        "status": "ok",
+        "render": ">rouge",
+        "boolean": null
+      }
+    },
+    {
+      "id": "opaque/render-loop-body",
+      "outcome": {
+        "status": "ok",
+        "render": "rouge;bleu;",
+        "boolean": null
+      }
+    }
+  ]
+}

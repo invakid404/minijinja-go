@@ -8,8 +8,8 @@ The baseline is `v2.16.0-baml.2` — upstream `mitsuhiko/minijinja@b9afca`
 [`scripts/verify-seed.sh`](scripts/verify-seed.sh). Everything below is a delta
 over that baseline, introduced by the template sweep (slice 6 of the scope's
 plan), the numeric core (slice 3), the coercion, container and VM operations
-(slice 4) and the builtins and pycompat surface (slice 5), so that the fork
-matches BAML's engine
+(slice 4), the builtins and pycompat surface (slice 5) and the opaque host map
+and object rendering (slice 7), so that the fork matches BAML's engine
 (`boundaryml/minijinja@8cfc770`, built with BAML's feature set).
 
 ## Rules
@@ -197,6 +197,43 @@ These are new files rather than changes to derived ones, declared in
 | `value/invalid.go`, `value/invalid_test.go` | `value.Invalid`, the fork's `ValueRepr::Invalid`: an error that travels as a value, which lazy iteration needs (patch #62). |
 | `oracle/harness_cache_test.go` | The proof that the harness memo re-keys on the CONTENT of the outcome source — and on the file `exec` actually resolves, whether the harness was named by path or bare on PATH — so a harness rebuilt or a recording re-recorded under its existing name is never served from cache (patch #101). Test-only, inside the fork-only `oracle/` module. |
 | `testdata/inputs/filters.txt`, `testdata/snapshots/filters.txt.snap` | The upstream Go snapshot case with the two `urlencode` lines removed (patch #45). Every other line is upstream verbatim, so the rest of that corpus keeps running. |
+
+### Slice 7 — the opaque host map, and object rendering
+
+Two value-model seams a host object reaches that no in-tree value does.
+
+A host object can be a **map by representation with no enumerable pairs** —
+`ObjectRepr::Map` plus `Enumerator::NonEnumerable`, which is what BAML gives an
+enum member and an enum namespace. It is not an empty map: it has no pair
+iterator at all, where `{}` has a known empty one. The engine's comparison,
+iteration and debug paths are all written against `try_iter_pairs()` /
+`enumerate()`, so every one of them behaves differently for the two, and the
+fork had collapsed them onto one by discarding the boolean that tells them
+apart.
+
+And an object's **rendering** is a single function in the engine: `render`,
+which an object value's Display AND its Debug both call. The fork exposed the
+counterpart interface (`value.ObjectWithString`) but never dispatched it, so it
+was documented and dead.
+
+The new `oracle/corpus/opaque.json` lane is the proof, driven by a generic host
+object (`opaque_map`) with no BAML types on either side of the differential.
+
+| # | Corpus ID(s) | Area | Upstream behaviour | Fork behaviour | Rationale | Landed in |
+| --- | --- | --- | --- | --- | --- | --- |
+| 102 | `opaque/member-eq-namespace`, `-namespace-eq-member`, `-member-ne-namespace`, `-namespace-ne-member`, `-namespace-eq-other-namespace`, `-member-eq-empty-map`, `-empty-map-eq-member`, `-member-ne-empty-map`, `-empty-map-ne-member`, `-nonempty-map-eq-member`, `-member-eq-nonempty-map`, `-member-in-namespace-seq`, `-namespace-in-member-seq`, `-member-in-two-namespaces`, `-member-in-empty-map-seq`, `-empty-map-in-member-seq`, `-member-eq-same-canonical`, `-member-eq-other-member`, `-member-eq-canonical-string`, `-string-eq-member` (20 rows) | map equality and sequence membership | `Value.containerEqual` discarded the boolean from `MapKeys`, so a map object with no enumerable pairs was one with zero keys. Two unrelated opaque host maps were then two empty key slices and compared EQUAL — an enum member equalled its own namespace, and equalled `{}` — and membership answered the same way in both orientations. | The engine's map arm, reproduced directionally (`value/mod.rs:533-559`). If the LEFT map cannot be enumerated, equality is false, because `a.try_iter_pairs()` is None and `is_some_and` short-circuits before the length fallback. If both enumerate, structural comparison is unchanged. If only the RIGHT one cannot, the length fallback counts it as zero, so a KNOWN-EMPTY left map is equal to it. Sequence membership still calls `item.Equal(needle)` with no shortcut. | The asymmetry is stock and is deliberately pinned rather than smoothed: `{} == Color.RED` is true and `Color.RED == {}` is false, and it is the ORIENTATION of the membership comparison that produces the two different empty-map outcomes. Papering over it in the host's comparator would have hidden the same defect for every other opaque host map. | slice 7 |
+| 103 | `opaque/member-lt-namespace`, `-namespace-lt-member`, `-member-lt-empty-map`, `-empty-map-lt-member`, `-sort-two-opaque-maps`, and the `-member-lt-canonical-string`, `-member-lt-other-member`, `-empty-map-lt-nonempty-map`, `-sort-one-opaque-map` controls (9 rows) | map ordering | `Value.containerCompare` ordered two non-enumerable maps as two empty key slices and returned `0`, so `Color.RED < Color` rendered a successful, invented answer. | The engine has no arm for it: ordering two map operands is `match (a.try_iter_pairs(), b.try_iter_pairs()) { (Some, Some) => a.cmp(b), _ => unreachable!() }` (`value/mod.rs:653-661`). The fork FAULTS, panicking with the new recoverable `value.UnorderableMaps`, which carries both operands. | The parity-decline rule: where the engine reaches `unreachable!()`, the fork must not return a stronger result. An ordering, a `(0, false)` decline and a plain `false` would each let a template render where BAML aborts. This follows `value.UncomparableNumbers` (patch #30) exactly, including that only ORDERING faults — `a == b` stays answerable where `a < b` is not. Both diagnostics are pinned in `oracle/panics_test.go`. | slice 7 |
+| 104 | `opaque/render-member`, `-render-namespace`, `-render-native-list`, `-render-nested-list`, `-render-map-value`, `-render-join`, `-render-upper`, `-render-string-filter`, `-render-concat`, `-render-concat-reverse`, `-render-loop-body`, `-member-debug`, `-member-pprint` (13 rows) | object display and debug | `Value.String` and `Value.Repr` fell through to Go's `fmt.Sprintf("%v", d)` for objects, so `value.ObjectWithString` was never consulted. An object that implemented it and not `fmt.Stringer` rendered as a Go struct literal — `{{ red }}` was `&{rouge}`, `{{ [red] }}` was `[&{rouge}]`, and `{{ red\|upper }}` was `&{ROUGE}`. | Both primitives dispatch `ObjectWithString` before the `%v` fallback, which is the fork's `Object::render`. In the engine an object value's Display and its Debug are the same call (`value/mod.rs:463, 717`), so the two spellings agree here too. `fmt.Stringer` remains the fallback. | Every renderer, container and coercion in the engine composes on those two primitives — native sequences, iterators and `formatMap` recurse through `Repr`; `join`, `stringArg`, `Args.CoerceStr` and `~` go through `String` — so fixing them one at a time cannot work. `debug`/`pprint` additionally stopped formatting a non-enumerable map as `{}` and fall back to the object's own debug form, the same guard the sequence arm already applied to an unsized iterable. | slice 7 |
+| 105 | `opaque/member-is-iterable`, `-member-list`, `-member-join`, `-member-first`, `-member-reverse`, `-member-items`, `-member-length`, `-member-for-loop`, `-member-truthy`, `-member-is-mapping`, `-member-tojson`, and the `-empty-map-list`, `-empty-map-is-iterable`, `-empty-map-falsey` controls (14 rows) | iterating a mapping | Iterability was decided from the value's KIND, so every `KindMap` was assumed to iterate. A map object with no enumerable pairs was therefore an EMPTY one: `x is iterable` was true, `x\|list` was `[]`, `x\|join(',')` was empty, `x\|first` was undefined and `x\|reverse` was `[]` — for a value `{% for %}` already refused to walk. | `try_iter` is the object's `enumerate()`, not its `repr()` (`value/object.rs:361-379`), so the mapping arm asks instead of assuming: `filters.tryIter`, `tests.TestIterable`, `first` (`as_object().and_then(try_iter)`, filters.rs:686-697) and `reverse` (`Enumerator::NonEnumerable => None`, value/mod.rs:1411) all report the engine's invalid operation. `items` is the deliberate exception — it gates on the KIND and yields a single `value.Invalid` from inside the iterable (filters.rs:363-377), because the engine asks the two questions in different places. | Same root as #102: a map that cannot be enumerated is not an empty map. Leaving it made the fork self-inconsistent — `x is iterable` true while `{% for x in x %}` errors — and every `[]`/undefined answer was a silent pass where the engine raises. Truthiness (`enumerator_len() != Some(0)`, so an unknown length is TRUE where `{}` is false) and `tojson` (`{}`, the one place empty is right) are pinned as the controls that keep the correction from over-reaching. | slice 7 |
+
+#### Fork-only files this slice adds
+
+| Path | Why |
+| --- | --- |
+| `value/opaquemap_fork_test.go` | The generic proof of patches #102 and #103: a non-enumerable `ObjectReprMap` object and an ordinary `{}`, with the directional equality table, the membership orientations, and the ordering fault. No profile types. |
+| `value/objectstring_fork_test.go` | The generic proof of patch #104 at the two primitives: an object that implements `ObjectWithString` and NOT `fmt.Stringer`, through `String`, `Repr`, native containers and `~`. |
+| `object_string_test.go` | The composed half of the same proof, through a real template: containers, `join`, `upper`, `string`, `~` and statement output. |
+| `oracle/corpus/opaque.json`, `oracle/recorded/rust-8cfc770-opaque.json` | The differential lane for all four patches, driven by the new generic `opaque_map` corpus value kind (`oracle/harness/src/main.rs`, `oracle/fork.go`). Its own lane, so adding it invalidates no other lane's recording. |
 
 ## Known divergences not yet patched
 

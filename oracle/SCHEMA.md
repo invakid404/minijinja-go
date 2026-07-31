@@ -66,6 +66,7 @@ through `float64` on the way in.
 | `list` | `items` | array of typed values |
 | `map` | `entries` | array of `{key, value}`. **Order is part of the fixture**: BAML builds the engine with `preserve_order`. |
 | `cmp_object` | `canonical`, `display` | A generic host object that answers the engine's comparison hook by `canonical` while displaying `display`. This is the generic shape of BAML's enum object — alias display, canonical-value identity — with no BAML types involved. |
+| `opaque_map` | `display`, optional `canonical` | A generic host object that is a **map by representation with no enumerable pairs**, displaying `display`. With a `canonical` it also answers the comparison hook by that value (a "member"); without one the hook declines everything (a "namespace"), which is what lets a row reach the engine's map fallback. |
 
 `cmp_object` is what exercises BoundaryML's sole engine delta. In Rust it
 implements `Object::value_cmp` (compare to a string by canonical value, delegate
@@ -74,6 +75,18 @@ to `custom_cmp` for objects). In Go it implements the fork's generic counterpart
 sides implement the *same* canonical-value semantics, so any difference the
 differential reports about them is a statement about comparison dispatch, not
 about the fixture.
+
+`opaque_map` is defined by its NEGATIVE capabilities, and they have to line up
+across two value models. In Rust it is `ObjectRepr::Map` with `enumerate()`
+returning `Enumerator::NonEnumerable`, an unknown `enumerator_len()`, a
+`get_value` that answers nothing, and a `render` of its own. In Go it reports
+`value.ObjectReprMap` and implements neither `value.MapObject` nor
+`value.MapGetter`, which is this value model's spelling of the same thing:
+`value.Value.MapKeys` reports `ok == false` for it, where an ordinary `{}`
+reports `([], true)`. It implements `value.ObjectWithString` and deliberately
+NOT `fmt.Stringer`, so its rendering rows test the interface dispatch rather
+than Go's `%v`. It is the generic shape of BAML's enum member and enum namespace
+objects.
 
 A `map` is built with the fork's order-preserving mapping
 (`value.FromOrderedMap`), the counterpart of `Value::from_iter` on the Rust side.

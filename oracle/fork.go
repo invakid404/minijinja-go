@@ -36,16 +36,17 @@ var (
 
 func (o *cmpObject) GetAttr(string) value.Value { return value.Undefined() }
 
-// String is what actually drives display: Value.String falls through to
-// fmt.Sprintf("%v", obj) for objects (value/value.go:947-948), so an object
-// author on this fork implements fmt.Stringer.
-func (o *cmpObject) String() string { return o.display }
-
-// ObjectString satisfies value.ObjectWithString, the interface the fork
-// documents for custom display. The engine never consults it — the port's own
-// test says so (value/object_test.go:628-638) — so it is implemented here for
-// completeness and does not affect the fixture.
+// ObjectString satisfies value.ObjectWithString, the fork's counterpart of the
+// Rust object's `render`. Value.String and Value.Repr both dispatch it, which
+// is what carries a host object's display through containers, `join`, argument
+// coercion and `~`.
 func (o *cmpObject) ObjectString() string { return o.display }
+
+// String is the older spelling the same display is also available under. It is
+// kept so this object exercises BOTH routes at once and pins that they agree:
+// the interface wins, and fmt.Stringer remains the fallback for an object that
+// only has one.
+func (o *cmpObject) String() string { return o.display }
 
 func (o *cmpObject) ObjectCmp(other value.Object) (int, bool) {
 	oo, ok := other.(*cmpObject)
@@ -66,6 +67,61 @@ func (o *cmpObject) ValueCmp(other value.Value) (int, bool) {
 		return o.ObjectCmp(obj)
 	}
 	return 0, false
+}
+
+// opaqueMapObject is the Go counterpart of the Rust harness's OpaqueMap: a host
+// object that is a map by REPRESENTATION and has no enumerable pairs.
+//
+// The negative capabilities are the fixture. It reports value.ObjectReprMap and
+// implements NEITHER value.MapObject NOR value.MapGetter, which is this value
+// model's spelling of `Enumerator::NonEnumerable`: value.Value.MapKeys reports
+// `ok == false` for it, where an ordinary `{}` reports `([], true)`. The engine's
+// map equality and ordering behave differently for the two, and reproducing that
+// difference is what these rows check.
+//
+// It implements value.ObjectWithString and deliberately NOT fmt.Stringer, so the
+// rendering rows are a real test of the interface dispatch rather than of Go's
+// `%v`: without it they render `&{...}`.
+type opaqueMapObject struct {
+	canonical string
+	display   string
+}
+
+var (
+	_ value.Object             = (*opaqueMapObject)(nil)
+	_ value.ObjectWithRepr     = (*opaqueMapObject)(nil)
+	_ value.ObjectWithString   = (*opaqueMapObject)(nil)
+	_ value.ObjectWithCmp      = (*opaqueMapObject)(nil)
+	_ value.ObjectWithValueCmp = (*opaqueMapObject)(nil)
+)
+
+func (o *opaqueMapObject) GetAttr(string) value.Value   { return value.Undefined() }
+func (o *opaqueMapObject) ObjectRepr() value.ObjectRepr { return value.ObjectReprMap }
+func (o *opaqueMapObject) ObjectString() string         { return o.display }
+
+// ValueCmp mirrors the Rust harness's value_cmp exactly: a MEMBER (one with a
+// canonical value) compares by it and declines everything else; a NAMESPACE (one
+// without) declines unconditionally, which is what lets the row reach the map
+// fallback the fix is about.
+func (o *opaqueMapObject) ValueCmp(other value.Value) (int, bool) {
+	if o.canonical == "" {
+		return 0, false
+	}
+	if s, ok := other.AsString(); ok {
+		return strings.Compare(o.canonical, s), true
+	}
+	if obj, ok := other.AsObject(); ok {
+		return o.ObjectCmp(obj)
+	}
+	return 0, false
+}
+
+func (o *opaqueMapObject) ObjectCmp(other value.Object) (int, bool) {
+	oo, ok := other.(*opaqueMapObject)
+	if !ok || o.canonical == "" || oo.canonical == "" {
+		return 0, false
+	}
+	return strings.Compare(o.canonical, oo.canonical), true
 }
 
 // BuildValue converts a corpus input into a fork value.
@@ -109,6 +165,8 @@ func BuildValue(tv TypedValue) (value.Value, error) {
 		return value.FromOrderedMap(m), nil
 	case KindCmpObject:
 		return value.FromObject(&cmpObject{canonical: tv.Canonical, display: tv.Display}), nil
+	case KindOpaqueMap:
+		return value.FromObject(&opaqueMapObject{canonical: tv.Canonical, display: tv.Display}), nil
 	default:
 		return value.Undefined(), fmt.Errorf("unknown value kind %q", tv.Kind)
 	}

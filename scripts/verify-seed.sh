@@ -91,6 +91,12 @@ FORK_ADDED=(
   "value_cmp_builtins_test.go"
   "value/invalid.go"
   "value/invalid_test.go"
+  # Slice 7: the generic opaque-map correction and the object-render dispatch,
+  # each proved against generic host objects with no profile types involved.
+  # PATCHES.md #102-#103.
+  "value/opaquemap_fork_test.go"
+  "value/objectstring_fork_test.go"
+  "object_string_test.go"
 )
 
 # Derived files this fork intentionally modifies, each with the PATCHES.md entry

@@ -402,9 +402,23 @@ func (v Value) containerEqual(other Value) bool {
 
 	switch k1, k2 := v.Kind(), other.Kind(); {
 	case k1 == KindMap && k2 == KindMap:
-		keys1, _ := v.MapKeys()
-		keys2, _ := other.MapKeys()
-		if len(keys1) != len(keys2) {
+		// The engine's map arm is DIRECTIONAL, and the direction is the whole
+		// of what separates an opaque host map from an empty one
+		// (value/mod.rs:533-559). [Value.MapKeys] reports which of the two a
+		// value is; see its "enumerable" contract.
+		keys1, enumerable1 := v.MapKeys()
+		keys2, enumerable2 := other.MapKeys()
+		if !enumerable1 {
+			// `a.try_iter_pairs()` is None for a non-enumerable object, so
+			// `is_some_and` is false and the engine returns false right there,
+			// before the length fallback can run (value/mod.rs:545-552). This
+			// is the arm that keeps a host map with no enumerable pairs from
+			// comparing equal to a second one, or to `{}`.
+			return false
+		}
+		if enumerable2 && len(keys1) != len(keys2) {
+			// Both lengths are known, so the engine settles it on length alone
+			// and skips the fallback (value/mod.rs:539-544).
 			return false
 		}
 		for _, k := range keys1 {
@@ -413,6 +427,20 @@ func (v Value) containerEqual(other Value) bool {
 			if !ok1 || !ok2 || !val1.Equal(val2) {
 				return false
 			}
+		}
+		if !enumerable2 {
+			// The length fallback the engine keeps for a map of unknown
+			// length: `a_count == b.try_iter().map_or(0, |x| x.count())`
+			// (value/mod.rs:554-558). A right side that cannot be enumerated
+			// counts as ZERO, so a KNOWN EMPTY left map is equal to it.
+			//
+			// That makes equality asymmetric: `{} == opaque` is true where
+			// `opaque == {}` is false. It is stock behaviour on the revision
+			// BAML builds, so it is pinned here rather than smoothed over —
+			// and it is why sequence membership must keep calling
+			// `item.Equal(needle)` in that order, since the orientation
+			// decides the answer.
+			return len(keys1) == 0
 		}
 		return true
 	case isSeqLike(k1) && isSeqLike(k2):
@@ -469,6 +497,53 @@ type UncomparableNumbers struct {
 func (u UncomparableNumbers) Error() string {
 	return fmt.Sprintf("cannot order %s against %s: neither converts to the other without loss",
 		u.Left.String(), u.Right.String())
+}
+
+// UnorderableMaps is the value [Value.Compare] panics with when two mappings
+// are ordered and at least one of them cannot enumerate its pairs.
+//
+// It exists for the same reason [UncomparableNumbers] does: the engine reaches
+// `unreachable!()` there. Ordering two `ObjectRepr::Map` operands is
+// `match (a.try_iter_pairs(), b.try_iter_pairs()) { (Some(a), Some(b)) =>
+// a.cmp(b), _ => unreachable!() }` (value/mod.rs:653-661), and
+// `try_iter_pairs` is None for an object whose `enumerate` is
+// `Enumerator::NonEnumerable` (value/object.rs:361-396). A host object that is
+// a map by representation but has no enumerable pairs — BAML's enum member and
+// enum namespace are exactly that — therefore aborts the operation rather than
+// ordering.
+//
+// Answering instead would be strictly worse than faulting. Treating the
+// non-enumerable side as an empty key list makes two unrelated opaque maps
+// compare EQUAL, and `(0, false)` would surface as an ordinary invalid-operation
+// error, both of which are results the engine does not produce. The fork's
+// contract is to reproduce the engine, so the operation fails.
+//
+// Like [UncomparableNumbers] it is a distinct type and an error, so a host can
+// recover and identify it:
+//
+//	defer func() {
+//	    if r := recover(); r != nil {
+//	        if u, ok := r.(value.UnorderableMaps); ok { ... }
+//	    }
+//	}()
+//
+// Only ordering panics. [Value.Equal] reaches the same pair of operands and
+// answers, directionally, so `a == b` is always answerable where `a < b` is not.
+type UnorderableMaps struct {
+	Left, Right Value
+}
+
+func (u UnorderableMaps) Error() string {
+	_, left := u.Left.MapKeys()
+	_, right := u.Right.MapKeys()
+	switch {
+	case !left && !right:
+		return "cannot order these mappings: neither enumerates its entries"
+	case !left:
+		return "cannot order these mappings: the left one does not enumerate its entries"
+	default:
+		return "cannot order these mappings: the right one does not enumerate its entries"
+	}
 }
 
 // Compare returns -1 if v < other, 0 if equal, 1 if v > other.
@@ -568,8 +643,14 @@ func (v Value) containerCompare(other Value) (int, bool) {
 		// Ordering compares key/value pairs in iteration order. Rust documents
 		// that this makes the result depend on insertion order and accepts it
 		// rather than paying to sort.
-		keys1, _ := v.MapKeys()
-		keys2, _ := other.MapKeys()
+		keys1, enumerable1 := v.MapKeys()
+		keys2, enumerable2 := other.MapKeys()
+		if !enumerable1 || !enumerable2 {
+			// The engine has no pair iterator to compare and reaches
+			// `unreachable!()` (value/mod.rs:653-661). The operation faults;
+			// see [UnorderableMaps] for why no answer is preferable to one.
+			panic(UnorderableMaps{Left: v, Right: other})
+		}
 		for i := 0; i < len(keys1) && i < len(keys2); i++ {
 			if cmp := strings.Compare(keys1[i], keys2[i]); cmp != 0 {
 				return cmp, true

@@ -25,7 +25,7 @@ use std::sync::Arc;
 use std::thread;
 use std::time::Duration;
 
-use minijinja::value::{DynObject, Object, ObjectRepr, Value};
+use minijinja::value::{DynObject, Enumerator, Object, ObjectRepr, Value};
 use minijinja::{Environment, ErrorKind};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -203,6 +203,21 @@ enum TypedValue {
     /// shape of BAML's enum object (alias display, canonical-value identity)
     /// with no BAML types involved.
     CmpObject { canonical: String, display: String },
+    /// A generic host object that is a map by REPRESENTATION and has NO
+    /// enumerable pairs: `ObjectRepr::Map` with `Enumerator::NonEnumerable`,
+    /// an unknown length, and a `render` of its own.
+    ///
+    /// It is the generic shape of BAML's enum member and enum namespace
+    /// objects, with no BAML types involved. `canonical` is what makes it a
+    /// member rather than a namespace: with it the object answers the generic
+    /// `value_cmp` hook by that value, and without it the hook declines
+    /// everything — which is what lets these rows reach the engine's map
+    /// fallback at all.
+    OpaqueMap {
+        #[serde(default)]
+        canonical: Option<String>,
+        display: String,
+    },
 }
 
 // ---------------------------------------------------------------------------
@@ -246,6 +261,68 @@ impl Object for CmpObject {
     }
 }
 
+/// A map object with no enumerable pairs.
+///
+/// Everything about it is a deliberate negative capability. `repr()` says Map,
+/// so the engine takes the map arm of equality and ordering; `enumerate()` says
+/// `NonEnumerable`, so `try_iter_pairs()` is None and `enumerator_len()` is
+/// None; and `get_value` answers nothing. That combination is what BAML's
+/// `MinijinjaBamlEnumValue` and `MinijinjaBamlEnumType` are, and it is the input
+/// the engine's map comparison behaves surprisingly on:
+///
+///   - equality returns false as soon as the LEFT operand cannot be enumerated,
+///     and otherwise falls back to counting a non-enumerable right side as zero;
+///   - ordering has no arm for it at all and reaches `unreachable!()`.
+///
+/// `render` writes the display string the way BAML's enum objects render their
+/// alias, rather than the empty debug map an unenumerable map would default to.
+#[derive(Debug, Clone)]
+struct OpaqueMap {
+    canonical: Option<String>,
+    display: String,
+}
+
+impl Object for OpaqueMap {
+    fn repr(self: &Arc<Self>) -> ObjectRepr {
+        ObjectRepr::Map
+    }
+
+    /// The whole point: no pairs, and no length.
+    fn enumerate(self: &Arc<Self>) -> Enumerator {
+        Enumerator::NonEnumerable
+    }
+
+    fn get_value(self: &Arc<Self>, _key: &Value) -> Option<Value> {
+        None
+    }
+
+    /// A member compares by its canonical value and declines everything else,
+    /// including a namespace. A namespace has no canonical value and declines
+    /// unconditionally.
+    fn value_cmp(self: &Arc<Self>, other: &Value) -> Option<Ordering> {
+        let canonical = self.canonical.as_deref()?;
+        if let Some(other_str) = other.as_str() {
+            return Some(canonical.cmp(other_str));
+        }
+        if let Some(other_obj) = other.as_object() {
+            return self.custom_cmp(other_obj);
+        }
+        None
+    }
+
+    fn custom_cmp(self: &Arc<Self>, other: &DynObject) -> Option<Ordering> {
+        let other = other.downcast_ref::<Self>()?;
+        Some(self.canonical.as_deref()?.cmp(other.canonical.as_deref()?))
+    }
+
+    fn render(self: &Arc<Self>, f: &mut fmt::Formatter<'_>) -> fmt::Result
+    where
+        Self: Sized + 'static,
+    {
+        write!(f, "{}", self.display)
+    }
+}
+
 fn build_value(tv: &TypedValue) -> Value {
     match tv {
         TypedValue::Int { value } => Value::from(*value),
@@ -260,6 +337,10 @@ fn build_value(tv: &TypedValue) -> Value {
                 .map(|e| (Value::from(e.key.as_str()), build_value(&e.value))),
         ),
         TypedValue::CmpObject { canonical, display } => Value::from_object(CmpObject {
+            canonical: canonical.clone(),
+            display: display.clone(),
+        }),
+        TypedValue::OpaqueMap { canonical, display } => Value::from_object(OpaqueMap {
             canonical: canonical.clone(),
             display: display.clone(),
         }),
