@@ -168,19 +168,6 @@ func prettyRepr(val value.Value, depth int) string {
 	pad := strings.Repeat("    ", depth)
 	inner := pad + "    "
 
-	// The engine's `{:#?}` of an object calls its `render` (value/mod.rs:462),
-	// and a CUSTOM render (an object with its own string form) wins over the
-	// default `debug_map`/`debug_list`. So an alias-aware class or a bare enum
-	// prints its own render here rather than a map rebuilt from its canonical
-	// keys — the same object render `{{ x }}` and `Repr` already dispatch. Rust
-	// re-indents a nested entry's own newlines by the surrounding depth
-	// (DebugList/DebugMap's PadAdapter); reproduce that by shifting every line
-	// after the first by this depth's padding, which is a no-op at the top and
-	// for a single-line render.
-	if s, ok := val.ObjectRender(); ok {
-		return strings.ReplaceAll(s, "\n", "\n"+pad)
-	}
-
 	switch val.Kind() {
 	case value.KindSeq, value.KindIterable:
 		if _, sized := val.Len(); !sized {
@@ -201,6 +188,25 @@ func prettyRepr(val value.Value, depth int) string {
 		b.WriteString("]")
 		return b.String()
 	case value.KindMap:
+		// The engine's `{:#?}` of an object calls its `render` (value/mod.rs:462),
+		// and a CUSTOM map render — an object with its own string form — wins over
+		// the default `debug_map` over its pairs. So an alias-aware class prints
+		// its own render here rather than a map rebuilt from its CANONICAL keys,
+		// and a bare enum member/namespace prints its render rather than a map it
+		// cannot enumerate — the same object render `{{ x }}` and `Repr` already
+		// dispatch. Rust re-indents a nested entry's own newlines by the
+		// surrounding depth (DebugMap's PadAdapter); reproduce that by shifting
+		// every line after the first, a no-op at the top and for a single-line
+		// render.
+		//
+		// This is scoped to a MAP object on purpose. A BAML class render forces
+		// the alternate `{map:#?}` and so equals the pprint form; a SEQ object
+		// (a host list) renders through the ambient formatter's `debug_list`,
+		// which RESPECTS the alternate flag, so its non-alternate `ObjectString`
+		// is NOT the pprint form — the sequence arm's expansion is, and it stays.
+		if s, ok := val.ObjectRender(); ok {
+			return strings.ReplaceAll(s, "\n", "\n"+pad)
+		}
 		// A mapping is a `debug_map` over its PAIRS, which a map object with no
 		// enumerable pairs does not have. That is the same guard the sequence
 		// arm above applies for an unsized iterable, and the fallback is the

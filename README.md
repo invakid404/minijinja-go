@@ -4,7 +4,7 @@
 > minijinja stack: rendered bytes, boolean results, value coercion, and
 > success/error behaviour.
 >
-> The current release is `v2.16.0-baml.5`. The baseline tag `v2.16.0-baml.2` is
+> The current release is `v2.16.0-baml.6`. The baseline tag `v2.16.0-baml.2` is
 > upstream `minijinja-go/v2.16.0` (commit `b9afca42`) with no semantic changes at
 > all. Since then the fork carries the deltas logged in
 > [PATCHES.md](PATCHES.md), each pinned by a differential corpus row;

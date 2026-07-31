@@ -1026,13 +1026,16 @@ func formatObject(data any) string {
 // `render`: for an object value both Display and Debug call `DynObject::render`
 // (value/mod.rs:462, 717), and only a CUSTOM render — an object implementing
 // [ObjectWithString] — differs from the default `debug_map`/`debug_list`
-// (value/object.rs:331-352). A renderer reproducing the ALTERNATE debug form
-// (`pprint`, `debug()`) therefore consults this BEFORE expanding a map or
-// sequence generically: where it answers, the engine prints the object's own
-// render (an alias-aware class or a bare enum), not the object's pairs. Native
-// maps and sequences are value-model kinds, not host objects, so they never
-// answer here and are expanded generically as before; nor does a `fmt.Stringer`
-// object, whose engine `render` is still the default debug form.
+// (value/object.rs:331-352). [Value.String] and [Value.Repr] dispatch it for
+// any object; the ALTERNATE debug renderers (`pprint`, `debug()`) consult it in
+// their MAP arm only. That scoping is deliberate: a host object's `ObjectString`
+// is a single fixed string, while the engine's `render` may RESPECT the
+// alternate flag. A class render forces the alternate `{map:#?}` and so equals
+// the pprint form; a list render goes through `debug_list`, which respects the
+// flag, so its non-alternate `ObjectString` is the wrong bytes under pprint and
+// the sequence keeps its `debug_list` expansion. Native maps and sequences are
+// value-model kinds, not host objects, so they never answer here; nor does a
+// `fmt.Stringer` object, whose engine `render` is still the default debug form.
 func (v Value) ObjectRender() (string, bool) {
 	if obj, ok := v.data.(ObjectWithString); ok {
 		return obj.ObjectString(), true

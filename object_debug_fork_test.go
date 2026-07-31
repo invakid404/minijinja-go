@@ -48,6 +48,48 @@ func (o *classObject) GetAttr(name string) value.Value {
 	return v
 }
 
+// seqRenderObject is a host LIST object: ObjectRepr::Seq, iterable through
+// SeqObject, with a COMPACT ObjectString of its own — the shape of a BAML list,
+// whose render calls the ambient formatter's `debug_list` and so is compact at
+// the top level but multi-line under the alternate `{:#?}`.
+//
+// Its ObjectString must NOT hijack pprint/debug the way a class's does: a class
+// render forces the alternate form and equals the pprint form, but a list render
+// RESPECTS the alternate flag, so its non-alternate ObjectString is the wrong
+// bytes for pprint. The alternate form is the sequence arm's `debug_list`
+// expansion, which is what must win here.
+type seqRenderObject struct{ items []value.Value }
+
+var (
+	_ value.Object           = (*seqRenderObject)(nil)
+	_ value.ObjectWithRepr   = (*seqRenderObject)(nil)
+	_ value.ObjectWithString = (*seqRenderObject)(nil)
+	_ value.SeqObject        = (*seqRenderObject)(nil)
+)
+
+func (o *seqRenderObject) GetAttr(string) value.Value   { return value.Undefined() }
+func (o *seqRenderObject) ObjectRepr() value.ObjectRepr { return value.ObjectReprSeq }
+func (o *seqRenderObject) SeqLen() int                  { return len(o.items) }
+func (o *seqRenderObject) SeqItem(i int) value.Value    { return o.items[i] }
+func (o *seqRenderObject) ObjectString() string         { return "COMPACT_MARKER" }
+
+// TestPprintSeqObjectDoesNotHijack pins the scoping of the object-render
+// dispatch: it applies to a MAP object (a class, whose render is always the
+// alternate form) but NOT a SEQ object (a list, whose render respects the
+// alternate flag). A host list under pprint/debug must expand as a debug_list,
+// not print its compact ObjectString.
+func TestPprintSeqObjectDoesNotHijack(t *testing.T) {
+	ctx := map[string]any{
+		"xs": value.FromObject(&seqRenderObject{items: []value.Value{value.FromString("a")}}),
+	}
+	want := "[\n    \"a\",\n]" // the debug_list expansion, not "COMPACT_MARKER"
+	for _, src := range []string{`{{ xs|pprint }}`, `{{ debug(xs) }}`} {
+		if got := renderExpr(t, src, ctx); got != want {
+			t.Errorf("%s = %q, want the debug_list expansion %q (ObjectString must not hijack a seq)", src, got, want)
+		}
+	}
+}
+
 func classCtx() map[string]any {
 	m := value.NewOrderedMap(1)
 	m.Set("prop1", value.FromString("value"))

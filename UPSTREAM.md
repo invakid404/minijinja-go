@@ -15,7 +15,7 @@ logged in [PATCHES.md](PATCHES.md) and pinned by a differential corpus row.
 | Upstream subtree sha | `10edf0cdd0a0b04fe3513464f7d1d1da51459096` |
 | Fork module path | `github.com/invakid404/minijinja-go/v2` |
 | Baseline tag | `v2.16.0-baml.2` — the semantically untouched baseline every patch is a delta over (see [Releases](#releases)) |
-| Current release | `v2.16.0-baml.5` |
+| Current release | `v2.16.0-baml.6` |
 | License | Apache-2.0, upstream `LICENSE` preserved verbatim (upstream ships no `NOTICE`) |
 
 ### Behavioural target
@@ -125,7 +125,8 @@ wrong gets a successor, never a rewrite. Every tag below still resolves.
 
 | Tag | Status | Notes |
 | --- | --- | --- |
-| `v2.16.0-baml.5` | **current** | Slice 8: the same two host-map shapes through pycompat `str.join`/`keys`/`values`/`items`/`get`, `dictsort`, and the `pprint`/`debug` alternate-debug renderers — a non-enumerable map faults instead of succeeding empty, and an enumerable class map is reached generically and renders through its own render. `PATCHES.md` #106-#108, pinned by the `render_map` corpus kind on the `oracle/corpus/opaque.json` lane. Same engine as `-baml.4` plus slice 8. |
+| `v2.16.0-baml.6` | **current** | Slice 8, corrected: scopes the alternate-debug object-render dispatch (patch #107) to MAP objects. `-baml.5` applied it to any object with a custom render, which regressed a host LIST under `pprint`/`debug` — a list render RESPECTS the alternate flag (its `debug_list` is multi-line under `{:#?}`) while its `ObjectString` is the compact non-alternate form, so the sequence must keep its `debug_list` expansion. Pinned by `object_debug_fork_test.go`'s `seqRenderObject` and the leaf's host-list `pprint`/`debug` CFFI rows. Same corpus and engine as `-baml.5`. |
+| `v2.16.0-baml.5` | retained, superseded | Slice 8: the same two host-map shapes through pycompat `str.join`/`keys`/`values`/`items`/`get`, `dictsort`, and the `pprint`/`debug` alternate-debug renderers — a non-enumerable map faults instead of succeeding empty, and an enumerable class map is reached generically and renders through its own render. `PATCHES.md` #106-#108, pinned by the `render_map` corpus kind on the `oracle/corpus/opaque.json` lane. Superseded by `-baml.6`, which scopes patch #107 to map objects after it was found to regress a host list under `pprint`. |
 | `v2.16.0-baml.4` | retained, superseded | Slice 7: the opaque host map (equality directionality, the ordering fault, and iterating a mapping that cannot be enumerated) and `ObjectWithString` dispatch through `Value.String`/`Value.Repr`. `PATCHES.md` #102-#105, pinned by the new `oracle/corpus/opaque.json` lane. Superseded by `-baml.5`, which is the same engine plus slice 8. |
 | `v2.16.0-baml.3` | retained, superseded | Slice 5: the builtin registry, string/format/JSON operations and the pycompat method surface. `PATCHES.md` #45-#101. Superseded by `-baml.4`, which is the same engine plus slice 7. |
 | `v2.16.0-baml.2` | retained, superseded | The **semantically untouched baseline**: upstream `minijinja-go/v2.16.0` with no engine change at all. It remains the reference `scripts/verify-seed.sh` derives from, and every patch in `PATCHES.md` is a delta over it. All CI green on linux/amd64 and darwin/arm64 at the tagged commit. |
@@ -149,6 +150,6 @@ Files README.md and README.md differ
 Files UPSTREAM.md and UPSTREAM.md differ
 ```
 
-That claim stops at `-baml.2`. `-baml.3`, `-baml.4` and `-baml.5` carry real
-engine changes, each declared in `PATCHES.md` and pinned by a differential corpus
-row, so their zips differ in Go source as well.
+That claim stops at `-baml.2`. `-baml.3` through `-baml.6` carry real engine
+changes, each declared in `PATCHES.md` and pinned by a differential corpus row,
+so their zips differ in Go source as well.

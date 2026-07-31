@@ -2877,20 +2877,6 @@ func FilterPprint(_ State, val value.Value, args []value.Value, kwargs *value.Or
 // that was never there.
 func pprintValue(val value.Value, indent int) string {
 	pad := strings.Repeat(" ", indent)
-
-	// The engine's `{:#?}` of an object calls its `render` (value/mod.rs:462),
-	// and a CUSTOM render (an object with its own string form) wins over the
-	// default `debug_map`/`debug_list`. So an alias-aware class or a bare enum
-	// prints its own render here rather than a map rebuilt from its canonical
-	// keys — the same object render `{{ x }}` and `Repr` already dispatch. Rust
-	// re-indents a nested entry's own newlines by the surrounding depth
-	// (DebugList/DebugMap's PadAdapter); reproduce that by shifting every line
-	// after the first by this indent, which is a no-op at the top and for a
-	// single-line render.
-	if s, ok := val.ObjectRender(); ok {
-		return strings.ReplaceAll(s, "\n", "\n"+pad)
-	}
-
 	switch val.Kind() {
 	case value.KindSeq, value.KindIterable:
 		if _, sized := val.Len(); !sized {
@@ -2911,6 +2897,19 @@ func pprintValue(val value.Value, indent int) string {
 		sb.WriteString("]")
 		return sb.String()
 	case value.KindMap:
+		// The engine's `{:#?}` of an object calls its `render` (value/mod.rs:462),
+		// and a CUSTOM map render — an object with its own string form — wins over
+		// the default `debug_map` over its pairs, so an alias-aware class prints
+		// its render rather than a map rebuilt from its CANONICAL keys, and a bare
+		// enum member/namespace prints its render rather than a map it cannot
+		// enumerate. Re-indented per depth the way Rust's DebugMap PadAdapter
+		// shifts a nested entry. Scoped to a MAP object: a SEQ object (a host
+		// list) renders through `debug_list`, which RESPECTS the alternate flag,
+		// so its non-alternate `ObjectString` is not the pprint form — the
+		// sequence arm's expansion is.
+		if s, ok := val.ObjectRender(); ok {
+			return strings.ReplaceAll(s, "\n", "\n"+pad)
+		}
 		// The mapping's own order, so a pretty-printed map does not disagree
 		// with the same map rendered normally.
 		keys, ok := val.MapKeys()
