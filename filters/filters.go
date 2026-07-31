@@ -2684,50 +2684,55 @@ func FilterDictSort(_ State, val value.Value, args []value.Value, kwargs *value.
 	}
 	byValue := by == "value"
 
-	if m, ok := val.AsMap(); ok {
-		// Start from the mapping's own order so that entries the sort considers
-		// equal keep it, rather than coming out in Go map order.
-		keys, ok := val.MapKeys()
-		if !ok {
-			keys = make([]string, 0, len(m))
-			for k := range m {
-				keys = append(keys, k)
-			}
-		}
-
-		// `dictsort` is the third caller of the engine's one comparator
-		// (filters.rs:333-336), so it sorts by exactly what `sort` and
-		// `groupby` do — Unicode case folding, and a tie that stays a tie.
-		if byValue {
-			sort.SliceStable(keys, func(i, j int) bool {
-				cmp := cmpHelper(m[keys[i]], m[keys[j]], caseSensitive)
-				if reverse {
-					return cmp > 0
-				}
-				return cmp < 0
-			})
-		} else {
-			sort.SliceStable(keys, func(i, j int) bool {
-				cmp := cmpHelper(value.FromString(keys[i]), value.FromString(keys[j]), caseSensitive)
-				if reverse {
-					return cmp > 0
-				}
-				return cmp < 0
-			})
-		}
-
-		var result []value.Value
-		for _, k := range keys {
-			result = append(result, value.FromSlice([]value.Value{
-				value.FromString(k),
-				m[k],
-			}))
-		}
-		return value.FromSlice(result), nil
+	// Like `items`, this is a mapping operation: anything that is not a map by
+	// KIND is an invalid operation rather than an empty list (filters.rs:319-324).
+	if val.Kind() != value.KindMap {
+		return value.Undefined(), invalidOp("cannot convert value into pair list")
 	}
-	// Like `items`, this is a mapping operation: anything else is an invalid
-	// operation rather than an empty list.
-	return value.Undefined(), invalidOp("cannot convert value into pair list")
+	// The pairs are the mapping's own iteration, which the engine takes with
+	// `ok!(v.try_iter())` (filters.rs:330). For a map object that returns
+	// Enumerator::NonEnumerable that FAULTS `map is not iterable` rather than
+	// sorting an empty list — so a non-enumerable host map faults here too,
+	// through the same generic MapKeys the enumerable path reads. Reaching the
+	// values generically (MapKeys + GetItem, not AsMap) is what lets an
+	// enumerable host map that is not a Go map — a MapObject class — sort at
+	// all, where AsMap declined it. Start from the mapping's own order so that
+	// entries the sort considers equal keep it.
+	keys, ok := val.MapKeys()
+	if !ok {
+		return value.Undefined(), invalidOp(fmt.Sprintf("%s is not iterable", val.Kind()))
+	}
+	get := func(k string) value.Value { return val.GetItem(value.FromString(k)) }
+
+	// `dictsort` is the third caller of the engine's one comparator
+	// (filters.rs:333-336), so it sorts by exactly what `sort` and
+	// `groupby` do — Unicode case folding, and a tie that stays a tie.
+	if byValue {
+		sort.SliceStable(keys, func(i, j int) bool {
+			cmp := cmpHelper(get(keys[i]), get(keys[j]), caseSensitive)
+			if reverse {
+				return cmp > 0
+			}
+			return cmp < 0
+		})
+	} else {
+		sort.SliceStable(keys, func(i, j int) bool {
+			cmp := cmpHelper(value.FromString(keys[i]), value.FromString(keys[j]), caseSensitive)
+			if reverse {
+				return cmp > 0
+			}
+			return cmp < 0
+		})
+	}
+
+	var result []value.Value
+	for _, k := range keys {
+		result = append(result, value.FromSlice([]value.Value{
+			value.FromString(k),
+			get(k),
+		}))
+	}
+	return value.FromSlice(result), nil
 }
 
 // FilterAttr looks up an attribute by name.
@@ -2872,6 +2877,20 @@ func FilterPprint(_ State, val value.Value, args []value.Value, kwargs *value.Or
 // that was never there.
 func pprintValue(val value.Value, indent int) string {
 	pad := strings.Repeat(" ", indent)
+
+	// The engine's `{:#?}` of an object calls its `render` (value/mod.rs:462),
+	// and a CUSTOM render (an object with its own string form) wins over the
+	// default `debug_map`/`debug_list`. So an alias-aware class or a bare enum
+	// prints its own render here rather than a map rebuilt from its canonical
+	// keys — the same object render `{{ x }}` and `Repr` already dispatch. Rust
+	// re-indents a nested entry's own newlines by the surrounding depth
+	// (DebugList/DebugMap's PadAdapter); reproduce that by shifting every line
+	// after the first by this indent, which is a no-op at the top and for a
+	// single-line render.
+	if s, ok := val.ObjectRender(); ok {
+		return strings.ReplaceAll(s, "\n", "\n"+pad)
+	}
+
 	switch val.Kind() {
 	case value.KindSeq, value.KindIterable:
 		if _, sized := val.Len(); !sized {
@@ -3029,17 +3048,30 @@ func urlencodeString(input string) string {
 //	{{ "hello world"|urlencode }}
 //	  -> "hello%20world"
 func FilterUrlencode(_ State, val value.Value, _ []value.Value, _ *value.OrderedMap) (value.Value, error) {
-	// Check if it's a map (dict) - encode as query string
-	if m, ok := val.AsMap(); ok {
-		var parts []string
-		keys := make([]string, 0, len(m))
-		for k := range m {
-			keys = append(keys, k)
+	// A mapping encodes as a query string. The gate is the value's KIND
+	// (filters.rs:1122), and the pairs come from `ok!(value.try_iter())`
+	// (filters.rs:1123) — so a map object that cannot enumerate its pairs FAULTS
+	// `map is not iterable` exactly as `items`/`dictsort` do, rather than falling
+	// through to string coercion and succeeding (the out-do a non-enumerable map
+	// took through the old `AsMap` gate). An enumerable host map that AsMap does
+	// not recognise is reached generically, through MapKeys + GetItem, in the
+	// map's own order — not a Go-map sort.
+	//
+	// This filter is withdrawn from the default environment (defaults.go:24, it
+	// is gated behind an engine feature BAML does not enable), so the gate is not
+	// reachable through a template today; the parity is kept for any external
+	// caller that registers it, and so the value model never carries a latent
+	// succeed-on-non-enumerable path.
+	if val.Kind() == value.KindMap {
+		keys, ok := val.MapKeys()
+		if !ok {
+			return value.Undefined(), invalidOp(fmt.Sprintf("%s is not iterable", val.Kind()))
 		}
-		sort.Strings(keys)
+		var parts []string
 		for _, k := range keys {
-			v := m[k]
-			if v.IsNone() {
+			v := val.GetItem(value.FromString(k))
+			// none AND undefined are both skipped (filters.rs:1126).
+			if v.IsNone() || v.IsUndefined() {
 				continue
 			}
 			parts = append(parts, urlencodeString(k)+"="+urlencodeString(v.String()))

@@ -622,6 +622,250 @@
       ],
       "expect": "bytes",
       "notes": "Statement output rather than expression output, so the formatter path is covered too."
+    },
+    {
+      "id": "opaque/pycompat-join-member-fault",
+      "surface": "pycompat",
+      "profile": "pycompat",
+      "form": "expression",
+      "source": "','.join(member)",
+      "inputs": [
+        { "name": "member", "value": { "kind": "opaque_map", "canonical": "RED", "display": "rouge" } }
+      ],
+      "expect": "error",
+      "notes": "Finding #1. `str.join` takes `values.try_iter()?` (pycompat.rs:260-271); a non-enumerable map has no iterator, so this FAULTS `map is not iterable` rather than joining nil as an empty list. The out-do the fix removes rendered \"\" here."
+    },
+    {
+      "id": "opaque/pycompat-join-namespace-fault",
+      "surface": "pycompat",
+      "profile": "pycompat",
+      "form": "expression",
+      "source": "','.join(namespace)",
+      "inputs": [
+        { "name": "namespace", "value": { "kind": "opaque_map", "display": "Color" } }
+      ],
+      "expect": "error",
+      "notes": "The same fault for the namespace object, which is non-enumerable too."
+    },
+    {
+      "id": "opaque/pycompat-join-empty-map",
+      "surface": "pycompat",
+      "profile": "pycompat",
+      "form": "expression",
+      "source": "','.join(m)",
+      "inputs": [
+        { "name": "m", "value": { "kind": "map", "entries": [] } }
+      ],
+      "expect": "bytes",
+      "notes": "The other side of the fix: a KNOWN-EMPTY enumerable map still joins to \"\", because its pair iterator exists and is empty. Only the non-enumerable map faults."
+    },
+    {
+      "id": "opaque/pycompat-join-class-keys",
+      "surface": "pycompat",
+      "profile": "pycompat",
+      "form": "expression",
+      "source": "','.join(c)",
+      "inputs": [
+        { "name": "c", "value": { "kind": "render_map", "entries": [ { "key": "prop1", "value": { "kind": "string", "value": "value" } } ], "display": "{\n    \"key1\": \"value\",\n}" } }
+      ],
+      "expect": "bytes",
+      "notes": "An enumerable map joins its KEYS (Python semantics), so a class map joins its canonical field names."
+    },
+    {
+      "id": "opaque/pycompat-member-keys",
+      "surface": "pycompat",
+      "profile": "pycompat",
+      "form": "expression",
+      "source": "member.keys()|list",
+      "inputs": [
+        { "name": "member", "value": { "kind": "opaque_map", "canonical": "RED", "display": "rouge" } }
+      ],
+      "expect": "bytes",
+      "notes": "Finding #3. The engine answers keys/values/items/get on any Map-representation object (pycompat.rs:276-315); a non-enumerable one yields empty views. AsMap declined the fork's object and errored `unknown method` — an under-do."
+    },
+    {
+      "id": "opaque/pycompat-member-values",
+      "surface": "pycompat",
+      "profile": "pycompat",
+      "form": "expression",
+      "source": "member.values()|list",
+      "inputs": [
+        { "name": "member", "value": { "kind": "opaque_map", "canonical": "RED", "display": "rouge" } }
+      ],
+      "expect": "bytes",
+      "notes": "Empty values view over a non-enumerable map."
+    },
+    {
+      "id": "opaque/pycompat-member-items",
+      "surface": "pycompat",
+      "profile": "pycompat",
+      "form": "expression",
+      "source": "member.items()|list",
+      "inputs": [
+        { "name": "member", "value": { "kind": "opaque_map", "canonical": "RED", "display": "rouge" } }
+      ],
+      "expect": "bytes",
+      "notes": "Empty items view over a non-enumerable map."
+    },
+    {
+      "id": "opaque/pycompat-member-get",
+      "surface": "pycompat",
+      "profile": "pycompat",
+      "form": "expression",
+      "source": "member.get('x', 'fallback')",
+      "inputs": [
+        { "name": "member", "value": { "kind": "opaque_map", "canonical": "RED", "display": "rouge" } }
+      ],
+      "expect": "bytes",
+      "notes": "get over a non-enumerable map has no entry, so it takes the default."
+    },
+    {
+      "id": "opaque/pycompat-class-keys",
+      "surface": "pycompat",
+      "profile": "pycompat",
+      "form": "expression",
+      "source": "c.keys()|list",
+      "inputs": [
+        { "name": "c", "value": { "kind": "render_map", "entries": [ { "key": "prop1", "value": { "kind": "string", "value": "value" } } ], "display": "{\n    \"key1\": \"value\",\n}" } }
+      ],
+      "expect": "bytes",
+      "notes": "An enumerable host map that AsMap declines still answers keys() through the generic MapKeys path, by its CANONICAL key."
+    },
+    {
+      "id": "opaque/pycompat-class-values",
+      "surface": "pycompat",
+      "profile": "pycompat",
+      "form": "expression",
+      "source": "c.values()|list",
+      "inputs": [
+        { "name": "c", "value": { "kind": "render_map", "entries": [ { "key": "prop1", "value": { "kind": "string", "value": "value" } } ], "display": "{\n    \"key1\": \"value\",\n}" } }
+      ],
+      "expect": "bytes",
+      "notes": "values() over the class map, through GetItem."
+    },
+    {
+      "id": "opaque/pycompat-class-items",
+      "surface": "pycompat",
+      "profile": "pycompat",
+      "form": "expression",
+      "source": "c.items()|list",
+      "inputs": [
+        { "name": "c", "value": { "kind": "render_map", "entries": [ { "key": "prop1", "value": { "kind": "string", "value": "value" } } ], "display": "{\n    \"key1\": \"value\",\n}" } }
+      ],
+      "expect": "bytes",
+      "notes": "items() over the class map: canonical key/value pairs."
+    },
+    {
+      "id": "opaque/pycompat-class-get-canonical",
+      "surface": "pycompat",
+      "profile": "pycompat",
+      "form": "expression",
+      "source": "c.get('prop1', 'fallback')",
+      "inputs": [
+        { "name": "c", "value": { "kind": "render_map", "entries": [ { "key": "prop1", "value": { "kind": "string", "value": "value" } } ], "display": "{\n    \"key1\": \"value\",\n}" } }
+      ],
+      "expect": "bytes",
+      "notes": "get by the CANONICAL key hits."
+    },
+    {
+      "id": "opaque/pycompat-class-get-alias",
+      "surface": "pycompat",
+      "profile": "pycompat",
+      "form": "expression",
+      "source": "c.get('key1', 'fallback')",
+      "inputs": [
+        { "name": "c", "value": { "kind": "render_map", "entries": [ { "key": "prop1", "value": { "kind": "string", "value": "value" } } ], "display": "{\n    \"key1\": \"value\",\n}" } }
+      ],
+      "expect": "bytes",
+      "notes": "get by the ALIAS (render) key misses: the map is keyed by canonical name."
+    },
+    {
+      "id": "opaque/class-dictsort",
+      "surface": "container",
+      "form": "expression",
+      "source": "c|dictsort",
+      "inputs": [
+        { "name": "c", "value": { "kind": "render_map", "entries": [ { "key": "prop1", "value": { "kind": "string", "value": "value" } } ], "display": "{\n    \"key1\": \"value\",\n}" } }
+      ],
+      "expect": "bytes",
+      "notes": "Finding #3 through dictsort: `ok!(v.try_iter())` over the enumerable class map (filters.rs:330) sorts its canonical pairs. AsMap declined it and errored `cannot convert value into pair list`."
+    },
+    {
+      "id": "opaque/class-items-filter",
+      "surface": "container",
+      "form": "expression",
+      "source": "c|items|list",
+      "inputs": [
+        { "name": "c", "value": { "kind": "render_map", "entries": [ { "key": "prop1", "value": { "kind": "string", "value": "value" } } ], "display": "{\n    \"key1\": \"value\",\n}" } }
+      ],
+      "expect": "bytes",
+      "notes": "The `|items` control, which already reached the class map through its GetItem fallback and must keep matching."
+    },
+    {
+      "id": "opaque/member-dictsort-fault",
+      "surface": "container",
+      "form": "expression",
+      "source": "member|dictsort",
+      "inputs": [
+        { "name": "member", "value": { "kind": "opaque_map", "canonical": "RED", "display": "rouge" } }
+      ],
+      "expect": "error",
+      "notes": "dictsort over a non-enumerable map faults `map is not iterable` (`ok!(v.try_iter())`), not an empty list."
+    },
+    {
+      "id": "opaque/class-pprint",
+      "surface": "rendering",
+      "form": "expression",
+      "source": "c|pprint",
+      "inputs": [
+        { "name": "c", "value": { "kind": "render_map", "entries": [ { "key": "prop1", "value": { "kind": "string", "value": "value" } } ], "display": "{\n    \"key1\": \"value\",\n}" } }
+      ],
+      "expect": "bytes",
+      "notes": "Finding #2. `{value:#?}` of an object calls its render (value/mod.rs:462), and the class's alias-aware render wins over a map rebuilt from its canonical keys. The recorded bytes are the engine's; the fork must match them."
+    },
+    {
+      "id": "opaque/class-debug",
+      "surface": "rendering",
+      "form": "expression",
+      "source": "debug(c)",
+      "inputs": [
+        { "name": "c", "value": { "kind": "render_map", "entries": [ { "key": "prop1", "value": { "kind": "string", "value": "value" } } ], "display": "{\n    \"key1\": \"value\",\n}" } }
+      ],
+      "expect": "bytes",
+      "notes": "debug() is the same `{:#?}` call as pprint (functions.rs:430-439), so the same bytes."
+    },
+    {
+      "id": "opaque/class-pprint-in-list",
+      "surface": "rendering",
+      "form": "expression",
+      "source": "[c]|pprint",
+      "inputs": [
+        { "name": "c", "value": { "kind": "render_map", "entries": [ { "key": "prop1", "value": { "kind": "string", "value": "value" } } ], "display": "{\n    \"key1\": \"value\",\n}" } }
+      ],
+      "expect": "bytes",
+      "notes": "Nested in a debug_list: the object render is re-indented by the surrounding depth (PadAdapter). The recorded bytes pin exactly how much."
+    },
+    {
+      "id": "opaque/class-pprint-in-map",
+      "surface": "rendering",
+      "form": "expression",
+      "source": "{'c': c}|pprint",
+      "inputs": [
+        { "name": "c", "value": { "kind": "render_map", "entries": [ { "key": "prop1", "value": { "kind": "string", "value": "value" } } ], "display": "{\n    \"key1\": \"value\",\n}" } }
+      ],
+      "expect": "bytes",
+      "notes": "Nested as a debug_map value: same re-indentation through the map entry's PadAdapter."
+    },
+    {
+      "id": "opaque/class-render",
+      "surface": "rendering",
+      "form": "expression",
+      "source": "c",
+      "inputs": [
+        { "name": "c", "value": { "kind": "render_map", "entries": [ { "key": "prop1", "value": { "kind": "string", "value": "value" } } ], "display": "{\n    \"key1\": \"value\",\n}" } }
+      ],
+      "expect": "bytes",
+      "notes": "Display of the class is its render — the same object render Repr and every container already dispatch."
     }
   ]
 }

@@ -97,6 +97,11 @@ FORK_ADDED=(
   "value/opaquemap_fork_test.go"
   "value/objectstring_fork_test.go"
   "object_string_test.go"
+  # Slice 8: the pycompat/pprint/map-API parity round — a non-enumerable map
+  # must fault rather than succeed empty, and the alternate-debug renderers and
+  # the generic map API must reach a host map. Proved against generic host
+  # objects with no profile types involved. PATCHES.md #106-#108.
+  "object_debug_fork_test.go"
 )
 
 # Derived files this fork intentionally modifies, each with the PATCHES.md entry

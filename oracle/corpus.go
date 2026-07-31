@@ -183,6 +183,16 @@ const (
 	// by that value. An empty one makes it a NAMESPACE, whose hook declines
 	// everything, which is what lets a row reach the engine's map fallback.
 	KindOpaqueMap ValueKind = "opaque_map"
+	// KindRenderMap is a generic host object that IS an enumerable map —
+	// `ObjectRepr::Map` enumerating its keys, `get_value` answering per key — but
+	// is not a Go map and renders through a CUSTOM `render`/`ObjectString`. It is
+	// the generic shape of BAML's class value: its keys enumerate by their
+	// CANONICAL field name (Entries), while its render (Display) is the
+	// alias-aware object form. AsMap declines it, so it exercises the generic
+	// MapKeys/GetItem path in the map API and the object-render dispatch in the
+	// alternate-debug renderers. Entries give the ordered keys and values;
+	// Display is the object render.
+	KindRenderMap ValueKind = "render_map"
 )
 
 // TypedValue is an explicitly typed corpus input.
@@ -255,7 +265,7 @@ func (t *TypedValue) UnmarshalJSON(data []byte) error {
 		if err := json.Unmarshal(raw.Value, &t.String); err != nil {
 			return fmt.Errorf("string value: %w", err)
 		}
-	case KindNull, KindList, KindMap, KindCmpObject, KindOpaqueMap:
+	case KindNull, KindList, KindMap, KindCmpObject, KindOpaqueMap, KindRenderMap:
 		// no scalar payload
 	default:
 		return fmt.Errorf("unknown value kind %q", raw.Kind)

@@ -235,6 +235,33 @@ object (`opaque_map`) with no BAML types on either side of the differential.
 | `object_string_test.go` | The composed half of the same proof, through a real template: containers, `join`, `upper`, `string`, `~` and statement output. |
 | `oracle/corpus/opaque.json`, `oracle/recorded/rust-8cfc770-opaque.json` | The differential lane for all four patches, driven by the new generic `opaque_map` corpus value kind (`oracle/harness/src/main.rs`, `oracle/fork.go`). Its own lane, so adding it invalidates no other lane's recording. |
 
+### Slice 8 — the same two host-map shapes through pycompat, the map API and the alternate-debug renderers
+
+Slice 7 corrected comparison, iteration and object rendering for a host map that
+is a map by representation. A cold re-review found three surfaces that reach the
+SAME two shapes — a **non-enumerable** map (`Enumerator::NonEnumerable`) and an
+**enumerable map with a custom render** (an `ObjectRepr::Map` that enumerates its
+canonical keys but renders through its own `render`, the shape of a BAML class) —
+and still handled them as slice 7's predecessors did: a non-enumerable map
+succeeding empty, or a host map that a Go-map check declines being turned away.
+
+The lane gains a second generic corpus value kind, `render_map`
+(`oracle/harness/src/main.rs`, `oracle/fork.go`), for the enumerable-render shape;
+`opaque_map` already models the non-enumerable one. No BAML types on either side.
+
+| # | Corpus ID(s) | Area | Upstream behaviour | Fork behaviour | Rationale | Landed in |
+| --- | --- | --- | --- | --- | --- | --- |
+| 106 | `opaque/pycompat-join-member-fault`, `-pycompat-join-namespace-fault`, and the `-pycompat-join-empty-map`, `-pycompat-join-class-keys` controls (4 rows) | pycompat `str.join` over a mapping | `pycompat.iterable` (the `values.try_iter()?` in `str.join`) put `KindMap` in the arm that always returns `val.Iter()`, so a non-enumerable map's nil iterator joined as an EMPTY list: `','.join(Color.RED)` rendered `""`. Stock errors `map is not iterable`. This was the one direct native-success out-do the re-review found. | `KindMap` moved to the same nil-check arm the other unknown kinds use, exactly as the generic `filters.tryIter` does: a non-enumerable map faults, while a KNOWN-EMPTY enumerable map (a non-nil empty `Iter()`) still joins to `""` and an enumerable class map joins its keys. | The parity-decline rule's exact violation: BAML errored while the profile returned a value. The generic filter-side `tryIter` correction (patch #105) did not cover this parallel pycompat path, so the two now share the same distinction. | slice 8 |
+| 107 | `opaque/class-pprint`, `-class-debug`, `-class-pprint-in-list`, `-class-pprint-in-map`, `-class-render` (5 rows) | alternate-debug rendering (`pprint`, `debug()`) of a map object with a custom render | `prettyRepr` (`debug`) and `pprintValue` (`pprint`) branched on the value's KIND and rebuilt an enumerable map from `MapKeys` before consulting the object's render, so a class printed its CANONICAL field name (`{"prop1": …}`) under `pprint`/`debug` while every other path already showed its alias-aware render (`{"key1": …}`). | Both renderers consult the new `value.Value.ObjectRender` FIRST — the engine's `{value:#?}` of an object calls its `render` (`value/mod.rs:462`), and a custom render wins over the default `debug_map`/`debug_list` (`value/object.rs:331-352`) — and re-indent its output by the current depth, which is Rust's `DebugList`/`DebugMap` PadAdapter for a nested entry. The non-enumerable `MapKeys`-false fallback is preserved. | The recorded Rust bytes pin the nesting exactly (`[c]` and `{'c': c}` each shift the render four spaces per level); the fork matches them byte-for-byte. `Value.String`/`Repr` already dispatched the render (patch #104); this closes the two alternate-debug renderers that did not. | slice 8 |
+| 108 | `opaque/pycompat-member-keys`, `-pycompat-member-values`, `-pycompat-member-items`, `-pycompat-member-get`, `-pycompat-class-keys`, `-pycompat-class-values`, `-pycompat-class-items`, `-pycompat-class-get-canonical`, `-pycompat-class-get-alias`, `-class-dictsort`, `-member-dictsort-fault`, and the `-class-items-filter` control (12 rows) | the map API on a host map (pycompat `keys`/`values`/`items`/`get`, `dictsort`) | `pycompat.mapMethods` and `FilterDictSort` gated on `val.AsMap()`, which recognises only a Go map or a `MapGetter`. A host map that is a map by representation but exposes only `MapObject`/`GetItem` (an enumerable class) or nothing (a non-enumerable member) was declined: `keys()` errored `unknown method`, `dictsort` errored `cannot convert value into pair list`. Stock answers every one. | Both reach the map generically — `MapKeys` for the keys, `GetItem`/`LookupAttr` for the values — exactly as the engine's `as_object()` + `try_iter`/`try_iter_pairs` do (`pycompat.rs:276-315`, `filters.rs:319-360`). A non-enumerable map yields empty `keys`/`values`/`items` views and a `get` fallback (its `MapKeys` is false), while `dictsort` FAULTS `map is not iterable` there, because it takes `ok!(v.try_iter())`. An enumerable class answers by its CANONICAL keys. | The same swept generalisation reaches two more `AsMap`-only map consumers, each proved by a fork Go test rather than the differential because neither is registered in the default environment: `FilterUrlencode` (a withdrawn filter, `defaults.go:24`) — whose map branch now faults on a non-enumerable map instead of falling through to a coerced string, an out-do removed at the source even though unreachable today — and `valueToNative` on the JSON auto-escape path, which stopped serializing an enumerable host map as an empty `{}`. | slice 8 |
+
+#### Fork-only files this slice adds
+
+| Path | Why |
+| --- | --- |
+| `pycompat/opaquemap_pycompat_test.go` | The generic proof of patches #106 and #108 through the pycompat module: `str.join` faults on a non-enumerable map and stays empty on `{}`, and `keys`/`values`/`items`/`get` answer for both host-map shapes. |
+| `object_debug_fork_test.go` | The generic proof of patch #107 (`pprint`/`debug` direct and nested), the `dictsort`/`items` half of #108, and the two swept siblings (`urlencode`, JSON auto-escape) — all against generic host objects, no profile types. |
+
 ## Known divergences not yet patched
 
 The differential records 16 declared divergences from BAML's engine, all classed

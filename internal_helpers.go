@@ -67,10 +67,17 @@ func valueToNative(v value.Value) interface{} {
 		}
 		return result
 	case value.KindMap:
-		m, _ := v.AsMap()
-		result := make(map[string]interface{}, len(m))
-		for k, val := range m {
-			result[k] = valueToNative(val)
+		// Through the generic map surface (MapKeys + GetItem), not AsMap: a host
+		// object that is a map by REPRESENTATION but not a Go map still serializes
+		// its entries here, matching the engine's serde, which walks
+		// `try_iter_pairs` for an `ObjectRepr::Map` (value/mod.rs:1714-1737).
+		// AsMap only recognises a Go map or a MapGetter, so an enumerable class
+		// map fell through to an empty `{}` — silent data loss. A non-enumerable
+		// map has no pairs, so it stays `{}` on both sides.
+		keys, _ := v.MapKeys()
+		result := make(map[string]interface{}, len(keys))
+		for _, k := range keys {
+			result[k] = valueToNative(v.GetItem(value.FromString(k)))
 		}
 		return result
 	default:

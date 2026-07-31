@@ -218,6 +218,16 @@ enum TypedValue {
         canonical: Option<String>,
         display: String,
     },
+    /// A generic host object that IS an enumerable map but renders through a
+    /// CUSTOM `render`. Its keys enumerate by their canonical name (`entries`),
+    /// while its `render` is the alias-aware object form (`display`). It is the
+    /// generic shape of BAML's class value: its Go counterpart is declined by
+    /// AsMap, so it drives the generic map API (keys/values/items/get, dictsort)
+    /// and the object-render dispatch in the alternate-debug renderers.
+    RenderMap {
+        entries: Vec<MapEntry>,
+        display: String,
+    },
 }
 
 // ---------------------------------------------------------------------------
@@ -323,6 +333,47 @@ impl Object for OpaqueMap {
     }
 }
 
+/// An enumerable map object with a custom render.
+///
+/// Unlike `OpaqueMap`, this one DOES enumerate: `repr()` is Map and `enumerate`
+/// yields its keys, so `try_iter_pairs()` pairs each key with `get_value`, and
+/// the map API (`keys`/`values`/`items`/`get`, `dictsort`, `items`) all answer.
+/// Its keys are the CANONICAL entry names. But `render` writes a display string
+/// of its own — the alias-aware object form — so `{value}`, `{value:?}` and
+/// `{value:#?}` all show the render rather than a debug map rebuilt from the
+/// canonical pairs. That is the split the alternate-debug fix is about.
+#[derive(Debug, Clone)]
+struct RenderMap {
+    keys: Vec<Value>,
+    values: Vec<Value>,
+    display: String,
+}
+
+impl Object for RenderMap {
+    fn repr(self: &Arc<Self>) -> ObjectRepr {
+        ObjectRepr::Map
+    }
+
+    fn enumerate(self: &Arc<Self>) -> Enumerator {
+        Enumerator::Values(self.keys.clone())
+    }
+
+    fn get_value(self: &Arc<Self>, key: &Value) -> Option<Value> {
+        let want = key.as_str()?;
+        self.keys
+            .iter()
+            .position(|k| k.as_str() == Some(want))
+            .map(|i| self.values[i].clone())
+    }
+
+    fn render(self: &Arc<Self>, f: &mut fmt::Formatter<'_>) -> fmt::Result
+    where
+        Self: Sized + 'static,
+    {
+        write!(f, "{}", self.display)
+    }
+}
+
 fn build_value(tv: &TypedValue) -> Value {
     match tv {
         TypedValue::Int { value } => Value::from(*value),
@@ -342,6 +393,14 @@ fn build_value(tv: &TypedValue) -> Value {
         }),
         TypedValue::OpaqueMap { canonical, display } => Value::from_object(OpaqueMap {
             canonical: canonical.clone(),
+            display: display.clone(),
+        }),
+        TypedValue::RenderMap { entries, display } => Value::from_object(RenderMap {
+            keys: entries
+                .iter()
+                .map(|e| Value::from(e.key.as_str()))
+                .collect(),
+            values: entries.iter().map(|e| build_value(&e.value)).collect(),
             display: display.clone(),
         }),
     }

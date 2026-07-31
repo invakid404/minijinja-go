@@ -20,7 +20,7 @@
     "harness_version": "1",
     "os": "macos",
     "arch": "aarch64",
-    "corpus_sha256": "c7992d99259ebbb406cac9fb802d6862237f140d8c310135611c2449a78aee86"
+    "corpus_sha256": "9f62eff7fce6d6f83c8f56ca95020606875ba0f3e422703448dac32232a397b7"
   },
   "results": [
     {
@@ -469,6 +469,177 @@
       "outcome": {
         "status": "ok",
         "render": "rouge;bleu;",
+        "boolean": null
+      }
+    },
+    {
+      "id": "opaque/pycompat-join-member-fault",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: map is not iterable (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "opaque/pycompat-join-namespace-fault",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: map is not iterable (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "opaque/pycompat-join-empty-map",
+      "outcome": {
+        "status": "ok",
+        "render": "",
+        "boolean": null
+      }
+    },
+    {
+      "id": "opaque/pycompat-join-class-keys",
+      "outcome": {
+        "status": "ok",
+        "render": "prop1",
+        "boolean": null
+      }
+    },
+    {
+      "id": "opaque/pycompat-member-keys",
+      "outcome": {
+        "status": "ok",
+        "render": "[]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "opaque/pycompat-member-values",
+      "outcome": {
+        "status": "ok",
+        "render": "[]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "opaque/pycompat-member-items",
+      "outcome": {
+        "status": "ok",
+        "render": "[]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "opaque/pycompat-member-get",
+      "outcome": {
+        "status": "ok",
+        "render": "fallback",
+        "boolean": null
+      }
+    },
+    {
+      "id": "opaque/pycompat-class-keys",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"prop1\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "opaque/pycompat-class-values",
+      "outcome": {
+        "status": "ok",
+        "render": "[\"value\"]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "opaque/pycompat-class-items",
+      "outcome": {
+        "status": "ok",
+        "render": "[[\"prop1\", \"value\"]]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "opaque/pycompat-class-get-canonical",
+      "outcome": {
+        "status": "ok",
+        "render": "value",
+        "boolean": null
+      }
+    },
+    {
+      "id": "opaque/pycompat-class-get-alias",
+      "outcome": {
+        "status": "ok",
+        "render": "fallback",
+        "boolean": null
+      }
+    },
+    {
+      "id": "opaque/class-dictsort",
+      "outcome": {
+        "status": "ok",
+        "render": "[[\"prop1\", \"value\"]]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "opaque/class-items-filter",
+      "outcome": {
+        "status": "ok",
+        "render": "[[\"prop1\", \"value\"]]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "opaque/member-dictsort-fault",
+      "outcome": {
+        "status": "error",
+        "category": "invalid_operation",
+        "kind": "InvalidOperation",
+        "message": "invalid operation: map is not iterable (in corpus.txt:1)"
+      }
+    },
+    {
+      "id": "opaque/class-pprint",
+      "outcome": {
+        "status": "ok",
+        "render": "{\n    \"key1\": \"value\",\n}",
+        "boolean": null
+      }
+    },
+    {
+      "id": "opaque/class-debug",
+      "outcome": {
+        "status": "ok",
+        "render": "{\n    \"key1\": \"value\",\n}",
+        "boolean": null
+      }
+    },
+    {
+      "id": "opaque/class-pprint-in-list",
+      "outcome": {
+        "status": "ok",
+        "render": "[\n    {\n        \"key1\": \"value\",\n    },\n]",
+        "boolean": null
+      }
+    },
+    {
+      "id": "opaque/class-pprint-in-map",
+      "outcome": {
+        "status": "ok",
+        "render": "{\n    \"c\": {\n        \"key1\": \"value\",\n    },\n}",
+        "boolean": null
+      }
+    },
+    {
+      "id": "opaque/class-render",
+      "outcome": {
+        "status": "ok",
+        "render": "{\n    \"key1\": \"value\",\n}",
         "boolean": null
       }
     }

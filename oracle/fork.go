@@ -124,6 +124,41 @@ func (o *opaqueMapObject) ObjectCmp(other value.Object) (int, bool) {
 	return strings.Compare(o.canonical, oo.canonical), true
 }
 
+// renderMapObject is the Go counterpart of the Rust harness's RenderMap: a host
+// object that IS an enumerable map but is not a Go map and renders through its
+// own string form. It exposes its keys through value.MapObject and its values
+// through GetAttr, and implements value.ObjectWithString for the render — the
+// generic shape of a BAML class value.
+//
+// AsMap declines it (it is neither a Go map nor a MapGetter), so it is the
+// fixture that proves the map API reaches a host map through the generic
+// MapKeys/GetItem path, and that the alternate-debug renderers use its render
+// rather than rebuilding a map from its canonical keys. Its keys are CANONICAL
+// (the entry keys), while its display is the alias-aware object form, so the two
+// cannot be confused.
+type renderMapObject struct {
+	m       *value.OrderedMap
+	display string
+}
+
+var (
+	_ value.Object           = (*renderMapObject)(nil)
+	_ value.ObjectWithRepr   = (*renderMapObject)(nil)
+	_ value.ObjectWithString = (*renderMapObject)(nil)
+	_ value.MapObject        = (*renderMapObject)(nil)
+)
+
+func (o *renderMapObject) ObjectRepr() value.ObjectRepr { return value.ObjectReprMap }
+func (o *renderMapObject) Keys() []string               { return o.m.Keys() }
+func (o *renderMapObject) ObjectString() string         { return o.display }
+func (o *renderMapObject) GetAttr(name string) value.Value {
+	v, ok := o.m.Get(name)
+	if !ok {
+		return value.Undefined()
+	}
+	return v
+}
+
 // BuildValue converts a corpus input into a fork value.
 //
 // A corpus map declares its entry order, and that order is part of the fixture
@@ -167,6 +202,16 @@ func BuildValue(tv TypedValue) (value.Value, error) {
 		return value.FromObject(&cmpObject{canonical: tv.Canonical, display: tv.Display}), nil
 	case KindOpaqueMap:
 		return value.FromObject(&opaqueMapObject{canonical: tv.Canonical, display: tv.Display}), nil
+	case KindRenderMap:
+		m := value.NewOrderedMap(len(tv.Entries))
+		for _, e := range tv.Entries {
+			v, err := BuildValue(e.Value)
+			if err != nil {
+				return value.Undefined(), fmt.Errorf("render_map key %q: %w", e.Key, err)
+			}
+			m.Set(e.Key, v)
+		}
+		return value.FromObject(&renderMapObject{m: m, display: tv.Display}), nil
 	default:
 		return value.Undefined(), fmt.Errorf("unknown value kind %q", tv.Kind)
 	}

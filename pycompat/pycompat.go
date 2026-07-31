@@ -159,9 +159,20 @@ func optBool(args []value.Value, i int) (bool, error) {
 // iterable is the `values.try_iter()?` in `str.join` (pycompat.rs:260-271):
 // none and undefined iterate as empty, and anything that is not iterable at
 // all is an invalid operation rather than an empty join.
+//
+// A MAPPING is asked, not assumed, for exactly the reason the generic
+// filters.tryIter (filters/filters.go) asks it: `try_iter` is `enumerate()`,
+// not `repr()` (value/object.rs:361-379), so a host object that is a map by
+// REPRESENTATION but returns `Enumerator::NonEnumerable` does not iterate at
+// all. Its `Iter()` is nil, and joining nil as an empty list is a native
+// success where the engine's `values.try_iter()?` raises `map is not
+// iterable` — the out-do direction. So KindMap goes through the same nil-check
+// as the other unknown kinds rather than short-circuiting to an empty join. A
+// KNOWN-EMPTY enumerable map still iterates ([value.Value.Iter] answers a
+// non-nil empty slice for it), so `",".join({})` stays "".
 func iterable(val value.Value) ([]value.Value, error) {
 	switch val.Kind() {
-	case value.KindSeq, value.KindMap, value.KindIterable, value.KindString:
+	case value.KindSeq, value.KindIterable, value.KindString:
 		return val.Iter(), nil
 	case value.KindNone, value.KindUndefined:
 		return nil, nil
@@ -503,11 +514,16 @@ func splitLines(s string) []string {
 }
 
 func mapMethods(val value.Value, method string, args []value.Value) (value.Value, error) {
-	m, ok := val.AsMap()
-	if !ok {
-		return value.Undefined(), unknownMethod()
-	}
-
+	// The reference module gates on `value.as_object()` (pycompat.rs:276-279),
+	// which every Map-representation value satisfies; the caller has already
+	// selected this table by KIND. So the map surface is reached GENERICALLY —
+	// through MapKeys/GetItem/mapLookup, not `AsMap`. AsMap only recognises a
+	// Go map or a MapGetter, so a host object that is a map by REPRESENTATION
+	// but exposes only MapObject/GetItem (an enumerable class map) or nothing
+	// (a non-enumerable enum member/namespace) would decline with a spurious
+	// `unknown method` where the engine answers. The non-enumerable case still
+	// yields the engine's empty views and get-fallback, because MapKeys reports
+	// `(nil, false)` and GetItem answers undefined for it.
 	switch method {
 	case "keys", "values", "items":
 		if err := noArgs(args); err != nil {
@@ -521,7 +537,9 @@ func mapMethods(val value.Value, method string, args []value.Value) (value.Value
 		// returns `Value::make_object_iterable` (pycompat.rs:282-308), so
 		// `dict(a=1).keys() is sequence` is FALSE while `is iterable` is true.
 		// Its length is known, which is why it still RENDERS as a list rather
-		// than as `<iterator>` (value/object.rs:338-352).
+		// than as `<iterator>` (value/object.rs:338-352). A non-enumerable map
+		// has no keys, so `keys`/`values`/`items` are empty views, exactly as
+		// `try_iter`/`try_iter_pairs` yield None → an empty iterator there.
 		names, _ := val.MapKeys()
 		out := make([]value.Value, 0, len(names))
 		for _, name := range names {
@@ -530,9 +548,9 @@ func mapMethods(val value.Value, method string, args []value.Value) (value.Value
 			case "keys":
 				out = append(out, key)
 			case "values":
-				out = append(out, m[name])
+				out = append(out, val.GetItem(key))
 			default:
-				out = append(out, value.FromSlice([]value.Value{key, m[name]}))
+				out = append(out, value.FromSlice([]value.Value{key, val.GetItem(key)}))
 			}
 		}
 		return value.MakeSizedIterable(out), nil
@@ -548,12 +566,15 @@ func mapMethods(val value.Value, method string, args []value.Value) (value.Value
 		// object for the key (`obj.get_value(key)` → Option) and only falls
 		// back when there is no entry. A key that is present with an undefined
 		// value is a hit, so `dict(a=nothing).get('a', 42)` is that undefined
-		// value and not 42.
+		// value and not 42. LookupAttr is that presence question generically: a
+		// Go map answers by presence, a host object by its own presence hook
+		// (or GetAttr definedness) — so a non-enumerable map's absent key takes
+		// the default.
 		name, isString := args[0].AsString()
 		if !isString {
 			name = args[0].String()
 		}
-		if got, present := m[name]; present {
+		if got, present := val.LookupAttr(name); present {
 			return got, nil
 		}
 		if len(args) > 1 {

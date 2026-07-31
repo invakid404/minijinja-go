@@ -168,6 +168,19 @@ func prettyRepr(val value.Value, depth int) string {
 	pad := strings.Repeat("    ", depth)
 	inner := pad + "    "
 
+	// The engine's `{:#?}` of an object calls its `render` (value/mod.rs:462),
+	// and a CUSTOM render (an object with its own string form) wins over the
+	// default `debug_map`/`debug_list`. So an alias-aware class or a bare enum
+	// prints its own render here rather than a map rebuilt from its canonical
+	// keys — the same object render `{{ x }}` and `Repr` already dispatch. Rust
+	// re-indents a nested entry's own newlines by the surrounding depth
+	// (DebugList/DebugMap's PadAdapter); reproduce that by shifting every line
+	// after the first by this depth's padding, which is a no-op at the top and
+	// for a single-line render.
+	if s, ok := val.ObjectRender(); ok {
+		return strings.ReplaceAll(s, "\n", "\n"+pad)
+	}
+
 	switch val.Kind() {
 	case value.KindSeq, value.KindIterable:
 		if _, sized := val.Len(); !sized {

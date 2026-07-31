@@ -1019,6 +1019,27 @@ func formatObject(data any) string {
 	return fmt.Sprintf("%v", data)
 }
 
+// ObjectRender returns the object's own render string when the value is a host
+// object that supplies one, and reports whether it did.
+//
+// It is the fork's analogue of the engine printing an object through its
+// `render`: for an object value both Display and Debug call `DynObject::render`
+// (value/mod.rs:462, 717), and only a CUSTOM render — an object implementing
+// [ObjectWithString] — differs from the default `debug_map`/`debug_list`
+// (value/object.rs:331-352). A renderer reproducing the ALTERNATE debug form
+// (`pprint`, `debug()`) therefore consults this BEFORE expanding a map or
+// sequence generically: where it answers, the engine prints the object's own
+// render (an alias-aware class or a bare enum), not the object's pairs. Native
+// maps and sequences are value-model kinds, not host objects, so they never
+// answer here and are expanded generically as before; nor does a `fmt.Stringer`
+// object, whose engine `render` is still the default debug form.
+func (v Value) ObjectRender() (string, bool) {
+	if obj, ok := v.data.(ObjectWithString); ok {
+		return obj.ObjectString(), true
+	}
+	return "", false
+}
+
 // formatMap renders a mapping the way the Rust engine does: entries in
 // iteration order, each key and value in its debug form. Display and debug are
 // the same function there (an object's Display calls its render, which builds a

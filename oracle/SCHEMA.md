@@ -67,6 +67,7 @@ through `float64` on the way in.
 | `map` | `entries` | array of `{key, value}`. **Order is part of the fixture**: BAML builds the engine with `preserve_order`. |
 | `cmp_object` | `canonical`, `display` | A generic host object that answers the engine's comparison hook by `canonical` while displaying `display`. This is the generic shape of BAML's enum object — alias display, canonical-value identity — with no BAML types involved. |
 | `opaque_map` | `display`, optional `canonical` | A generic host object that is a **map by representation with no enumerable pairs**, displaying `display`. With a `canonical` it also answers the comparison hook by that value (a "member"); without one the hook declines everything (a "namespace"), which is what lets a row reach the engine's map fallback. |
+| `render_map` | `entries`, `display` | A generic host object that IS an **enumerable map with a custom render**: it enumerates the canonical keys in `entries` (with their values), but renders through `display` rather than a debug map of its pairs. This is the generic shape of BAML's class value — canonical field keys, alias-aware render — with no BAML types involved. Its Go counterpart is declined by `AsMap`, so it drives the generic map API and the alternate-debug render dispatch. |
 
 `cmp_object` is what exercises BoundaryML's sole engine delta. In Rust it
 implements `Object::value_cmp` (compare to a string by canonical value, delegate
@@ -87,6 +88,16 @@ reports `([], true)`. It implements `value.ObjectWithString` and deliberately
 NOT `fmt.Stringer`, so its rendering rows test the interface dispatch rather
 than Go's `%v`. It is the generic shape of BAML's enum member and enum namespace
 objects.
+
+`render_map` is the complementary shape: it DOES enumerate. In Rust it is
+`ObjectRepr::Map` whose `enumerate()` yields its keys (`Enumerator::Values`) and
+whose `get_value` answers per key, with a `render` of its own. In Go it reports
+`value.ObjectReprMap` and implements `value.MapObject` (keys) plus `GetAttr`
+(values) and `value.ObjectWithString` (render) — but NOT a Go map or
+`value.MapGetter`, so `value.Value.AsMap` declines it while `MapKeys`/`GetItem`
+answer. Its keys are the CANONICAL entry names and its `display` is the
+alias-aware object form, so the two cannot be confused: `keys()`/`dictsort` show
+the canonical key, while `pprint`/`debug` show the render.
 
 A `map` is built with the fork's order-preserving mapping
 (`value.FromOrderedMap`), the counterpart of `Value::from_iter` on the Rust side.
